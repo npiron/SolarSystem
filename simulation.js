@@ -18,6 +18,12 @@ const STORAGE_KEY = "neo-survivors-save";
 const TAU = Math.PI * 2;
 
 const palette = ["#22d3ee", "#a78bfa", "#f472b6", "#f97316", "#34d399"];
+const icons = {
+  essence: "⚡",
+  fragments: "✦",
+  wave: "🌊",
+  reach: "📡"
+};
 
 const generators = [
   { id: "drone", name: "Drones collecteurs", baseRate: 0.2, rate: 0.2, level: 0, cost: 15 },
@@ -73,6 +79,18 @@ const upgrades = [
     apply: (state) => {
       state.player.projectiles += 1;
     }
+  },
+  {
+    id: "range",
+    name: "Portée fractale",
+    description: "+20% portée des projectiles",
+    cost: 80,
+    baseCost: 80,
+    level: 0,
+    max: 25,
+    apply: (state) => {
+      state.player.range *= 1.2;
+    }
   }
 ];
 
@@ -83,6 +101,12 @@ const state = {
   lastFrame: performance.now(),
   enemies: [],
   bullets: [],
+  floatingText: [],
+  runStats: {
+    kills: 0,
+    fragments: 0,
+    essence: 0
+  },
   player: {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -94,7 +118,8 @@ const state = {
     fireDelay: 0.65,
     fireTimer: 0,
     projectiles: 1,
-    regen: 2
+    regen: 2,
+    range: 1
   },
   resources: {
     essence: 0,
@@ -102,7 +127,13 @@ const state = {
     idleMultiplier: 1
   },
   spawnTimer: 0,
-  overlayFade: 0.12
+  overlayFade: 0.12,
+  prestigeCooldown: 0
+};
+
+const uiRefs = {
+  generatorButtons: new Map(),
+  upgradeButtons: new Map()
 };
 
 function loadSave() {
@@ -116,6 +147,7 @@ function loadSave() {
     state.player.fireDelay = save.player?.fireDelay ?? state.player.fireDelay;
     state.player.projectiles = save.player?.projectiles ?? state.player.projectiles;
     state.player.regen = save.player?.regen ?? state.player.regen;
+    state.player.range = save.player?.range ?? state.player.range;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
@@ -153,7 +185,8 @@ function saveGame() {
       damage: state.player.damage,
       fireDelay: state.player.fireDelay,
       projectiles: state.player.projectiles,
-      regen: state.player.regen
+      regen: state.player.regen,
+      range: state.player.range
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
@@ -176,6 +209,7 @@ function applyUpgradeEffects() {
   state.player.fireDelay = 0.65;
   state.player.projectiles = 1;
   state.player.regen = 2;
+  state.player.range = 1;
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
@@ -188,6 +222,10 @@ function formatNumber(value) {
   if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
   if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
   return value.toFixed(0);
+}
+
+function addFloatingText(text, x, y, color = "#fef08a") {
+  state.floatingText.push({ text, x, y, life: 1.4, color });
 }
 
 function computeIdleRate() {
@@ -204,13 +242,17 @@ function buyGenerator(gen) {
 
 function renderGenerators() {
   generatorsContainer.innerHTML = "";
+  uiRefs.generatorButtons.clear();
   generators.forEach((gen) => {
     const card = document.createElement("div");
     card.className = "card";
     const info = document.createElement("div");
-    info.innerHTML = `<h3>${gen.name}</h3><p>${gen.level} niveau(x) · ${gen.rate.toFixed(2)} /s</p>`;
+    const production = gen.rate * gen.level;
+    info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · +${formatNumber(
+      production
+    )} ${icons.essence}/s</p>`;
     const btn = document.createElement("button");
-    btn.textContent = `Acheter ${formatNumber(gen.cost)} ⚡`;
+    btn.textContent = `${icons.essence} Acheter ${formatNumber(gen.cost)}`;
     btn.className = "secondary";
     btn.disabled = state.resources.essence < gen.cost;
     btn.addEventListener("click", () => {
@@ -221,6 +263,7 @@ function renderGenerators() {
     card.appendChild(info);
     card.appendChild(btn);
     generatorsContainer.appendChild(card);
+    uiRefs.generatorButtons.set(gen.id, btn);
   });
 }
 
@@ -235,13 +278,14 @@ function buyUpgrade(upgrade) {
 
 function renderUpgrades() {
   upgradesContainer.innerHTML = "";
+  uiRefs.upgradeButtons.clear();
   upgrades.forEach((up) => {
     const card = document.createElement("div");
     card.className = "card";
     const info = document.createElement("div");
     info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${up.max}</p>`;
     const btn = document.createElement("button");
-    btn.textContent = `Acheter ${formatNumber(up.cost)} ✦`;
+    btn.textContent = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
     btn.className = "primary";
     btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
     btn.addEventListener("click", () => {
@@ -252,6 +296,7 @@ function renderUpgrades() {
     card.appendChild(info);
     card.appendChild(btn);
     upgradesContainer.appendChild(card);
+    uiRefs.upgradeButtons.set(up.id, btn);
   });
 }
 
@@ -281,7 +326,7 @@ function fire() {
       y: state.player.y,
       dx: Math.cos(angle + spread) * 260,
       dy: Math.sin(angle + spread) * 260,
-      life: 1.2
+      life: 1.2 * state.player.range
     });
   }
 }
@@ -347,8 +392,13 @@ function update(dt) {
   // Remove dead enemies
   state.enemies = state.enemies.filter((e) => {
     if (e.hp <= 0) {
+      const fragReward = e.reward * 0.35;
       state.resources.essence += e.reward;
-      state.resources.fragments += e.reward * 0.35;
+      state.resources.fragments += fragReward;
+      state.runStats.kills += 1;
+      state.runStats.fragments += fragReward;
+      state.runStats.essence += e.reward;
+      addFloatingText(`+${formatNumber(fragReward)} ${icons.fragments}`, e.x, e.y - 12, "#f472b6");
       return false;
     }
     return true;
@@ -372,10 +422,20 @@ function update(dt) {
   // Progress wave based on time alive
   state.wave += dt * 0.15;
 
+  // Prestige cooldown
+  if (state.prestigeCooldown > 0) {
+    state.prestigeCooldown = Math.max(0, state.prestigeCooldown - dt);
+  }
+
   // Idle gains
   const idleRate = computeIdleRate();
   state.resources.essence += idleRate * dt;
   state.resources.fragments += idleRate * 0.35 * dt;
+
+  // Floating texts motion
+  state.floatingText = state.floatingText
+    .map((f) => ({ ...f, y: f.y - 18 * dt, life: f.life - dt }))
+    .filter((f) => f.life > 0);
 }
 
 function softReset() {
@@ -385,6 +445,8 @@ function softReset() {
   state.player.y = canvas.height / 2;
   state.enemies = [];
   state.bullets = [];
+  state.floatingText = [];
+  state.runStats = { kills: 0, fragments: 0, essence: 0 };
 }
 
 function prestige() {
@@ -394,6 +456,7 @@ function prestige() {
     g.rate = g.baseRate * Math.pow(1.12, g.level) * state.resources.idleMultiplier;
   });
   softReset();
+  state.prestigeCooldown = 8;
   saveGame();
   renderGenerators();
 }
@@ -462,17 +525,77 @@ function render() {
     ctx.fillStyle = "#22c55e";
     ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
   });
+
+  // Floating texts
+  ctx.font = "14px 'Space Grotesk', sans-serif";
+  state.floatingText.forEach((f) => {
+    ctx.globalAlpha = Math.max(0, f.life);
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.text, f.x, f.y - (1.5 - f.life) * 24);
+  });
+  ctx.globalAlpha = 1;
+
+  // HUD overlay
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  const x = 12;
+  const y = 12;
+  const w = 210;
+  const h = 110;
+  const r = 10;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#e2e8f0";
+  ctx.font = "16px 'Space Grotesk', sans-serif";
+  ctx.fillText(`${icons.wave} Vague ${state.wave.toFixed(1)}`, 24, 40);
+  ctx.fillText(`⚔️ Kills ${state.runStats.kills}`, 24, 64);
+  ctx.fillText(`${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, 24, 88);
+  ctx.fillText(`${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, 24, 112);
+  ctx.restore();
 }
 
 function updateHud() {
   essenceEl.textContent = formatNumber(state.resources.essence);
   fragmentsEl.textContent = formatNumber(state.resources.fragments);
-  idleRateEl.textContent = `${computeIdleRate().toFixed(2)} /s`;
+  idleRateEl.textContent = `${formatNumber(computeIdleRate())} /s`;
   waveEl.textContent = state.wave.toFixed(1);
   hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
   const dps = (state.player.damage / state.player.fireDelay) * state.player.projectiles;
   dpsEl.textContent = dps.toFixed(1);
   spawnRateEl.textContent = `${Math.min(2.2, 0.6 + state.wave * 0.04).toFixed(2)} /s`;
+
+  // Update affordability without re-rendering cards
+  uiRefs.generatorButtons.forEach((btn, id) => {
+    const gen = generators.find((g) => g.id === id);
+    if (!gen) return;
+    btn.disabled = state.resources.essence < gen.cost;
+  });
+  uiRefs.upgradeButtons.forEach((btn, id) => {
+    const up = upgrades.find((u) => u.id === id);
+    if (!up) return;
+    btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
+  });
+
+  // Prestige cooldown label
+  if (state.prestigeCooldown > 0) {
+    softPrestigeBtn.textContent = `⟳ Consolidation (${state.prestigeCooldown.toFixed(1)}s)`;
+    softPrestigeBtn.disabled = true;
+  } else {
+    softPrestigeBtn.textContent = "⟳ Consolidation";
+    softPrestigeBtn.disabled = false;
+  }
 }
 
 function loop(now) {
@@ -499,6 +622,7 @@ function initUI() {
   });
 
   softPrestigeBtn.addEventListener("click", () => {
+    if (state.prestigeCooldown > 0) return;
     prestige();
   });
 

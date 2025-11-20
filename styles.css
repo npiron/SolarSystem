@@ -90,6 +90,11 @@ p { margin: 0; }
   margin-top: 6px;
 }
 
+.icon {
+  display: inline-block;
+  margin-right: 6px;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -164,6 +169,16 @@ button:disabled {
   color: var(--muted);
   backdrop-filter: blur(4px);
 }
+
+.guide {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  display: grid;
+  gap: 6px;
+}
+
+.guide li { line-height: 1.4; }
 
 .footer {
   text-align: center;
