@@ -59,6 +59,7 @@
       <div class="overlay">
         <p>Le personnage se déplace et tire automatiquement. Les ennemis arrivent par vagues sans fin. Achetez des améliorations pour accélérer l'inflation de dégâts.</p>
         <p class="muted">Sauvegardé dans le navigateur : cookies/localStorage, aucun serveur requis.</p>
+        <p class="status" id="statusMessage"></p>
       </div>
     </section>
 
@@ -71,6 +72,7 @@
         <h2>Prestige doux</h2>
         <p class="muted">Réduit ta vague à 1 mais augmente la puissance passive. Parfait pour scaler à l'infini.</p>
         <button id="softPrestige" class="secondary">⟳ Consolidation</button>
+        <button id="restartRun" class="ghost">↻ Relancer la run</button>
       </div>
 
       <div class="stat-block">
@@ -79,7 +81,19 @@
           <li>Investis l'Essence (⚡) dans la production passive, puis utilise les Fragments (✦) pour renforcer le combat.</li>
           <li>Les vagues montent sans fin : quand c'est trop dur, lance une Consolidation pour booster le passif et repartir.</li>
           <li>Chaque ennemi détruit lâche des Fragments visibles dans l'arène, et la vague en cours est affichée sur le HUD.</li>
+          <li>Les ennemis tirent aussi : utilise la portée, la vitesse de projectile et le DPS pour survivre aux vagues plus élevées.</li>
         </ul>
+      </div>
+
+      <div class="stat-block debug">
+        <h2>Debug</h2>
+        <p class="muted">Boutons de test (local uniquement) pour accélérer les vérifications.</p>
+        <div class="debug-grid">
+          <button id="debugGiveEssence" class="ghost">+1M ⚡</button>
+          <button id="debugGiveFragments" class="ghost">+1M ✦</button>
+          <button id="debugSkipWave" class="ghost">+10 vagues</button>
+          <button id="debugNuke" class="ghost">☄️ Clear ennemis</button>
+        </div>
       </div>
     </section>
   </main>

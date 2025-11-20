@@ -22,7 +22,8 @@ const icons = {
   essence: "⚡",
   fragments: "✦",
   wave: "🌊",
-  reach: "📡"
+  reach: "📡",
+  speed: "💨"
 };
 
 const generators = [
@@ -91,6 +92,18 @@ const upgrades = [
     apply: (state) => {
       state.player.range *= 1.2;
     }
+  },
+  {
+    id: "velocity",
+    name: "Balistique ionisée",
+    description: "+15% vitesse des projectiles",
+    cost: 140,
+    baseCost: 140,
+    level: 0,
+    max: 20,
+    apply: (state) => {
+      state.player.bulletSpeed *= 1.15;
+    }
   }
 ];
 
@@ -119,7 +132,8 @@ const state = {
     fireTimer: 0,
     projectiles: 1,
     regen: 2,
-    range: 1
+    range: 1,
+    bulletSpeed: 260
   },
   resources: {
     essence: 0,
@@ -128,7 +142,9 @@ const state = {
   },
   spawnTimer: 0,
   overlayFade: 0.12,
-  prestigeCooldown: 0
+  prestigeCooldown: 0,
+  enemyBullets: [],
+  dead: false
 };
 
 const uiRefs = {
@@ -210,6 +226,7 @@ function applyUpgradeEffects() {
   state.player.projectiles = 1;
   state.player.regen = 2;
   state.player.range = 1;
+  state.player.bulletSpeed = 260;
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
@@ -218,10 +235,47 @@ function applyUpgradeEffects() {
 }
 
 function formatNumber(value) {
-  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
-  if (value >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
-  return value.toFixed(0);
+  const suffixes = [
+    "",
+    "K",
+    "M",
+    "B",
+    "T",
+    "Qa",
+    "Qi",
+    "Sx",
+    "Sp",
+    "Oc",
+    "No",
+    "De",
+    "Ud",
+    "Dd",
+    "Td",
+    "Qad",
+    "Qid",
+    "Sxd",
+    "Spd",
+    "Ocd",
+    "Nod",
+    "Vg",
+    "Uv",
+    "Dv",
+    "Tv",
+    "Qav",
+    "Qiv",
+    "Sxv",
+    "Spv",
+    "Ocv",
+    "Nov"
+  ];
+  if (Math.abs(value) < 1000) return value.toFixed(0);
+  const tier = Math.floor(Math.log10(Math.abs(value)) / 3);
+  if (tier < suffixes.length) {
+    const suffix = suffixes[tier];
+    const scaled = value / Math.pow(10, tier * 3);
+    return `${scaled.toFixed(2)}${suffix}`;
+  }
+  return value.toExponential(2);
 }
 
 function addFloatingText(text, x, y, color = "#fef08a") {
@@ -248,9 +302,7 @@ function renderGenerators() {
     card.className = "card";
     const info = document.createElement("div");
     const production = gen.rate * gen.level;
-    info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · +${formatNumber(
-      production
-    )} ${icons.essence}/s</p>`;
+    info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · Produit ${formatNumber(production)} ${icons.essence}/s</p>`;
     const btn = document.createElement("button");
     btn.textContent = `${icons.essence} Acheter ${formatNumber(gen.cost)}`;
     btn.className = "secondary";
@@ -312,7 +364,18 @@ function spawnEnemy() {
 
   const hp = 20 + state.wave * 6;
   const speed = 40 + state.wave * 1.6;
-  state.enemies.push({ x, y, radius: 10, hp, maxHp: hp, speed, reward: 2 + state.wave * 0.6 });
+  const fireDelay = Math.max(1.5, 4 - state.wave * 0.06);
+  state.enemies.push({
+    x,
+    y,
+    radius: 10,
+    hp,
+    maxHp: hp,
+    speed,
+    reward: 2 + state.wave * 0.6,
+    fireTimer: fireDelay * Math.random(),
+    fireDelay
+  });
 }
 
 function fire() {
@@ -324,8 +387,8 @@ function fire() {
     state.bullets.push({
       x: state.player.x,
       y: state.player.y,
-      dx: Math.cos(angle + spread) * 260,
-      dy: Math.sin(angle + spread) * 260,
+      dx: Math.cos(angle + spread) * state.player.bulletSpeed,
+      dy: Math.sin(angle + spread) * state.player.bulletSpeed,
       life: 1.2 * state.player.range
     });
   }
@@ -339,7 +402,7 @@ function update(dt) {
   state.spawnTimer -= dt;
 
   if (state.spawnTimer <= 0) {
-    const rate = Math.min(2.2, 0.6 + state.wave * 0.04);
+    const rate = Math.min(6, 1.2 + state.wave * 0.08);
     spawnEnemy();
     state.spawnTimer = 1 / rate;
   }
@@ -372,6 +435,22 @@ function update(dt) {
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
     e.x += Math.cos(angle) * e.speed * dt;
     e.y += Math.sin(angle) * e.speed * dt;
+
+    if (state.wave >= 3) {
+      e.fireTimer -= dt;
+      if (e.fireTimer <= 0) {
+        const bulletAngle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
+        const speed = 160 + state.wave * 4;
+        state.enemyBullets.push({
+          x: e.x,
+          y: e.y,
+          dx: Math.cos(bulletAngle) * speed,
+          dy: Math.sin(bulletAngle) * speed,
+          life: 4
+        });
+        e.fireTimer = Math.max(1, e.fireDelay + Math.random());
+      }
+    }
   });
 
   // Collisions bullets
@@ -415,8 +494,18 @@ function update(dt) {
     }
   });
 
-  if (state.player.hp <= 0) {
-    softReset();
+  // Enemy bullet collisions with player
+  state.enemyBullets.forEach((b) => {
+    const dx = b.x - state.player.x;
+    const dy = b.y - state.player.y;
+    if (dx * dx + dy * dy < (state.player.radius + 3) ** 2) {
+      state.player.hp -= 25 * dt;
+    }
+  });
+
+  if (state.player.hp <= 0 && !state.dead) {
+    state.dead = true;
+    state.running = false;
   }
 
   // Progress wave based on time alive
@@ -436,6 +525,14 @@ function update(dt) {
   state.floatingText = state.floatingText
     .map((f) => ({ ...f, y: f.y - 18 * dt, life: f.life - dt }))
     .filter((f) => f.life > 0);
+
+  // Enemy bullets
+  state.enemyBullets.forEach((b) => {
+    b.x += b.dx * dt;
+    b.y += b.dy * dt;
+    b.life -= dt;
+  });
+  state.enemyBullets = state.enemyBullets.filter((b) => b.life > 0);
 }
 
 function softReset() {
@@ -445,8 +542,11 @@ function softReset() {
   state.player.y = canvas.height / 2;
   state.enemies = [];
   state.bullets = [];
+  state.enemyBullets = [];
   state.floatingText = [];
   state.runStats = { kills: 0, fragments: 0, essence: 0 };
+  state.dead = false;
+  state.running = true;
 }
 
 function prestige() {
@@ -574,7 +674,9 @@ function updateHud() {
   hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
   const dps = (state.player.damage / state.player.fireDelay) * state.player.projectiles;
   dpsEl.textContent = dps.toFixed(1);
-  spawnRateEl.textContent = `${Math.min(2.2, 0.6 + state.wave * 0.04).toFixed(2)} /s`;
+  spawnRateEl.textContent = `${Math.min(6, 1.2 + state.wave * 0.08).toFixed(2)} /s`;
+
+  pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
 
   // Update affordability without re-rendering cards
   uiRefs.generatorButtons.forEach((btn, id) => {
@@ -595,6 +697,15 @@ function updateHud() {
   } else {
     softPrestigeBtn.textContent = "⟳ Consolidation";
     softPrestigeBtn.disabled = false;
+  }
+
+  const status = document.getElementById("statusMessage");
+  if (state.dead) {
+    status.textContent = "Vous êtes hors service. Relancez la run pour reprendre.";
+    status.classList.add("visible");
+  } else {
+    status.textContent = "";
+    status.classList.remove("visible");
   }
 }
 

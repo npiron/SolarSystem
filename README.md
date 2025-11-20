@@ -16,5 +16,7 @@ L'interface affiche trois colonnes : statistiques et production passive à gauch
 - ✦ **Fragments** : drop en combat et visibles dans l'arène. Servez-vous-en pour acheter des upgrades offensives (dégâts, cadence, régén, projectiles, portée).
 - 🌊 **Vagues infinies** : le HUD de l'arène affiche la vague courante, les kills et les ressources gagnées pendant le run.
 - ⟳ **Consolidation** : un prestige doux avec un petit temps de recharge qui remet la vague à 1 et augmente le multiplicateur passif permanent.
+- ☠️ **Mort & reprise** : quand les PV tombent à zéro, la run se met en pause et un bouton « Relancer la run » permet de repartir.
+- 🎯 **Échelonnage** : les ennemis finissent par tirer des projectiles. Monte la portée, la vitesse de tir et la vitesse des projectiles pour survivre.
 
-Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Pas de backend requis.
+Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Les valeurs sont abrégées (K, M, B…) puis passent en notation scientifique pour les très grands nombres. Pas de backend requis.
