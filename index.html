@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation du système solaire</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <canvas id="space"></canvas>
+    <aside class="panel">
+      <h1>Simulation du système solaire</h1>
+      <p class="lede">Best-effort Newtonian gravity avec intégrateur symplectique (Velocity-Verlet).</p>
+      <section>
+        <h2>Mode d'emploi / How it works</h2>
+        <ul>
+          <li><strong>Modèle:</strong> Gravitation newtonienne N-corps avec masse solaire = 1. Les masses planétaires sont réalistes.</li>
+          <li><strong>Intégration:</strong> Schéma Velocity-Verlet (kick-drift-kick), stable et symplectique, pas de temps fixe de 0,5 jour.</li>
+          <li><strong>Unités:</strong> UA pour les distances, jours pour le temps, masse solaire pour les masses. <code>G = 2.95912208286e-4 UA³/(jour²·M☉)</code>.</li>
+          <li><strong>Conditions initiales:</strong> Orbites quasi circulaires dans le plan de l'écliptique, vitesses tangentielles estimées par <code>v = √(G·M☉/r)</code>.</li>
+          <li><strong>Rendu:</strong> Canvas 2D, échelle auto pour afficher tout jusqu'à Neptune. Les traînées montrent la courbure des orbites.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Quick recap (EN)</h2>
+        <ul>
+          <li><strong>Model:</strong> Newtonian N-body gravity, solar mass set to 1; planet masses use real mass ratios.</li>
+          <li><strong>Integrator:</strong> Velocity-Verlet (kick-drift-kick) with a fixed 0.5-day timestep for energy stability.</li>
+          <li><strong>Units:</strong> AU for distance, days for time, solar masses for mass. <code>G = 2.95912208286e-4 AU³/(day²·M☉)</code>.</li>
+          <li><strong>Initial state:</strong> Nearly circular, coplanar orbits; tangential speeds derived from <code>v = √(G·M☉/r)</code>.</li>
+          <li><strong>Rendering:</strong> Auto-scaled Canvas view to include Neptune; faint trails reveal orbital arcs.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Vue &amp; navigation</h2>
+        <ul>
+          <li><strong>Zoom:</strong> molette souris ou trackpad pour zoomer/dézoomer, centré sur le Soleil.</li>
+          <li><strong>Angle:</strong> inclinez le plan pour une vue à plat ou en perspective hélicoïdale.</li>
+          <li><strong>Rotation:</strong> laissez la caméra tourner pour voir le « tourbillon » global.</li>
+        </ul>
+      </section>
+      <div class="controls">
+        <button id="toggle">⏸ Pause</button>
+        <button id="reset">↺ Réinitialiser</button>
+        <label class="slider-group">
+          <span>Vitesse du temps / Time speed</span>
+          <input id="speed" type="range" min="0.5" max="120" step="0.5" value="24" />
+          <small id="speedValue">24 j/s</small>
+        </label>
+        <label class="slider-group">
+          <span>Angle de vue / View pitch</span>
+          <input id="pitch" type="range" min="0" max="80" step="1" value="20" />
+          <small id="pitchValue">20°</small>
+        </label>
+        <label class="slider-group">
+          <span>Rotation de la caméra / Spin</span>
+          <input id="spin" type="range" min="-45" max="45" step="1" value="6" />
+          <small id="spinValue">6°/s</small>
+        </label>
+      </div>
+      <section class="metrics">
+        <h2>État / Telemetry</h2>
+        <div class="metric-grid">
+          <div>
+            <span>Temps simulé</span>
+            <strong id="timeReadout">0 j</strong>
+          </div>
+          <div>
+            <span>Zoom</span>
+            <strong id="zoomReadout">1.0×</strong>
+          </div>
+          <div>
+            <span>Angle</span>
+            <strong id="angleReadout">20°</strong>
+          </div>
+        </div>
+        <table class="telemetry">
+          <thead>
+            <tr>
+              <th>Corps</th>
+              <th>r (UA)</th>
+              <th>v (UA/j)</th>
+              <th>Période approx (j)</th>
+            </tr>
+          </thead>
+          <tbody id="telemetryBody"></tbody>
+        </table>
+      </section>
+      <p class="footnote">Astuce : cliquez sur le canvas pour réinitialiser/recentrer la simulation sur le Soleil. Molette = zoom.</p>
+    </aside>
+  </div>
+  <script type="module" src="simulation.js"></script>
+</body>
+</html>
