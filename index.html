@@ -3,47 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulation du système solaire</title>
+  <title>Neo Survivors Idle</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="layout">
-    <canvas id="space"></canvas>
-    <aside class="panel">
-      <h1>Simulation du système solaire</h1>
-      <p class="lede">Best-effort Newtonian gravity avec intégrateur symplectique (Velocity-Verlet).</p>
-      <section>
-        <h2>Mode d'emploi / How it works</h2>
-        <ul>
-          <li><strong>Modèle:</strong> Gravitation newtonienne N-corps avec masse solaire = 1. Les masses planétaires sont réalistes.</li>
-          <li><strong>Intégration:</strong> Schéma Velocity-Verlet (kick-drift-kick), stable et symplectique, pas de temps fixe de 0,5 jour.</li>
-          <li><strong>Unités:</strong> UA pour les distances, jours pour le temps, masse solaire pour les masses. <code>G = 2.95912208286e-4 UA³/(jour²·M☉)</code>.</li>
-          <li><strong>Conditions initiales:</strong> Orbites quasi circulaires dans le plan de l'écliptique, vitesses tangentielles estimées par <code>v = √(G·M☉/r)</code>.</li>
-          <li><strong>Rendu:</strong> Canvas 2D, échelle auto pour afficher tout jusqu'à Neptune. Les traînées montrent la courbure des orbites.</li>
-        </ul>
-      </section>
-      <section>
-        <h2>Quick recap (EN)</h2>
-        <ul>
-          <li><strong>Model:</strong> Newtonian N-body gravity, solar mass set to 1; planet masses use real mass ratios.</li>
-          <li><strong>Integrator:</strong> Velocity-Verlet (kick-drift-kick) with a fixed 0.5-day timestep for energy stability.</li>
-          <li><strong>Units:</strong> AU for distance, days for time, solar masses for mass. <code>G = 2.95912208286e-4 AU³/(day²·M☉)</code>.</li>
-          <li><strong>Initial state:</strong> Nearly circular, coplanar orbits; tangential speeds derived from <code>v = √(G·M☉/r)</code>.</li>
-          <li><strong>Rendering:</strong> Auto-scaled Canvas view to include Neptune; faint trails reveal orbital arcs.</li>
-        </ul>
-      </section>
-      <div class="controls">
-        <button id="toggle">⏸ Pause</button>
-        <button id="reset">↺ Réinitialiser</button>
-        <label class="slider-group">
-          <span>Vitesse du temps / Time speed</span>
-          <input id="speed" type="range" min="0.5" max="120" step="0.5" value="24" />
-          <small id="speedValue">24 j/s</small>
-        </label>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Incremental x Survivors</p>
+      <h1>Neo Survivors Idle</h1>
+      <p class="lede">Un auto-battler infini, 100% client-side, qui tourne même quand tu fermes l'onglet.</p>
+    </div>
+    <div class="cta">
+      <button id="resetProgress" class="ghost">Réinitialiser la progression</button>
+      <button id="pause" class="primary">⏸ Pause</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel stats">
+      <div class="stat-block">
+        <h2>Ressources</h2>
+        <div class="stat-row">
+          <span>Essence</span>
+          <span id="essence">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Fragments</span>
+          <span id="fragments">0</span>
+        </div>
+        <div class="stat-row muted">
+          <span>Gain passif</span>
+          <span id="idleRate">0 /s</span>
+        </div>
       </div>
-      <p class="footnote">Astuce : cliquez sur le canvas pour réinitialiser/recentrer la simulation sur le Soleil.</p>
-    </aside>
-  </div>
+
+      <div class="stat-block">
+        <h2>Run en cours</h2>
+        <div class="stat-row"><span>Vague</span><span id="wave">1</span></div>
+        <div class="stat-row"><span>Vie</span><span id="hp">100</span></div>
+        <div class="stat-row"><span>Dégâts</span><span id="dps">0</span></div>
+        <div class="stat-row muted"><span>Spawn</span><span id="spawnRate">0/s</span></div>
+      </div>
+
+      <div class="stat-block">
+        <h2>Production passive</h2>
+        <div id="generators" class="list"></div>
+      </div>
+    </section>
+
+    <section class="arena-wrapper">
+      <canvas id="arena" width="960" height="600"></canvas>
+      <div class="overlay">
+        <p>Le personnage se déplace et tire automatiquement. Les ennemis arrivent par vagues sans fin. Achetez des améliorations pour accélérer l'inflation de dégâts.</p>
+        <p class="muted">Sauvegardé dans le navigateur : cookies/localStorage, aucun serveur requis.</p>
+      </div>
+    </section>
+
+    <section class="panel upgrades">
+      <div class="stat-block">
+        <h2>Améliorations de combat</h2>
+        <div id="upgrades" class="list"></div>
+      </div>
+      <div class="stat-block">
+        <h2>Prestige doux</h2>
+        <p class="muted">Réduit ta vague à 1 mais augmente la puissance passive. Parfait pour scaler à l'infini.</p>
+        <button id="softPrestige" class="secondary">⟳ Consolidation</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Made for fun. Pas de serveur, pas de compte : tout reste dans tes cookies.</p>
+  </footer>
+
   <script type="module" src="simulation.js"></script>
 </body>
 </html>
