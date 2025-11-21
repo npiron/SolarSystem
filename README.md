@@ -10,7 +10,7 @@ Le canvas de l'arène tourne sur [Kontra.js](https://straker.github.io/kontra/),
 
 ## Aperçu rapide
 
-L'interface affiche trois colonnes : statistiques et production passive à gauche, l'arène centrale avec le personnage auto-mouvant, puis les améliorations et le bouton de prestige doux à droite. Tout tourne en local (HTML/CSS/JS) et se sauvegarde dans `localStorage` sans serveur.
+L'interface affiche trois colonnes pleine hauteur : statistiques et production passive à gauche, l'arène centrale plein écran où le personnage auto-mouvant survit en boucle, puis les améliorations et le bouton de prestige doux à droite. Tout tourne en local (HTML/CSS/JS) et se sauvegarde dans `localStorage` sans serveur.
 
 ## Comment jouer
 
@@ -21,6 +21,7 @@ L'interface affiche trois colonnes : statistiques et production passive à gauch
 - ☠️ **Mort & reprise** : quand les PV tombent à zéro, la run se met en pause et un bouton « Relancer la run » permet de repartir.
 - 🎯 **Échelonnage** : les ennemis finissent par tirer des projectiles, certains deviennent des élites plus résistantes. Monte la portée, la vitesse de tir, la vitesse des projectiles, le bouclier et la perforation pour survivre.
 - 🧿 **Défense & contrôle** : de nouvelles améliorations ajoutent un bouclier (réduction de dégâts) et des projectiles perforants. Le HUD affiche aussi la vitesse de spawn effective.
+- 🌀 **Tirs circulaires** : chaque niveau de projectiles génère un éventail circulaire autour du héros pour nettoyer toutes les directions.
 - 🧪 **Debug local** : quelques boutons permettent de tester rapidement (ajout de ressources, avance de vagues, nettoyage d'ennemis) sans impacter la sauvegarde.
 
 Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Les valeurs sont abrégées (K, M, B…) puis passent en notation scientifique pour les très grands nombres. Pas de backend requis.

@@ -181,6 +181,22 @@ const state = {
   dead: false
 };
 
+function clampPlayerToBounds() {
+  state.player.x = Math.max(30, Math.min(canvas.width - 30, state.player.x));
+  state.player.y = Math.max(30, Math.min(canvas.height - 30, state.player.y));
+}
+
+function resizeCanvas(center = false) {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  if (center) {
+    state.player.x = canvas.width / 2;
+    state.player.y = canvas.height / 2;
+  }
+  clampPlayerToBounds();
+}
+
 const uiRefs = {
   generatorButtons: new Map(),
   upgradeButtons: new Map()
@@ -332,6 +348,11 @@ function addFloatingText(text, x, y, color = "#fef08a") {
   state.floatingText.push({ text, x, y, life: 1.4, color });
 }
 
+function debugPing(text, color = "#c7d2fe") {
+  addFloatingText(text, state.player.x, state.player.y - 16, color);
+  updateHud();
+}
+
 function computeIdleRate() {
   return generators.reduce((sum, g) => sum + g.rate * g.level, 0);
 }
@@ -430,17 +451,34 @@ function spawnEnemy() {
   });
 }
 
+function nearestEnemy() {
+  let closest = null;
+  let bestDist = Infinity;
+  state.enemies.forEach((e) => {
+    const dx = e.x - state.player.x;
+    const dy = e.y - state.player.y;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      closest = e;
+    }
+  });
+  return closest;
+}
+
 function fire() {
-  const target = state.enemies[0];
-  if (!target) return;
-  const angle = Math.atan2(target.y - state.player.y, target.x - state.player.x);
-  for (let i = 0; i < state.player.projectiles; i++) {
-    const spread = (i - (state.player.projectiles - 1) / 2) * 0.12;
+  const target = nearestEnemy();
+  const count = Math.max(1, state.player.projectiles);
+  const baseAngle = target ? Math.atan2(target.y - state.player.y, target.x - state.player.x) : state.time * 0.9;
+  const ringStep = TAU / count;
+
+  for (let i = 0; i < count; i++) {
+    const angle = count > 1 ? baseAngle + i * ringStep : baseAngle;
     state.bullets.push({
       x: state.player.x,
       y: state.player.y,
-      dx: Math.cos(angle + spread) * state.player.bulletSpeed,
-      dy: Math.sin(angle + spread) * state.player.bulletSpeed,
+      dx: Math.cos(angle) * state.player.bulletSpeed,
+      dy: Math.sin(angle) * state.player.bulletSpeed,
       life: 1.2 * state.player.range,
       pierce: state.player.pierce
     });
@@ -467,8 +505,7 @@ function update(dt) {
   const orbit = Math.sin(state.time * 0.6) * 0.4;
   state.player.x += Math.cos(state.time * 0.8 + orbit) * state.player.speed * dt;
   state.player.y += Math.sin(state.time * 0.5) * state.player.speed * dt;
-  state.player.x = Math.max(30, Math.min(canvas.width - 30, state.player.x));
-  state.player.y = Math.max(30, Math.min(canvas.height - 30, state.player.y));
+  clampPlayerToBounds();
 
   if (state.player.fireTimer <= 0) {
     fire();
@@ -821,19 +858,24 @@ function initUI() {
     state.resources.essence += 1_000_000;
     renderGenerators();
     saveGame();
+    debugPing("+1M ⚡");
   });
   debugBtns.giveFragments?.addEventListener("click", () => {
     state.resources.fragments += 1_000_000;
     renderUpgrades();
     saveGame();
+    debugPing("+1M ✦");
   });
   debugBtns.skipWave?.addEventListener("click", () => {
     state.wave += 10;
+    state.spawnTimer = 0;
     saveGame();
+    debugPing("+10 vagues");
   });
   debugBtns.nuke?.addEventListener("click", () => {
     state.enemies = [];
     state.enemyBullets = [];
+    debugPing("☄️ Nuke", "#f472b6");
   });
 
   renderGenerators();
@@ -841,10 +883,12 @@ function initUI() {
 }
 
 function bootstrap() {
+  resizeCanvas(true);
   loadSave();
   initUI();
   renderGenerators();
   renderUpgrades();
+  window.addEventListener("resize", () => resizeCanvas());
   loop.start();
   setInterval(saveGame, 5000);
 }

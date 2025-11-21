@@ -9,6 +9,8 @@
   --accent: #f472b6;
   --danger: #ef4444;
   --border: rgba(255, 255, 255, 0.08);
+  --header-height: 118px;
+  --footer-height: 64px;
   font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
   color: var(--text);
 }
@@ -22,6 +24,8 @@ body {
     radial-gradient(circle at 50% 80%, rgba(167, 139, 250, 0.06), transparent 30%),
     var(--bg);
   min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   color: var(--text);
@@ -38,6 +42,7 @@ p { margin: 0; }
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(10px);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent);
+  min-height: var(--header-height);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -58,10 +63,13 @@ p { margin: 0; }
 
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 320px 1fr 340px;
   gap: 16px;
-  padding: 16px;
+  padding: 12px 16px 16px;
   flex: 1;
+  height: calc(100vh - var(--header-height) - var(--footer-height));
+  min-height: 0;
+  align-items: stretch;
 }
 
 .panel {
@@ -73,6 +81,8 @@ p { margin: 0; }
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 100%;
+  overflow: auto;
 }
 
 .stat-block {
@@ -148,6 +158,8 @@ button:disabled {
   background: radial-gradient(circle at 40% 40%, rgba(34, 211, 238, 0.06), transparent 30%),
     radial-gradient(circle at 60% 70%, rgba(167, 139, 250, 0.08), transparent 35%),
     #0b1021;
+  height: 100%;
+  min-height: 520px;
 }
 
 #arena {
@@ -210,8 +222,9 @@ button:disabled {
 .muted { color: var(--muted); }
 
 @media (max-width: 1200px) {
-  .layout { grid-template-columns: 1fr; }
-  .panel { order: 2; }
+  body { overflow: auto; height: auto; }
+  .layout { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - var(--header-height)); }
+  .panel { order: 2; max-height: none; }
   .arena-wrapper { order: 1; height: 520px; }
 }
 
