@@ -19,6 +19,8 @@ L'interface affiche trois colonnes : statistiques et production passive à gauch
 - 🌊 **Vagues infinies** : le HUD de l'arène affiche la vague courante, les kills et les ressources gagnées pendant le run.
 - ⟳ **Consolidation** : un prestige doux avec un petit temps de recharge qui remet la vague à 1 et augmente le multiplicateur passif permanent.
 - ☠️ **Mort & reprise** : quand les PV tombent à zéro, la run se met en pause et un bouton « Relancer la run » permet de repartir.
-- 🎯 **Échelonnage** : les ennemis finissent par tirer des projectiles. Monte la portée, la vitesse de tir et la vitesse des projectiles pour survivre.
+- 🎯 **Échelonnage** : les ennemis finissent par tirer des projectiles, certains deviennent des élites plus résistantes. Monte la portée, la vitesse de tir, la vitesse des projectiles, le bouclier et la perforation pour survivre.
+- 🧿 **Défense & contrôle** : de nouvelles améliorations ajoutent un bouclier (réduction de dégâts) et des projectiles perforants. Le HUD affiche aussi la vitesse de spawn effective.
+- 🧪 **Debug local** : quelques boutons permettent de tester rapidement (ajout de ressources, avance de vagues, nettoyage d'ennemis) sans impacter la sauvegarde.
 
 Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Les valeurs sont abrégées (K, M, B…) puis passent en notation scientifique pour les très grands nombres. Pas de backend requis.

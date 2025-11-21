@@ -4,6 +4,13 @@ const { canvas, context: ctx } = init("arena");
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
 const softPrestigeBtn = document.getElementById("softPrestige");
+const restartRunBtn = document.getElementById("restartRun");
+const debugBtns = {
+  giveEssence: document.getElementById("debugGiveEssence"),
+  giveFragments: document.getElementById("debugGiveFragments"),
+  skipWave: document.getElementById("debugSkipWave"),
+  nuke: document.getElementById("debugNuke")
+};
 
 const essenceEl = document.getElementById("essence");
 const fragmentsEl = document.getElementById("fragments");
@@ -24,7 +31,8 @@ const icons = {
   fragments: "✦",
   wave: "🌊",
   reach: "📡",
-  speed: "💨"
+  speed: "💨",
+  shield: "🧿"
 };
 
 const generators = [
@@ -105,6 +113,30 @@ const upgrades = [
     apply: (state) => {
       state.player.bulletSpeed *= 1.15;
     }
+  },
+  {
+    id: "shield",
+    name: "Bouclier prismatique",
+    description: "Réduit les dégâts subis de 5%",
+    cost: 220,
+    baseCost: 220,
+    level: 0,
+    max: 12,
+    apply: (state) => {
+      state.player.damageReduction = Math.min(0.7, state.player.damageReduction + 0.05);
+    }
+  },
+  {
+    id: "pierce",
+    name: "Percée quantique",
+    description: "+1 traversée de projectile",
+    cost: 260,
+    baseCost: 260,
+    level: 0,
+    max: 10,
+    apply: (state) => {
+      state.player.pierce += 1;
+    }
   }
 ];
 
@@ -133,7 +165,9 @@ const state = {
     projectiles: 1,
     regen: 2,
     range: 1,
-    bulletSpeed: 260
+    bulletSpeed: 260,
+    damageReduction: 0,
+    pierce: 0
   },
   resources: {
     essence: 0,
@@ -164,6 +198,9 @@ function loadSave() {
     state.player.projectiles = save.player?.projectiles ?? state.player.projectiles;
     state.player.regen = save.player?.regen ?? state.player.regen;
     state.player.range = save.player?.range ?? state.player.range;
+    state.player.bulletSpeed = save.player?.bulletSpeed ?? state.player.bulletSpeed;
+    state.player.damageReduction = save.player?.damageReduction ?? state.player.damageReduction;
+    state.player.pierce = save.player?.pierce ?? state.player.pierce;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
@@ -202,7 +239,10 @@ function saveGame() {
       fireDelay: state.player.fireDelay,
       projectiles: state.player.projectiles,
       regen: state.player.regen,
-      range: state.player.range
+      range: state.player.range,
+      bulletSpeed: state.player.bulletSpeed,
+      damageReduction: state.player.damageReduction,
+      pierce: state.player.pierce
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
@@ -219,6 +259,14 @@ function grantOfflineGains(seconds) {
   state.resources.fragments += earned * 0.4;
 }
 
+function spawnRate() {
+  return Math.min(10, 1.6 + state.wave * 0.1);
+}
+
+function packSize() {
+  return Math.max(1, Math.floor(state.wave / 10));
+}
+
 function applyUpgradeEffects() {
   // Reset to base before reapplying
   state.player.damage = 12;
@@ -227,6 +275,8 @@ function applyUpgradeEffects() {
   state.player.regen = 2;
   state.player.range = 1;
   state.player.bulletSpeed = 260;
+  state.player.damageReduction = 0;
+  state.player.pierce = 0;
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
@@ -362,9 +412,10 @@ function spawnEnemy() {
   if (side === 2) { x = margin; y = Math.random() * canvas.height; }
   if (side === 3) { x = canvas.width - margin; y = Math.random() * canvas.height; }
 
-  const hp = 20 + state.wave * 6;
-  const speed = 40 + state.wave * 1.6;
-  const fireDelay = Math.max(1.5, 4 - state.wave * 0.06);
+  const elite = Math.random() < 0.12 + state.wave * 0.002;
+  const hp = (20 + state.wave * 7) * (elite ? 2.8 : 1);
+  const speed = (40 + state.wave * 1.8) * (elite ? 0.9 : 1);
+  const fireDelay = Math.max(1.2, (elite ? 3 : 4) - state.wave * 0.06);
   state.enemies.push({
     x,
     y,
@@ -372,9 +423,10 @@ function spawnEnemy() {
     hp,
     maxHp: hp,
     speed,
-    reward: 2 + state.wave * 0.6,
+    reward: (2 + state.wave * 0.7) * (elite ? 3 : 1),
     fireTimer: fireDelay * Math.random(),
-    fireDelay
+    fireDelay,
+    elite
   });
 }
 
@@ -389,7 +441,8 @@ function fire() {
       y: state.player.y,
       dx: Math.cos(angle + spread) * state.player.bulletSpeed,
       dy: Math.sin(angle + spread) * state.player.bulletSpeed,
-      life: 1.2 * state.player.range
+      life: 1.2 * state.player.range,
+      pierce: state.player.pierce
     });
   }
 }
@@ -402,8 +455,11 @@ function update(dt) {
   state.spawnTimer -= dt;
 
   if (state.spawnTimer <= 0) {
-    const rate = Math.min(6, 1.2 + state.wave * 0.08);
-    spawnEnemy();
+    const rate = spawnRate();
+    const pack = packSize();
+    for (let i = 0; i < pack; i++) {
+      spawnEnemy();
+    }
     state.spawnTimer = 1 / rate;
   }
 
@@ -460,7 +516,11 @@ function update(dt) {
       const dy = enemy.y - b.y;
       if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
         enemy.hp -= state.player.damage;
-        b.life = -1;
+        if (b.pierce > 0) {
+          b.pierce -= 1;
+        } else {
+          b.life = -1;
+        }
       }
     });
   });
@@ -490,7 +550,8 @@ function update(dt) {
     const distSq = dx * dx + dy * dy;
     const radius = e.radius + state.player.radius;
     if (distSq < radius * radius) {
-      state.player.hp -= 18 * dt * (1 + state.wave * 0.05);
+      const dmg = 18 * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
+      state.player.hp -= dmg;
     }
   });
 
@@ -499,7 +560,9 @@ function update(dt) {
     const dx = b.x - state.player.x;
     const dy = b.y - state.player.y;
     if (dx * dx + dy * dy < (state.player.radius + 3) ** 2) {
-      state.player.hp -= 25 * dt;
+      const dmg = 25 * dt * (1 - state.player.damageReduction);
+      state.player.hp -= dmg;
+      b.life = -1;
     }
   });
 
@@ -616,7 +679,7 @@ function render() {
 
   // Enemies
   state.enemies.forEach((e, idx) => {
-    ctx.fillStyle = palette[idx % palette.length];
+    ctx.fillStyle = e.elite ? "#f97316" : palette[idx % palette.length];
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.radius, 0, TAU);
     ctx.fill();
@@ -624,6 +687,14 @@ function render() {
     ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
     ctx.fillStyle = "#22c55e";
     ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
+  });
+
+  // Enemy bullets
+  ctx.fillStyle = "#f87171";
+  state.enemyBullets.forEach((b) => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3, 0, TAU);
+    ctx.fill();
   });
 
   // Floating texts
@@ -674,7 +745,9 @@ function updateHud() {
   hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
   const dps = (state.player.damage / state.player.fireDelay) * state.player.projectiles;
   dpsEl.textContent = dps.toFixed(1);
-  spawnRateEl.textContent = `${Math.min(6, 1.2 + state.wave * 0.08).toFixed(2)} /s`;
+  const totalSpawn = spawnRate() * packSize();
+  spawnRateEl.textContent = `${totalSpawn.toFixed(2)} /s`;
+  document.getElementById("shield").textContent = `${Math.round(state.player.damageReduction * 100)}%`;
 
   pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
 
@@ -737,6 +810,30 @@ function initUI() {
   softPrestigeBtn.addEventListener("click", () => {
     if (state.prestigeCooldown > 0) return;
     prestige();
+  });
+
+  restartRunBtn.addEventListener("click", () => {
+    softReset();
+    saveGame();
+  });
+
+  debugBtns.giveEssence?.addEventListener("click", () => {
+    state.resources.essence += 1_000_000;
+    renderGenerators();
+    saveGame();
+  });
+  debugBtns.giveFragments?.addEventListener("click", () => {
+    state.resources.fragments += 1_000_000;
+    renderUpgrades();
+    saveGame();
+  });
+  debugBtns.skipWave?.addEventListener("click", () => {
+    state.wave += 10;
+    saveGame();
+  });
+  debugBtns.nuke?.addEventListener("click", () => {
+    state.enemies = [];
+    state.enemyBullets = [];
   });
 
   renderGenerators();
