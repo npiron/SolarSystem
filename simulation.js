@@ -5,6 +5,7 @@ const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
 const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
+const togglePerfBtn = document.getElementById("togglePerf");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -24,6 +25,12 @@ const upgradesContainer = document.getElementById("upgrades");
 
 const STORAGE_KEY = "neo-survivors-save";
 const TAU = Math.PI * 2;
+const CELL_SIZE = 80;
+const FX_BUDGET = {
+  floatingText: 80,
+  bullets: 520,
+  fragments: 200
+};
 
 const palette = ["#22d3ee", "#a78bfa", "#f472b6", "#f97316", "#34d399"];
 const icons = {
@@ -175,6 +182,7 @@ const state = {
   bullets: [],
   floatingText: [],
   fragmentsOrbs: [],
+  gainTicker: { fragments: 0, essence: 0, timer: 0 },
   runStats: {
     kills: 0,
     fragments: 0,
@@ -209,7 +217,8 @@ const state = {
   spawnTimer: 0,
   overlayFade: 0.12,
   prestigeCooldown: 0,
-  dead: false
+  dead: false,
+  visualsLow: false
 };
 
 function clampPlayerToBounds() {
@@ -386,12 +395,27 @@ function formatNumber(value) {
 }
 
 function addFloatingText(text, x, y, color = "#fef08a") {
-  state.floatingText.push({ text, x, y, life: 1.4, color });
+  if (state.floatingText.length >= FX_BUDGET.floatingText) {
+    state.floatingText.shift();
+  }
+  const life = state.visualsLow ? 0.9 : 1.4;
+  state.floatingText.push({ text, x, y, life, color });
 }
 
 function debugPing(text, color = "#c7d2fe") {
   addFloatingText(text, state.player.x, state.player.y - 16, color);
   updateHud();
+}
+
+function registerFragmentGain(value, x, y, silent = false) {
+  state.resources.fragments += value;
+  state.runStats.fragments += value;
+  if (silent || state.visualsLow || state.floatingText.length >= FX_BUDGET.floatingText) {
+    state.gainTicker.fragments += value;
+    state.gainTicker.timer = 1.2;
+    return;
+  }
+  addFloatingText(`+${formatNumber(value)} ${icons.fragments}`, x, y, "#f472b6");
 }
 
 function computeIdleRate() {
@@ -530,6 +554,7 @@ function fire() {
   const ringStep = TAU / count;
 
   for (let i = 0; i < count; i++) {
+    if (state.bullets.length >= FX_BUDGET.bullets) break;
     const angle = count > 1 ? baseAngle + i * ringStep : baseAngle;
     state.bullets.push({
       x: state.player.x,
@@ -588,6 +613,9 @@ function update(dt) {
     b.y += b.dy * dt;
     b.life -= dt;
   });
+  if (state.bullets.length > FX_BUDGET.bullets) {
+    state.bullets.splice(0, state.bullets.length - FX_BUDGET.bullets);
+  }
   state.bullets = state.bullets.filter((b) => b.life > 0);
 
   // Fragments drift
@@ -604,13 +632,17 @@ function update(dt) {
     f.y += f.vy * dt;
     const collectDist = state.player.radius + 6 + state.player.collectRadius * 0.15;
     if (dist < collectDist) {
-      state.resources.fragments += f.value;
-      state.runStats.fragments += f.value;
-      addFloatingText(`+${formatNumber(f.value)} ${icons.fragments}`, f.x, f.y - 6, "#f472b6");
+      registerFragmentGain(f.value, f.x, f.y - 6);
       f.life = -1;
     }
   });
   state.fragmentsOrbs = state.fragmentsOrbs.filter((f) => f.life > 0);
+
+  if (state.fragmentsOrbs.length > FX_BUDGET.fragments) {
+    const overflow = state.fragmentsOrbs.splice(0, state.fragmentsOrbs.length - FX_BUDGET.fragments);
+    const merged = overflow.reduce((sum, f) => sum + f.value, 0);
+    registerFragmentGain(merged, state.player.x, state.player.y - 10, true);
+  }
 
   // Enemies
   state.enemies.forEach((e) => {
@@ -619,25 +651,54 @@ function update(dt) {
     e.y += Math.sin(angle) * e.speed * dt;
   });
 
-  // Collisions bullets
+  // Spatial hash for collisions
+  const enemyBuckets = new Map();
+  const bucketKey = (x, y) => `${Math.floor(x / CELL_SIZE)},${Math.floor(y / CELL_SIZE)}`;
+  const neighborKeys = (x, y) => {
+    const cx = Math.floor(x / CELL_SIZE);
+    const cy = Math.floor(y / CELL_SIZE);
+    const keys = [];
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        keys.push(`${cx + dx},${cy + dy}`);
+      }
+    }
+    return keys;
+  };
+
   state.enemies.forEach((enemy) => {
-    state.bullets.forEach((b) => {
-      const dx = enemy.x - b.x;
-      const dy = enemy.y - b.y;
-      if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
-        const crit = Math.random() < state.player.critChance;
-        const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
-        enemy.hp -= dmg;
-        if (crit) {
-          addFloatingText("CRIT", enemy.x, enemy.y - 4, "#f472b6");
-        }
-        if (b.pierce > 0) {
-          b.pierce -= 1;
-        } else {
-          b.life = -1;
+    const key = bucketKey(enemy.x, enemy.y);
+    if (!enemyBuckets.has(key)) enemyBuckets.set(key, []);
+    enemyBuckets.get(key).push(enemy);
+  });
+
+  // Collisions bullets
+  state.enemies.forEach((enemy) => (enemy.hitThisFrame = false));
+  state.bullets.forEach((b) => {
+    const keys = neighborKeys(b.x, b.y);
+    for (const key of keys) {
+      const bucket = enemyBuckets.get(key);
+      if (!bucket) continue;
+      for (const enemy of bucket) {
+        const dx = enemy.x - b.x;
+        const dy = enemy.y - b.y;
+        if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
+          const crit = Math.random() < state.player.critChance;
+          const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+          enemy.hp -= dmg;
+          enemy.hitThisFrame = true;
+          if (!state.visualsLow) {
+            if (crit) addFloatingText("CRIT", enemy.x, enemy.y - 4, "#f472b6");
+          }
+          if (b.pierce > 0) {
+            b.pierce -= 1;
+          } else {
+            b.life = -1;
+            return;
+          }
         }
       }
-    });
+    }
   });
 
   // Remove bullets consumed
@@ -650,14 +711,18 @@ function update(dt) {
       state.resources.essence += e.reward;
       state.runStats.kills += 1;
       state.runStats.essence += e.reward;
-      state.fragmentsOrbs.push({
-        x: e.x,
-        y: e.y,
-        value: fragReward,
-        vx: (Math.random() - 0.5) * 30,
-        vy: (Math.random() - 0.5) * 30,
-        life: 12
-      });
+      if (state.fragmentsOrbs.length < FX_BUDGET.fragments) {
+        state.fragmentsOrbs.push({
+          x: e.x,
+          y: e.y,
+          value: fragReward,
+          vx: (Math.random() - 0.5) * 30,
+          vy: (Math.random() - 0.5) * 30,
+          life: 12
+        });
+      } else {
+        registerFragmentGain(fragReward, e.x, e.y, true);
+      }
       return false;
     }
     return true;
@@ -693,10 +758,18 @@ function update(dt) {
   state.resources.essence += idleRate * dt;
   state.resources.fragments += idleRate * 0.35 * dt;
 
-  // Floating texts motion
+  // Floating texts motion & ticker decay
   state.floatingText = state.floatingText
     .map((f) => ({ ...f, y: f.y - 18 * dt, life: f.life - dt }))
     .filter((f) => f.life > 0);
+
+  if (state.gainTicker.timer > 0) {
+    state.gainTicker.timer = Math.max(0, state.gainTicker.timer - dt);
+    if (state.gainTicker.timer === 0) {
+      state.gainTicker.fragments = 0;
+      state.gainTicker.essence = 0;
+    }
+  }
 
 }
 
@@ -729,22 +802,24 @@ function prestige() {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Background grid
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,255,255,0.03)";
-  for (let x = 0; x < canvas.width; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
+  if (!state.visualsLow) {
+    // Background grid
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.03)";
+    for (let x = 0; x < canvas.width; x += 60) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < canvas.height; y += 60) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
-  for (let y = 0; y < canvas.height; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-  ctx.restore();
 
   // Player trail
   ctx.save();
@@ -755,18 +830,22 @@ function render() {
   ctx.restore();
 
   // Player
-  const gradient = ctx.createRadialGradient(
-    state.player.x - 4,
-    state.player.y - 4,
-    4,
-    state.player.x,
-    state.player.y,
-    state.player.radius * 1.4
-  );
-  gradient.addColorStop(0, "#fff");
-  gradient.addColorStop(0.3, palette[0]);
-  gradient.addColorStop(1, "rgba(255,255,255,0.1)");
-  ctx.fillStyle = gradient;
+  if (state.visualsLow) {
+    ctx.fillStyle = "#22d3ee";
+  } else {
+    const gradient = ctx.createRadialGradient(
+      state.player.x - 4,
+      state.player.y - 4,
+      4,
+      state.player.x,
+      state.player.y,
+      state.player.radius * 1.4
+    );
+    gradient.addColorStop(0, "#fff");
+    gradient.addColorStop(0.3, palette[0]);
+    gradient.addColorStop(1, "rgba(255,255,255,0.1)");
+    ctx.fillStyle = gradient;
+  }
   ctx.beginPath();
   ctx.arc(state.player.x, state.player.y, state.player.radius, 0, TAU);
   ctx.fill();
@@ -778,7 +857,7 @@ function render() {
   ctx.stroke();
 
   // Bullets
-  ctx.fillStyle = "#fef3c7";
+  ctx.fillStyle = state.visualsLow ? "#e2e8f0" : "#fef3c7";
   state.bullets.forEach((b) => {
     ctx.beginPath();
     ctx.arc(b.x, b.y, 4, 0, TAU);
@@ -791,10 +870,12 @@ function render() {
     ctx.beginPath();
     ctx.arc(f.x, f.y, 6, 0, TAU);
     ctx.fill();
-    ctx.strokeStyle = "rgba(244,114,182,0.4)";
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, 10, 0, TAU);
-    ctx.stroke();
+    if (!state.visualsLow) {
+      ctx.strokeStyle = "rgba(244,114,182,0.4)";
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, 10, 0, TAU);
+      ctx.stroke();
+    }
   });
 
   // Enemies
@@ -803,10 +884,12 @@ function render() {
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.radius, 0, TAU);
     ctx.fill();
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
-    ctx.fillStyle = "#22c55e";
-    ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
+    if (!state.visualsLow || e.hitThisFrame) {
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
+      ctx.fillStyle = "#22c55e";
+      ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
+    }
   });
 
   // Floating texts
@@ -826,7 +909,7 @@ function render() {
   const x = 12;
   const y = 12;
   const w = 210;
-  const h = 110;
+  const h = 150;
   const r = 10;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -846,6 +929,10 @@ function render() {
   ctx.fillText(`⚔️ Kills ${state.runStats.kills}`, 24, 64);
   ctx.fillText(`${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, 24, 88);
   ctx.fillText(`${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, 24, 112);
+  if (state.gainTicker.fragments > 0) {
+    ctx.fillStyle = "#f472b6";
+    ctx.fillText(`⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, 24, 136);
+  }
   ctx.restore();
 }
 
@@ -930,6 +1017,12 @@ function initUI() {
   restartRunBtn.addEventListener("click", () => {
     softReset();
     saveGame();
+  });
+
+  togglePerfBtn.addEventListener("click", () => {
+    state.visualsLow = !state.visualsLow;
+    togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
+    debugPing(state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa");
   });
 
   debugBtns.giveEssence?.addEventListener("click", () => {

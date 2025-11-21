@@ -8,6 +8,8 @@ Ouvrir `index.html` dans le navigateur. Le personnage se déplace/tire automatiq
 
 Le canvas de l'arène tourne sur [Kontra.js](https://straker.github.io/kontra/), une micro-bibliothèque open source (~10k) qui gère la boucle de jeu et le rendu 2D sans dépendances serveur.
 
+Un bouton « Mode perfo » dans le header coupe certains effets visuels, regroupe les gains flottants et maintient la lisibilité même quand des centaines d'entités sont actives.
+
 ## Aperçu rapide
 
 L'interface affiche trois colonnes pleine hauteur : statistiques et production passive à gauche, l'arène centrale plein écran où le personnage auto-mouvant survit en boucle, puis les améliorations et le bouton de prestige doux à droite. Tout tourne en local (HTML/CSS/JS) et se sauvegarde dans `localStorage` sans serveur.
@@ -23,5 +25,6 @@ L'interface affiche trois colonnes pleine hauteur : statistiques et production p
 - 🧿 **Défense & contrôle** : des améliorations ajoutent un bouclier (réduction de dégâts), de la perforation, de la portée et un aimant de collecte. Le HUD affiche aussi la vitesse de spawn effective.
 - 🌀 **Tirs circulaires** : chaque niveau de projectiles génère un éventail circulaire autour du héros pour nettoyer toutes les directions, avec une rotation progressive.
 - 🧪 **Debug local** : quelques boutons permettent de tester rapidement (ajout de ressources, avance de vagues, nettoyage d'ennemis) sans impacter la sauvegarde.
+- 🚀 **Performance** : un spatial hash réduit les collisions à tester et des budgets limitent projectiles/particules. Active le mode perfo pour des effets allégés et des gains regroupés en ticker.
 
 Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Les valeurs sont abrégées (K, M, B…) puis passent en notation scientifique pour les très grands nombres. Pas de backend requis.
