@@ -32,7 +32,9 @@ const icons = {
   wave: "🌊",
   reach: "📡",
   speed: "💨",
-  shield: "🧿"
+  shield: "🧿",
+  crit: "🎯",
+  magnet: "🧲"
 };
 
 const generators = [
@@ -115,6 +117,19 @@ const upgrades = [
     }
   },
   {
+    id: "crit",
+    name: "Pointes critiques",
+    description: "+4% chance de critique (x2.2)",
+    cost: 200,
+    baseCost: 200,
+    level: 0,
+    max: 20,
+    apply: (state) => {
+      state.player.critChance = Math.min(0.9, state.player.critChance + 0.04);
+      state.player.critMultiplier = 2.2;
+    }
+  },
+  {
     id: "shield",
     name: "Bouclier prismatique",
     description: "Réduit les dégâts subis de 5%",
@@ -137,6 +152,18 @@ const upgrades = [
     apply: (state) => {
       state.player.pierce += 1;
     }
+  },
+  {
+    id: "collect",
+    name: "Rayon de collecte",
+    description: "+12% portée d'aspiration des fragments",
+    cost: 140,
+    baseCost: 140,
+    level: 0,
+    max: 25,
+    apply: (state) => {
+      state.player.collectRadius *= 1.12;
+    }
   }
 ];
 
@@ -147,6 +174,7 @@ const state = {
   enemies: [],
   bullets: [],
   floatingText: [],
+  fragmentsOrbs: [],
   runStats: {
     kills: 0,
     fragments: 0,
@@ -167,7 +195,11 @@ const state = {
     range: 1,
     bulletSpeed: 260,
     damageReduction: 0,
-    pierce: 0
+    pierce: 0,
+    collectRadius: 90,
+    critChance: 0.08,
+    critMultiplier: 2,
+    spin: 0
   },
   resources: {
     essence: 0,
@@ -177,7 +209,6 @@ const state = {
   spawnTimer: 0,
   overlayFade: 0.12,
   prestigeCooldown: 0,
-  enemyBullets: [],
   dead: false
 };
 
@@ -217,6 +248,9 @@ function loadSave() {
     state.player.bulletSpeed = save.player?.bulletSpeed ?? state.player.bulletSpeed;
     state.player.damageReduction = save.player?.damageReduction ?? state.player.damageReduction;
     state.player.pierce = save.player?.pierce ?? state.player.pierce;
+    state.player.collectRadius = save.player?.collectRadius ?? state.player.collectRadius;
+    state.player.critChance = save.player?.critChance ?? state.player.critChance;
+    state.player.critMultiplier = save.player?.critMultiplier ?? state.player.critMultiplier;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
@@ -258,7 +292,10 @@ function saveGame() {
       range: state.player.range,
       bulletSpeed: state.player.bulletSpeed,
       damageReduction: state.player.damageReduction,
-      pierce: state.player.pierce
+      pierce: state.player.pierce,
+      collectRadius: state.player.collectRadius,
+      critChance: state.player.critChance,
+      critMultiplier: state.player.critMultiplier
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
@@ -293,6 +330,9 @@ function applyUpgradeEffects() {
   state.player.bulletSpeed = 260;
   state.player.damageReduction = 0;
   state.player.pierce = 0;
+  state.player.collectRadius = 90;
+  state.player.critChance = 0.08;
+  state.player.critMultiplier = 2;
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
@@ -341,7 +381,8 @@ function formatNumber(value) {
     const scaled = value / Math.pow(10, tier * 3);
     return `${scaled.toFixed(2)}${suffix}`;
   }
-  return value.toExponential(2);
+  const exp = value.toExponential(2).replace("e", "E");
+  return exp;
 }
 
 function addFloatingText(text, x, y, color = "#fef08a") {
@@ -466,10 +507,26 @@ function nearestEnemy() {
   return closest;
 }
 
+function nearestFragment() {
+  let closest = null;
+  let bestDist = Infinity;
+  state.fragmentsOrbs.forEach((f) => {
+    const dx = f.x - state.player.x;
+    const dy = f.y - state.player.y;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      closest = f;
+    }
+  });
+  return closest;
+}
+
 function fire() {
   const target = nearestEnemy();
   const count = Math.max(1, state.player.projectiles);
-  const baseAngle = target ? Math.atan2(target.y - state.player.y, target.x - state.player.x) : state.time * 0.9;
+  const baseTrack = target ? Math.atan2(target.y - state.player.y, target.x - state.player.x) : state.time * 0.9;
+  const baseAngle = baseTrack + state.player.spin;
   const ringStep = TAU / count;
 
   for (let i = 0; i < count; i++) {
@@ -491,6 +548,7 @@ function update(dt) {
   state.time += dt;
   state.player.fireTimer -= dt;
   state.spawnTimer -= dt;
+  state.player.spin = (state.player.spin + dt * 1.2) % TAU;
 
   if (state.spawnTimer <= 0) {
     const rate = spawnRate();
@@ -501,10 +559,19 @@ function update(dt) {
     state.spawnTimer = 1 / rate;
   }
 
-  // Auto movement : orbiting drift
-  const orbit = Math.sin(state.time * 0.6) * 0.4;
-  state.player.x += Math.cos(state.time * 0.8 + orbit) * state.player.speed * dt;
-  state.player.y += Math.sin(state.time * 0.5) * state.player.speed * dt;
+  // Auto movement : chase fragments if any, otherwise orbiting drift
+  const targetFragment = nearestFragment();
+  if (targetFragment) {
+    const dx = targetFragment.x - state.player.x;
+    const dy = targetFragment.y - state.player.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    state.player.x += (dx / dist) * state.player.speed * dt * 1.1;
+    state.player.y += (dy / dist) * state.player.speed * dt * 1.1;
+  } else {
+    const orbit = Math.sin(state.time * 0.6) * 0.4;
+    state.player.x += Math.cos(state.time * 0.8 + orbit) * state.player.speed * dt;
+    state.player.y += Math.sin(state.time * 0.5) * state.player.speed * dt;
+  }
   clampPlayerToBounds();
 
   if (state.player.fireTimer <= 0) {
@@ -523,27 +590,33 @@ function update(dt) {
   });
   state.bullets = state.bullets.filter((b) => b.life > 0);
 
+  // Fragments drift
+  state.fragmentsOrbs.forEach((f) => {
+    f.life -= dt;
+    const dx = state.player.x - f.x;
+    const dy = state.player.y - f.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    if (dist < state.player.collectRadius) {
+      f.vx += (dx / dist) * 120 * dt;
+      f.vy += (dy / dist) * 120 * dt;
+    }
+    f.x += f.vx * dt;
+    f.y += f.vy * dt;
+    const collectDist = state.player.radius + 6 + state.player.collectRadius * 0.15;
+    if (dist < collectDist) {
+      state.resources.fragments += f.value;
+      state.runStats.fragments += f.value;
+      addFloatingText(`+${formatNumber(f.value)} ${icons.fragments}`, f.x, f.y - 6, "#f472b6");
+      f.life = -1;
+    }
+  });
+  state.fragmentsOrbs = state.fragmentsOrbs.filter((f) => f.life > 0);
+
   // Enemies
   state.enemies.forEach((e) => {
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
     e.x += Math.cos(angle) * e.speed * dt;
     e.y += Math.sin(angle) * e.speed * dt;
-
-    if (state.wave >= 3) {
-      e.fireTimer -= dt;
-      if (e.fireTimer <= 0) {
-        const bulletAngle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
-        const speed = 160 + state.wave * 4;
-        state.enemyBullets.push({
-          x: e.x,
-          y: e.y,
-          dx: Math.cos(bulletAngle) * speed,
-          dy: Math.sin(bulletAngle) * speed,
-          life: 4
-        });
-        e.fireTimer = Math.max(1, e.fireDelay + Math.random());
-      }
-    }
   });
 
   // Collisions bullets
@@ -552,7 +625,12 @@ function update(dt) {
       const dx = enemy.x - b.x;
       const dy = enemy.y - b.y;
       if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
-        enemy.hp -= state.player.damage;
+        const crit = Math.random() < state.player.critChance;
+        const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+        enemy.hp -= dmg;
+        if (crit) {
+          addFloatingText("CRIT", enemy.x, enemy.y - 4, "#f472b6");
+        }
         if (b.pierce > 0) {
           b.pierce -= 1;
         } else {
@@ -565,16 +643,21 @@ function update(dt) {
   // Remove bullets consumed
   state.bullets = state.bullets.filter((b) => b.life > 0);
 
-  // Remove dead enemies
+  // Remove dead enemies & spawn fragments
   state.enemies = state.enemies.filter((e) => {
     if (e.hp <= 0) {
       const fragReward = e.reward * 0.35;
       state.resources.essence += e.reward;
-      state.resources.fragments += fragReward;
       state.runStats.kills += 1;
-      state.runStats.fragments += fragReward;
       state.runStats.essence += e.reward;
-      addFloatingText(`+${formatNumber(fragReward)} ${icons.fragments}`, e.x, e.y - 12, "#f472b6");
+      state.fragmentsOrbs.push({
+        x: e.x,
+        y: e.y,
+        value: fragReward,
+        vx: (Math.random() - 0.5) * 30,
+        vy: (Math.random() - 0.5) * 30,
+        life: 12
+      });
       return false;
     }
     return true;
@@ -589,17 +672,6 @@ function update(dt) {
     if (distSq < radius * radius) {
       const dmg = 18 * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
-    }
-  });
-
-  // Enemy bullet collisions with player
-  state.enemyBullets.forEach((b) => {
-    const dx = b.x - state.player.x;
-    const dy = b.y - state.player.y;
-    if (dx * dx + dy * dy < (state.player.radius + 3) ** 2) {
-      const dmg = 25 * dt * (1 - state.player.damageReduction);
-      state.player.hp -= dmg;
-      b.life = -1;
     }
   });
 
@@ -626,13 +698,6 @@ function update(dt) {
     .map((f) => ({ ...f, y: f.y - 18 * dt, life: f.life - dt }))
     .filter((f) => f.life > 0);
 
-  // Enemy bullets
-  state.enemyBullets.forEach((b) => {
-    b.x += b.dx * dt;
-    b.y += b.dy * dt;
-    b.life -= dt;
-  });
-  state.enemyBullets = state.enemyBullets.filter((b) => b.life > 0);
 }
 
 function softReset() {
@@ -642,8 +707,8 @@ function softReset() {
   state.player.y = canvas.height / 2;
   state.enemies = [];
   state.bullets = [];
-  state.enemyBullets = [];
   state.floatingText = [];
+  state.fragmentsOrbs = [];
   state.runStats = { kills: 0, fragments: 0, essence: 0 };
   state.dead = false;
   state.running = true;
@@ -706,12 +771,30 @@ function render() {
   ctx.arc(state.player.x, state.player.y, state.player.radius, 0, TAU);
   ctx.fill();
 
+  // Collect radius cue
+  ctx.strokeStyle = "rgba(52,211,153,0.18)";
+  ctx.beginPath();
+  ctx.arc(state.player.x, state.player.y, state.player.collectRadius * 0.4, 0, TAU);
+  ctx.stroke();
+
   // Bullets
   ctx.fillStyle = "#fef3c7";
   state.bullets.forEach((b) => {
     ctx.beginPath();
     ctx.arc(b.x, b.y, 4, 0, TAU);
     ctx.fill();
+  });
+
+  // Fragments
+  state.fragmentsOrbs.forEach((f) => {
+    ctx.fillStyle = "#f472b6";
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 6, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(244,114,182,0.4)";
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, 10, 0, TAU);
+    ctx.stroke();
   });
 
   // Enemies
@@ -724,14 +807,6 @@ function render() {
     ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
     ctx.fillStyle = "#22c55e";
     ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
-  });
-
-  // Enemy bullets
-  ctx.fillStyle = "#f87171";
-  state.enemyBullets.forEach((b) => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 3, 0, TAU);
-    ctx.fill();
   });
 
   // Floating texts
@@ -780,11 +855,14 @@ function updateHud() {
   idleRateEl.textContent = `${formatNumber(computeIdleRate())} /s`;
   waveEl.textContent = state.wave.toFixed(1);
   hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
-  const dps = (state.player.damage / state.player.fireDelay) * state.player.projectiles;
+  const avgDamage = state.player.damage * (1 + state.player.critChance * (state.player.critMultiplier - 1));
+  const dps = (avgDamage / state.player.fireDelay) * state.player.projectiles;
   dpsEl.textContent = dps.toFixed(1);
   const totalSpawn = spawnRate() * packSize();
   spawnRateEl.textContent = `${totalSpawn.toFixed(2)} /s`;
   document.getElementById("shield").textContent = `${Math.round(state.player.damageReduction * 100)}%`;
+  document.getElementById("crit").textContent = `${Math.round(state.player.critChance * 100)}% x${state.player.critMultiplier.toFixed(1)}`;
+  document.getElementById("collect").textContent = `${Math.round(state.player.collectRadius)}px`;
 
   pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
 
@@ -874,7 +952,7 @@ function initUI() {
   });
   debugBtns.nuke?.addEventListener("click", () => {
     state.enemies = [];
-    state.enemyBullets = [];
+    state.fragmentsOrbs = [];
     debugPing("☄️ Nuke", "#f472b6");
   });
 
