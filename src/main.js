@@ -31,13 +31,13 @@ const arenaLayers = {
 const hudTextOptions = {
   fontFamily: "Space Grotesk",
   fontSize: 16,
-  fill: "#f8fafc",
+  fill: "#ffffff",
   stroke: "#0b1220",
   strokeThickness: 4,
   dropShadow: true,
   dropShadowColor: "#0b1220",
   dropShadowBlur: 6,
-  dropShadowAlpha: 0.75,
+  dropShadowAlpha: 0.9,
   dropShadowDistance: 0,
 };
 
