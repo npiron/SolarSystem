@@ -28,7 +28,7 @@ const arenaLayers = {
   overlay: new PIXI.Container(),
 };
 
-const hudTextStyle = new PIXI.TextStyle({
+const hudTextOptions = {
   fontFamily: "Space Grotesk",
   fontSize: 16,
   fill: "#f8fafc",
@@ -39,10 +39,12 @@ const hudTextStyle = new PIXI.TextStyle({
   dropShadowBlur: 6,
   dropShadowAlpha: 0.75,
   dropShadowDistance: 0,
-});
+};
+
+const hudTextStyle = new PIXI.TextStyle(hudTextOptions);
 
 const hudAccentStyle = new PIXI.TextStyle({
-  ...hudTextStyle.toJSON(),
+  ...hudTextOptions,
   fill: "#f472b6",
 });
 
