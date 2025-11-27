@@ -175,9 +175,12 @@ function saveGame() {
 
 function grantOfflineGains(seconds) {
   const rate = computeIdleRate();
-  const earned = rate * seconds;
-  state.resources.essence += earned;
-  state.resources.fragments += earned * 0.4;
+  const earnedEssence = rate * seconds;
+  const earnedFragments = earnedEssence * 0.4;
+  state.resources.essence += earnedEssence;
+  state.resources.fragments += earnedFragments;
+  state.runStats.essence += earnedEssence;
+  state.runStats.fragments += earnedFragments;
 }
 
 function applyUpgradeEffects() {
@@ -334,8 +337,12 @@ function update(dt) {
   }
 
   const idleRate = computeIdleRate();
-  state.resources.essence += idleRate * dt;
-  state.resources.fragments += idleRate * 0.35 * dt;
+  const passiveEssence = idleRate * dt;
+  const passiveFragments = idleRate * 0.35 * dt;
+  state.resources.essence += passiveEssence;
+  state.resources.fragments += passiveFragments;
+  state.runStats.essence += passiveEssence;
+  state.runStats.fragments += passiveFragments;
 
   updateFloatingText(state, dt);
 }
