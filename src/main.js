@@ -1,5 +1,5 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { STORAGE_KEY, TAU, icons, palette } from "./config/constants.js";
+import { STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
@@ -193,6 +193,7 @@ const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
 const toggleFpsBtn = document.getElementById("toggleFps");
+const versionBadge = document.getElementById("versionBadge");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -216,6 +217,10 @@ const fpsCanvas = document.getElementById("fpsGraph");
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
+
+if (versionBadge) {
+  versionBadge.textContent = VERSION;
+}
 
 const state = {
   running: true,
