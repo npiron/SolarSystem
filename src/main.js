@@ -55,19 +55,6 @@ const renderObjects = {
 
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
 
-function scaleBackgroundSprite(width, height) {
-  if (!renderObjects.pattern) return;
-  const scale = Math.max(
-    width / renderObjects.pattern.texture.width,
-    height / renderObjects.pattern.texture.height
-  );
-  renderObjects.pattern.scale.set(scale);
-  renderObjects.pattern.position.set(
-    (width - renderObjects.pattern.width) / 2,
-    (height - renderObjects.pattern.height) / 2
-  );
-}
-
 function buildBackground(width, height) {
   renderObjects.backgroundContainer.removeChildren();
   renderObjects.pattern = null;
@@ -86,10 +73,9 @@ function buildBackground(width, height) {
     renderObjects.backgroundContainer.addChild(renderObjects.grid);
 
     if (textures.background) {
-      renderObjects.pattern = new PIXI.Sprite(textures.background);
+      renderObjects.pattern = new PIXI.TilingSprite(textures.background, width, height);
       renderObjects.pattern.alpha = 0.12;
       renderObjects.pattern.tint = 0xe8dfce;
-      scaleBackgroundSprite(width, height);
       renderObjects.backgroundContainer.addChildAt(renderObjects.pattern, 0);
     }
   }
@@ -214,6 +200,7 @@ const idleRateEl = document.getElementById("idleRate");
 const waveEl = document.getElementById("wave");
 const hpEl = document.getElementById("hp");
 const dpsEl = document.getElementById("dps");
+const damageRow = document.getElementById("damageRow");
 const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators");
@@ -419,6 +406,7 @@ const hudContext = {
     waveEl,
     hpEl,
     dpsEl,
+    damageRow,
     spawnRateEl,
     pauseBtn,
     softPrestigeBtn,
@@ -588,7 +576,8 @@ function render() {
   } else if (!renderObjects.backgroundContainer.children.length) {
     buildBackground(width, height);
   } else if (renderObjects.pattern) {
-    scaleBackgroundSprite(width, height);
+    renderObjects.pattern.width = width;
+    renderObjects.pattern.height = height;
   }
 
   renderObjects.aura.clear();
@@ -675,10 +664,8 @@ function render() {
   renderObjects.hudLabels.kills.text = `⚔️ Kills ${state.runStats.kills}`;
   renderObjects.hudLabels.fragments.text = `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`;
   renderObjects.hudLabels.essence.text = `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`;
+  renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
   renderObjects.hudLabels.gain.visible = state.gainTicker.fragments > 0;
-  if (state.gainTicker.fragments > 0) {
-    renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
-  }
 }
 
 app.ticker.add((delta) => {
