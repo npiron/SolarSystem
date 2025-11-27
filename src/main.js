@@ -33,7 +33,7 @@ const arenaLayers = {
 };
 
 const hudTextOptions = {
-  fontFamily: "Space Grotesk",
+  fontFamily: "Cinzel, EB Garamond, serif",
   fontSize: 16,
   fill: "#ffffff",
   stroke: "#0b1220",
@@ -818,7 +818,7 @@ function render() {
     const text = new PIXI.Text({
       text: label,
       style: new PIXI.TextStyle({
-        fontFamily: "Space Grotesk",
+        fontFamily: "Cinzel, EB Garamond, serif",
         fontSize: 14,
         fill: f.color || "#f8fafc",
         stroke: "#0f172a",
