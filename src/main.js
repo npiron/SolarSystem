@@ -15,10 +15,15 @@ const app = new PIXI.Application({
 app.stop();
 
 const assetPaths = {
-  background: new URL("../public/assets/Medieval RTS/Vector/medievalRTS_vector.svg", import.meta.url).href,
+  background: new URL("../public/assets/Medieval RTS/Preview_KenneyNL.png", import.meta.url).href,
   player: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1181.png", import.meta.url).href,
   fragment: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1805.png", import.meta.url).href,
-  enemy: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1173.png", import.meta.url).href
+  enemy: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1173.png", import.meta.url).href,
+};
+const spriteScales = {
+  player: 1.2,
+  enemy: 1.1,
+  fragment: 1.4,
 };
 const textures = {};
 const spritePools = {
@@ -119,12 +124,12 @@ function buildBackground(width, height) {
 
   if (!state.visualsLow) {
     renderObjects.grid.clear();
-    renderObjects.grid.lineStyle({ color: 0xffffff, alpha: 0.04, width: 1 });
-    for (let x = 0; x < width; x += 60) {
+    renderObjects.grid.lineStyle({ color: 0xb4c6fc, alpha: 0.06, width: 2 });
+    for (let x = 0; x < width; x += 64) {
       renderObjects.grid.moveTo(x, 0);
       renderObjects.grid.lineTo(x, height);
     }
-    for (let y = 0; y < height; y += 60) {
+    for (let y = 0; y < height; y += 64) {
       renderObjects.grid.moveTo(0, y);
       renderObjects.grid.lineTo(width, y);
     }
@@ -132,8 +137,9 @@ function buildBackground(width, height) {
 
     if (textures.background) {
       renderObjects.pattern = new PIXI.TilingSprite(textures.background, width, height);
-      renderObjects.pattern.alpha = 0.12;
-      renderObjects.pattern.tint = 0xe8dfce;
+      renderObjects.pattern.alpha = 0.4;
+      renderObjects.pattern.tint = 0xffffff;
+      renderObjects.pattern.blendMode = PIXI.BLEND_MODES.ADD;
       renderObjects.backgroundContainer.addChildAt(renderObjects.pattern, 0);
     }
   }
@@ -708,6 +714,7 @@ function render() {
   } else if (renderObjects.pattern) {
     renderObjects.pattern.width = width;
     renderObjects.pattern.height = height;
+    renderObjects.pattern.tilePosition.set(state.time * -60, state.time * 48);
   }
 
   renderObjects.aura.clear();
@@ -722,8 +729,9 @@ function render() {
   const sprite = renderObjects.playerSprite;
   if (sprite) {
     const baseSize = textures.player?.width || sprite.width || 64;
-    const scale = (state.player.radius * 3) / baseSize;
+    const scale = ((state.player.radius * 3.6) / baseSize) * spriteScales.player;
     sprite.scale.set(scale);
+    sprite.rotation = state.time * 0.8;
     sprite.position.set(state.player.x, state.player.y);
   } else {
     renderObjects.playerFallback.position.set(state.player.x, state.player.y);
@@ -750,9 +758,10 @@ function render() {
     state.fragmentsOrbs.forEach((f) => {
       const spriteFragment = acquireSprite(spritePools.fragments, textures.fragment, colors.fragment);
       const baseSize = textures.fragment.width || 64;
-      const scale = 12 / baseSize;
+      const scale = (22 / baseSize) * spriteScales.fragment;
       spriteFragment.alpha = state.visualsLow ? 0.85 : 1;
       spriteFragment.scale.set(scale);
+      spriteFragment.rotation = state.time * 1.6;
       spriteFragment.position.set(f.x, f.y);
       renderObjects.fragmentSprites.addChild(spriteFragment);
     });
@@ -784,9 +793,10 @@ function render() {
       const tint = e.elite ? colors.elite : paletteHex[idx % paletteHex.length];
       const spriteEnemy = acquireSprite(spritePools.enemies, textures.enemy, tint);
       const baseSize = textures.enemy.width || 64;
-      const scale = (e.radius * 2) / baseSize;
+      const scale = ((e.radius * 2.6) / baseSize) * spriteScales.enemy;
       spriteEnemy.alpha = state.visualsLow ? 0.7 : 1;
       spriteEnemy.scale.set(scale);
+      spriteEnemy.rotation = state.time * 0.6 + idx * 0.1;
       spriteEnemy.position.set(e.x, e.y);
       renderObjects.enemySprites.addChild(spriteEnemy);
     });
