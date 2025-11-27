@@ -343,13 +343,16 @@ function update(dt) {
 function softReset() {
   state.wave = 1;
   state.player.hp = state.player.maxHp;
+  state.player.fireTimer = 0;
   state.player.x = canvas.width / 2;
   state.player.y = canvas.height / 2;
   state.enemies = [];
   state.bullets = [];
   state.floatingText = [];
   state.fragmentsOrbs = [];
+  state.gainTicker = { fragments: 0, essence: 0, timer: 0 };
   state.runStats = { kills: 0, fragments: 0, essence: 0 };
+  state.spawnTimer = 0;
   state.dead = false;
   state.running = true;
 }
