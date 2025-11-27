@@ -1057,8 +1057,6 @@ function bootstrap() {
   resizeCanvas(true);
   loadSave();
   initUI();
-  renderGenerators();
-  renderUpgrades();
   window.addEventListener("resize", () => resizeCanvas());
   loop.start();
   setInterval(saveGame, 5000);
