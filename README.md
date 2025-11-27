@@ -15,6 +15,13 @@ Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie autom
 2. Pousser sur `main` (ou `work`) : le workflow génère l'artefact et déploie sur GitHub Pages.
 3. L'URL finale est de la forme `https://<utilisateur>.github.io/<nom-du-depot>/` et sert directement `index.html` à la racine.
 
+## Releases, tags et patch notes
+
+- Le versionnement suit SemVer (`vMAJOR.MINOR.PATCH`).
+- Pousser un tag `v*.*.*` déclenche le workflow `.github/workflows/release.yml` : il archive l'état du dépôt (`release.zip`), crée la Release GitHub et génère les notes automatiquement.
+- Le fichier `CHANGELOG.md` peut être complété avant de taguer : déplacez les entrées de la section « Unreleased » vers la version en cours avec la date du jour.
+- Le détail complet du flux est décrit dans `RELEASE_PROCESS.md`.
+
 ```
 .
 ├── index.html           # Point d'entrée statique servi à la racine
