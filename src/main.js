@@ -190,6 +190,7 @@ const resetProgressBtn = document.getElementById("resetProgress");
 const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
+const toggleFpsBtn = document.getElementById("toggleFps");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -208,6 +209,8 @@ const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators");
 const upgradesContainer = document.getElementById("upgrades");
+const fpsValueEl = document.getElementById("fpsValue");
+const fpsCanvas = document.getElementById("fpsGraph");
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
@@ -256,7 +259,13 @@ const state = {
   overlayFade: 0.12,
   prestigeCooldown: 0,
   dead: false,
-  visualsLow: false
+  visualsLow: false,
+  performance: {
+    fps: 0,
+    history: [],
+    maxSamples: 240,
+    graphVisible: false
+  }
 };
 
 function clampPlayerToBounds() {
@@ -276,6 +285,9 @@ function resizeCanvas(center = false) {
     state.player.y = height / 2;
   }
   clampPlayerToBounds();
+  if (state.performance.graphVisible) {
+    drawFpsGraph();
+  }
 }
 
 const uiRefs = {
@@ -399,6 +411,74 @@ function applyUpgradeEffects() {
 
 function computeIdleRate() {
   return generators.reduce((sum, g) => sum + g.rate * g.level, 0);
+}
+
+function recordFpsSample() {
+  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
+  const fps = 1000 / frameMs;
+  state.performance.fps = fps;
+  state.performance.history.push(fps);
+  if (state.performance.history.length > state.performance.maxSamples) {
+    state.performance.history.shift();
+  }
+}
+
+function drawFpsGraph() {
+  if (!fpsCanvas || !state.performance.graphVisible) return;
+  if (fpsCanvas.width !== fpsCanvas.clientWidth) fpsCanvas.width = fpsCanvas.clientWidth;
+  if (fpsCanvas.height !== fpsCanvas.clientHeight) fpsCanvas.height = fpsCanvas.clientHeight;
+  const ctx = fpsCanvas.getContext("2d");
+  if (!ctx) return;
+
+  const history = state.performance.history;
+  const { width, height } = fpsCanvas;
+  ctx.clearRect(0, 0, width, height);
+  if (!history.length) return;
+
+  const maxFps = Math.max(30, ...history);
+  const minFps = Math.min(0, ...history);
+  const range = Math.max(1, maxFps - minFps);
+  const stepX = history.length > 1 ? width / (history.length - 1) : width;
+
+  const targetFps = 60;
+  const targetY = height - ((targetFps - minFps) / range) * height;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = "rgba(255, 220, 170, 0.35)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, targetY);
+  ctx.lineTo(width, targetY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = "#d6b96c";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  history.forEach((fpsValue, idx) => {
+    const x = idx * stepX;
+    const y = height - ((fpsValue - minFps) / range) * height;
+    if (idx === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(214, 185, 108, 0.12)";
+  ctx.lineTo(width, height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function updatePerformanceHud() {
+  if (fpsValueEl) {
+    fpsValueEl.textContent = Math.round(state.performance.fps).toString();
+  }
+  if (state.performance.graphVisible) {
+    drawFpsGraph();
+  }
 }
 
 const hudContext = {
@@ -681,9 +761,11 @@ function render() {
 }
 
 app.ticker.add((delta) => {
+  recordFpsSample();
   const dt = Math.min(0.05, delta / 60);
   update(dt);
   updateHud(state, hudContext);
+  updatePerformanceHud();
   render();
 });
 
@@ -718,6 +800,13 @@ function initUI() {
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
     );
+  });
+
+  toggleFpsBtn?.addEventListener("click", () => {
+    state.performance.graphVisible = !state.performance.graphVisible;
+    fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
+    toggleFpsBtn.textContent = state.performance.graphVisible ? "📉 Masquer le graph" : "📈 Afficher le graph";
+    drawFpsGraph();
   });
 
   debugBtns.giveEssence?.addEventListener("click", () => {
