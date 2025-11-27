@@ -85,7 +85,7 @@ export function updateFloatingText(state, dt) {
 }
 
 export function updateHud(state, { elements, uiRefs, generators, upgrades, computeIdleRate }) {
-  const { essenceEl, fragmentsEl, idleRateEl, waveEl, hpEl, dpsEl, spawnRateEl, pauseBtn, softPrestigeBtn, statusEl } = elements;
+  const { essenceEl, fragmentsEl, idleRateEl, waveEl, hpEl, dpsEl, damageRow, spawnRateEl, pauseBtn, softPrestigeBtn, statusEl } = elements;
 
   essenceEl.textContent = formatNumber(state.resources.essence);
   fragmentsEl.textContent = formatNumber(state.resources.fragments);
@@ -95,6 +95,11 @@ export function updateHud(state, { elements, uiRefs, generators, upgrades, compu
   const avgDamage = state.player.damage * (1 + state.player.critChance * (state.player.critMultiplier - 1));
   const dps = (avgDamage / state.player.fireDelay) * state.player.projectiles;
   dpsEl.textContent = dps.toFixed(1);
+  const shotsPerSecond = 1 / state.player.fireDelay;
+  const critPercent = Math.round(state.player.critChance * 100);
+  if (damageRow) {
+    damageRow.dataset.tooltip = `Dégâts moyens : ${avgDamage.toFixed(1)} · ${shotsPerSecond.toFixed(1)} tirs/s · ${state.player.projectiles} projectile(s) · Critiques : ${critPercent}% x${state.player.critMultiplier.toFixed(1)} · DPS estimé : ${dps.toFixed(1)}`;
+  }
   const totalSpawn = spawnRate(state) * packSize(state);
   spawnRateEl.textContent = `${totalSpawn.toFixed(2)} /s`;
   document.getElementById("shield").textContent = `${Math.round(state.player.damageReduction * 100)}%`;

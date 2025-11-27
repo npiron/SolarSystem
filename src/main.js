@@ -62,6 +62,7 @@ const idleRateEl = document.getElementById("idleRate");
 const waveEl = document.getElementById("wave");
 const hpEl = document.getElementById("hp");
 const dpsEl = document.getElementById("dps");
+const damageRow = document.getElementById("damageRow");
 const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators");
@@ -266,6 +267,7 @@ const hudContext = {
     waveEl,
     hpEl,
     dpsEl,
+    damageRow,
     spawnRateEl,
     pauseBtn,
     softPrestigeBtn,
