@@ -2,100 +2,26 @@ import { init, GameLoop } from "https://unpkg.com/kontra@9/kontra.mjs";
 import { CELL_SIZE, FX_BUDGET, STORAGE_KEY, TAU, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
+import { createInitialState, clampPlayerToBounds, resizeCanvas, resetPlayerStats } from "./state.js";
+import { formatNumber } from "./utils/format.js";
+import { createUI } from "./ui.js";
 
 const { canvas, context: ctx } = init("arena");
-const pauseBtn = document.getElementById("pause");
-const resetProgressBtn = document.getElementById("resetProgress");
-const softPrestigeBtn = document.getElementById("softPrestige");
-const restartRunBtn = document.getElementById("restartRun");
-const togglePerfBtn = document.getElementById("togglePerf");
-const debugBtns = {
-  giveEssence: document.getElementById("debugGiveEssence"),
-  giveFragments: document.getElementById("debugGiveFragments"),
-  skipWave: document.getElementById("debugSkipWave"),
-  nuke: document.getElementById("debugNuke")
-};
-
-const essenceEl = document.getElementById("essence");
-const fragmentsEl = document.getElementById("fragments");
-const idleRateEl = document.getElementById("idleRate");
-const waveEl = document.getElementById("wave");
-const hpEl = document.getElementById("hp");
-const dpsEl = document.getElementById("dps");
-const spawnRateEl = document.getElementById("spawnRate");
-const generatorsContainer = document.getElementById("generators");
-const upgradesContainer = document.getElementById("upgrades");
-
 const generators = createGenerators();
 const upgrades = createUpgrades();
+const state = createInitialState(canvas);
 
-const state = {
-  running: true,
-  wave: 1,
-  time: 0,
-  enemies: [],
-  bullets: [],
-  floatingText: [],
-  fragmentsOrbs: [],
-  gainTicker: { fragments: 0, essence: 0, timer: 0 },
-  runStats: {
-    kills: 0,
-    fragments: 0,
-    essence: 0
-  },
-  player: {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    radius: 12,
-    hp: 120,
-    maxHp: 120,
-    speed: 95,
-    damage: 12,
-    fireDelay: 0.65,
-    fireTimer: 0,
-    projectiles: 1,
-    regen: 2,
-    range: 1,
-    bulletSpeed: 260,
-    damageReduction: 0,
-    pierce: 0,
-    collectRadius: 90,
-    critChance: 0.08,
-    critMultiplier: 2,
-    spin: 0
-  },
-  resources: {
-    essence: 0,
-    fragments: 0,
-    idleMultiplier: 1
-  },
-  spawnTimer: 0,
-  overlayFade: 0.12,
-  prestigeCooldown: 0,
-  dead: false,
-  visualsLow: false
-};
-
-function clampPlayerToBounds() {
-  state.player.x = Math.max(30, Math.min(canvas.width - 30, state.player.x));
-  state.player.y = Math.max(30, Math.min(canvas.height - 30, state.player.y));
-}
-
-function resizeCanvas(center = false) {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-  if (center) {
-    state.player.x = canvas.width / 2;
-    state.player.y = canvas.height / 2;
-  }
-  clampPlayerToBounds();
-}
-
-const uiRefs = {
-  generatorButtons: new Map(),
-  upgradeButtons: new Map()
-};
+const { renderGenerators, renderUpgrades, updateHud, initUI } = createUI(state, generators, upgrades, {
+  buyGenerator,
+  buyUpgrade,
+  saveGame,
+  computeIdleRate,
+  spawnRate,
+  packSize,
+  prestige,
+  softReset,
+  debugPing
+});
 
 function loadSave() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -186,67 +112,12 @@ function packSize() {
 
 function applyUpgradeEffects() {
   // Reset to base before reapplying
-  state.player.damage = 12;
-  state.player.fireDelay = 0.65;
-  state.player.projectiles = 1;
-  state.player.regen = 2;
-  state.player.range = 1;
-  state.player.bulletSpeed = 260;
-  state.player.damageReduction = 0;
-  state.player.pierce = 0;
-  state.player.collectRadius = 90;
-  state.player.critChance = 0.08;
-  state.player.critMultiplier = 2;
+  resetPlayerStats(state);
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
     }
   });
-}
-
-function formatNumber(value) {
-  const suffixes = [
-    "",
-    "K",
-    "M",
-    "B",
-    "T",
-    "Qa",
-    "Qi",
-    "Sx",
-    "Sp",
-    "Oc",
-    "No",
-    "De",
-    "Ud",
-    "Dd",
-    "Td",
-    "Qad",
-    "Qid",
-    "Sxd",
-    "Spd",
-    "Ocd",
-    "Nod",
-    "Vg",
-    "Uv",
-    "Dv",
-    "Tv",
-    "Qav",
-    "Qiv",
-    "Sxv",
-    "Spv",
-    "Ocv",
-    "Nov"
-  ];
-  if (Math.abs(value) < 1000) return value.toFixed(0);
-  const tier = Math.floor(Math.log10(Math.abs(value)) / 3);
-  if (tier < suffixes.length) {
-    const suffix = suffixes[tier];
-    const scaled = value / Math.pow(10, tier * 3);
-    return `${scaled.toFixed(2)}${suffix}`;
-  }
-  const exp = value.toExponential(2).replace("e", "E");
-  return exp;
 }
 
 function addFloatingText(text, x, y, color = "#fef08a") {
@@ -285,31 +156,6 @@ function buyGenerator(gen) {
   gen.rate = gen.baseRate * Math.pow(1.12, gen.level) * state.resources.idleMultiplier;
 }
 
-function renderGenerators() {
-  generatorsContainer.innerHTML = "";
-  uiRefs.generatorButtons.clear();
-  generators.forEach((gen) => {
-    const card = document.createElement("div");
-    card.className = "card";
-    const info = document.createElement("div");
-    const production = gen.rate * gen.level;
-    info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · Produit ${formatNumber(production)} ${icons.essence}/s</p>`;
-    const btn = document.createElement("button");
-    btn.textContent = `${icons.essence} Acheter ${formatNumber(gen.cost)}`;
-    btn.className = "secondary";
-    btn.disabled = state.resources.essence < gen.cost;
-    btn.addEventListener("click", () => {
-      buyGenerator(gen);
-      renderGenerators();
-      saveGame();
-    });
-    card.appendChild(info);
-    card.appendChild(btn);
-    generatorsContainer.appendChild(card);
-    uiRefs.generatorButtons.set(gen.id, btn);
-  });
-}
-
 function buyUpgrade(upgrade) {
   if (upgrade.level >= upgrade.max) return;
   if (state.resources.fragments < upgrade.cost) return;
@@ -318,31 +164,6 @@ function buyUpgrade(upgrade) {
   upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
   upgrade.apply(state);
 }
-
-function renderUpgrades() {
-  upgradesContainer.innerHTML = "";
-  uiRefs.upgradeButtons.clear();
-  upgrades.forEach((up) => {
-    const card = document.createElement("div");
-    card.className = "card";
-    const info = document.createElement("div");
-    info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${up.max}</p>`;
-    const btn = document.createElement("button");
-    btn.textContent = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
-    btn.className = "primary";
-    btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
-    btn.addEventListener("click", () => {
-      buyUpgrade(up);
-      renderUpgrades();
-      saveGame();
-    });
-    card.appendChild(info);
-    card.appendChild(btn);
-    upgradesContainer.appendChild(card);
-    uiRefs.upgradeButtons.set(up.id, btn);
-  });
-}
-
 function spawnEnemy() {
   const margin = 20;
   const side = Math.floor(Math.random() * 4);
@@ -452,7 +273,7 @@ function update(dt) {
     state.player.x += Math.cos(state.time * 0.8 + orbit) * state.player.speed * dt;
     state.player.y += Math.sin(state.time * 0.5) * state.player.speed * dt;
   }
-  clampPlayerToBounds();
+  clampPlayerToBounds(state, canvas);
 
   if (state.player.fireTimer <= 0) {
     fire();
@@ -791,54 +612,6 @@ function render() {
   ctx.restore();
 }
 
-function updateHud() {
-  essenceEl.textContent = formatNumber(state.resources.essence);
-  fragmentsEl.textContent = formatNumber(state.resources.fragments);
-  idleRateEl.textContent = `${formatNumber(computeIdleRate())} /s`;
-  waveEl.textContent = state.wave.toFixed(1);
-  hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
-  const avgDamage = state.player.damage * (1 + state.player.critChance * (state.player.critMultiplier - 1));
-  const dps = (avgDamage / state.player.fireDelay) * state.player.projectiles;
-  dpsEl.textContent = dps.toFixed(1);
-  const totalSpawn = spawnRate() * packSize();
-  spawnRateEl.textContent = `${totalSpawn.toFixed(2)} /s`;
-  document.getElementById("shield").textContent = `${Math.round(state.player.damageReduction * 100)}%`;
-  document.getElementById("crit").textContent = `${Math.round(state.player.critChance * 100)}% x${state.player.critMultiplier.toFixed(1)}`;
-  document.getElementById("collect").textContent = `${Math.round(state.player.collectRadius)}px`;
-
-  pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
-
-  // Update affordability without re-rendering cards
-  uiRefs.generatorButtons.forEach((btn, id) => {
-    const gen = generators.find((g) => g.id === id);
-    if (!gen) return;
-    btn.disabled = state.resources.essence < gen.cost;
-  });
-  uiRefs.upgradeButtons.forEach((btn, id) => {
-    const up = upgrades.find((u) => u.id === id);
-    if (!up) return;
-    btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
-  });
-
-  // Prestige cooldown label
-  if (state.prestigeCooldown > 0) {
-    softPrestigeBtn.textContent = `⟳ Consolidation (${state.prestigeCooldown.toFixed(1)}s)`;
-    softPrestigeBtn.disabled = true;
-  } else {
-    softPrestigeBtn.textContent = "⟳ Consolidation";
-    softPrestigeBtn.disabled = false;
-  }
-
-  const status = document.getElementById("statusMessage");
-  if (state.dead) {
-    status.textContent = "Vous êtes hors service. Relancez la run pour reprendre.";
-    status.classList.add("visible");
-  } else {
-    status.textContent = "";
-    status.classList.remove("visible");
-  }
-}
-
 const loop = GameLoop({
   update(dt) {
     const clamped = Math.min(0.05, dt);
@@ -850,69 +623,11 @@ const loop = GameLoop({
   }
 });
 
-function initUI() {
-  pauseBtn.addEventListener("click", () => {
-    state.running = !state.running;
-    pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
-    saveGame();
-  });
-
-  resetProgressBtn.addEventListener("click", () => {
-    if (confirm("Effacer la sauvegarde et recommencer ?")) {
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.reload();
-    }
-  });
-
-  softPrestigeBtn.addEventListener("click", () => {
-    if (state.prestigeCooldown > 0) return;
-    prestige();
-  });
-
-  restartRunBtn.addEventListener("click", () => {
-    softReset();
-    saveGame();
-  });
-
-  togglePerfBtn.addEventListener("click", () => {
-    state.visualsLow = !state.visualsLow;
-    togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
-    debugPing(state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa");
-  });
-
-  debugBtns.giveEssence?.addEventListener("click", () => {
-    state.resources.essence += 1_000_000;
-    renderGenerators();
-    saveGame();
-    debugPing("+1M ⚡");
-  });
-  debugBtns.giveFragments?.addEventListener("click", () => {
-    state.resources.fragments += 1_000_000;
-    renderUpgrades();
-    saveGame();
-    debugPing("+1M ✦");
-  });
-  debugBtns.skipWave?.addEventListener("click", () => {
-    state.wave += 10;
-    state.spawnTimer = 0;
-    saveGame();
-    debugPing("+10 vagues");
-  });
-  debugBtns.nuke?.addEventListener("click", () => {
-    state.enemies = [];
-    state.fragmentsOrbs = [];
-    debugPing("☄️ Nuke", "#f472b6");
-  });
-
-  renderGenerators();
-  renderUpgrades();
-}
-
 function bootstrap() {
-  resizeCanvas(true);
+  resizeCanvas(canvas, state, true);
   loadSave();
   initUI();
-  window.addEventListener("resize", () => resizeCanvas());
+  window.addEventListener("resize", () => resizeCanvas(canvas, state));
   loop.start();
   setInterval(saveGame, 5000);
 }
