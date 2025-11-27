@@ -53,6 +53,13 @@
       </div>
 
       <div class="stat-block">
+        <h2>Performance</h2>
+        <div class="stat-row"><span><span class="icon">🎞️</span> FPS</span><span id="fpsValue">--</span></div>
+        <button id="toggleFps" class="ghost small">📈 Afficher le graph</button>
+        <canvas id="fpsGraph" class="fps-chart" width="260" height="120"></canvas>
+      </div>
+
+      <div class="stat-block">
         <h2>Production passive</h2>
         <div id="generators" class="list"></div>
       </div>
