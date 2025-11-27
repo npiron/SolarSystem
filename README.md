@@ -4,13 +4,23 @@ Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : pro
 
 ## Lancer
 
-Ouvrir `public/index.html` dans le navigateur (ou via un serveur statique). Le personnage se déplace/tire automatiquement, les ennemis arrivent en vagues infinies, et les gains passifs continuent hors ligne.
+- Ouvrir `index.html` à la racine du dépôt ou démarrer un petit serveur statique (`python -m http.server 8000`) puis visiter [http://localhost:8000](http://localhost:8000).
+- Le personnage se déplace/tire automatiquement, les ennemis arrivent en vagues infinies, et les gains passifs continuent hors ligne.
+
+## Déployer sur GitHub Pages
+
+Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie automatiquement le site statique depuis la racine.
+
+1. Dans l'onglet **Settings > Pages** du dépôt, choisir **Source: GitHub Actions**.
+2. Pousser sur `main` (ou `work`) : le workflow génère l'artefact et déploie sur GitHub Pages.
+3. L'URL finale est de la forme `https://<utilisateur>.github.io/<nom-du-depot>/` et sert directement `index.html` à la racine.
 
 ```
 .
+├── index.html           # Point d'entrée statique servi à la racine
 ├── public/              # Assets livrables (HTML + CSS)
 │   ├── assets/styles/   # Styles globaux
-│   └── index.html       # Point d'entrée statique
+│   └── index.html       # Redirection vers la racine (compatibilité)
 └── src/                 # Code source JS (modules et configuration)
     ├── config/          # Constantes, générateurs et upgrades déclarés
     └── main.js          # Boucle de jeu, état et logique UI
