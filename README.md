@@ -4,7 +4,17 @@ Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : pro
 
 ## Lancer
 
-Ouvrir `index.html` dans le navigateur. Le personnage se déplace/tire automatiquement, les ennemis arrivent en vagues infinies, et les gains passifs continuent hors ligne.
+Ouvrir `public/index.html` dans le navigateur (ou via un serveur statique). Le personnage se déplace/tire automatiquement, les ennemis arrivent en vagues infinies, et les gains passifs continuent hors ligne.
+
+```
+.
+├── public/              # Assets livrables (HTML + CSS)
+│   ├── assets/styles/   # Styles globaux
+│   └── index.html       # Point d'entrée statique
+└── src/                 # Code source JS (modules et configuration)
+    ├── config/          # Constantes, générateurs et upgrades déclarés
+    └── main.js          # Boucle de jeu, état et logique UI
+```
 
 Le canvas de l'arène tourne sur [Kontra.js](https://straker.github.io/kontra/), une micro-bibliothèque open source (~10k) qui gère la boucle de jeu et le rendu 2D sans dépendances serveur.
 
