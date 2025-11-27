@@ -39,13 +39,13 @@ const arenaLayers = {
 
 const hudTextOptions = {
   fontFamily: "Cinzel, EB Garamond, serif",
-  fontSize: 16,
+  fontSize: 14,
   fill: "#ffffff",
   stroke: "#0b1220",
-  strokeThickness: 4,
+  strokeThickness: 3,
   dropShadow: true,
   dropShadowColor: "#0b1220",
-  dropShadowBlur: 6,
+  dropShadowBlur: 4,
   dropShadowAlpha: 0.9,
   dropShadowDistance: 0,
 };
@@ -193,11 +193,11 @@ function setupScene() {
   renderObjects.hudLabels.gain = new PIXI.Text({ text: "", style: hudAccentStyle });
 
   const hudEntries = [
-    { label: renderObjects.hudLabels.wave, y: 40 },
-    { label: renderObjects.hudLabels.kills, y: 64 },
-    { label: renderObjects.hudLabels.fragments, y: 88 },
-    { label: renderObjects.hudLabels.essence, y: 112 },
-    { label: renderObjects.hudLabels.gain, y: 136 },
+    { label: renderObjects.hudLabels.wave, y: 28 },
+    { label: renderObjects.hudLabels.kills, y: 48 },
+    { label: renderObjects.hudLabels.fragments, y: 68 },
+    { label: renderObjects.hudLabels.essence, y: 88 },
+    { label: renderObjects.hudLabels.gain, y: 108 },
   ];
 
   hudEntries.forEach(({ label, y }) => {
@@ -208,13 +208,17 @@ function setupScene() {
 
   const x = 12;
   const y = 12;
-  const w = 210;
-  const h = 150;
+  const w = 190;
+  const h = 126;
   const r = 10;
   renderObjects.hudBg.beginFill(colors.hudBg, 0.45);
   renderObjects.hudBg.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
   renderObjects.hudBg.drawRoundedRect(x, y, w, h, r);
   renderObjects.hudBg.endFill();
+
+  // Scale down the HUD block so it doesn't eat too much screen real estate
+  renderObjects.hudLayer.scale.set(0.82);
+  renderObjects.hudLayer.position.set(4, 4);
 
   arenaLayers.overlay.addChild(renderObjects.floatingLayer, renderObjects.hudLayer);
 }
@@ -829,13 +833,13 @@ function render() {
       text: label,
       style: new PIXI.TextStyle({
         fontFamily: "Cinzel, EB Garamond, serif",
-        fontSize: 14,
+        fontSize: 12,
         fill: f.color || "#f8fafc",
         stroke: "#0f172a",
         strokeThickness: 2,
         dropShadow: true,
         dropShadowColor: "#0f172a",
-        dropShadowBlur: 4,
+        dropShadowBlur: 3,
         dropShadowAlpha: 0.7,
         dropShadowDistance: 0,
       }),
