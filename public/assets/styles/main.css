@@ -15,7 +15,7 @@
   --parchment: linear-gradient(135deg, rgba(255, 239, 210, 0.04), rgba(120, 96, 64, 0.04));
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath fill='%23d0b891' fill-opacity='0.08' d='M0 7h40v2H0zM0 19h40v2H0zM0 31h40v2H0z'/%3E%3C/svg%3E");
   --font-heading: "Cinzel", "Uncial Antiqua", serif;
-  --font-body: "Space Grotesk", "EB Garamond", Georgia, serif;
+  --font-body: "EB Garamond", "Uncial Antiqua", Georgia, serif;
   font-family: var(--font-body);
   color: var(--text);
 }
