@@ -113,6 +113,8 @@ p { margin: 0; }
   justify-content: space-between;
   align-items: center;
   margin-top: 6px;
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
 }
 
 .tooltip {
@@ -129,13 +131,14 @@ p { margin: 0; }
   max-width: 280px;
   background: radial-gradient(circle at 20% 20%, rgba(214, 185, 108, 0.35), transparent 50%),
     linear-gradient(135deg, rgba(35, 27, 18, 0.95), rgba(54, 39, 26, 0.9));
-  color: #fefcf5;
+  color: #ffffff;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(255, 220, 170, 0.3);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 240, 210, 0.18);
   font-size: 14px;
   line-height: 1.4;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
   opacity: 0;
   transform: translateY(-4px);
   pointer-events: none;
