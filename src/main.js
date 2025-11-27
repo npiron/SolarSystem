@@ -28,6 +28,24 @@ const arenaLayers = {
   overlay: new PIXI.Container(),
 };
 
+const hudTextStyle = new PIXI.TextStyle({
+  fontFamily: "Space Grotesk",
+  fontSize: 16,
+  fill: "#e2e8f0",
+  stroke: "#0f172a",
+  strokeThickness: 3,
+  dropShadow: true,
+  dropShadowColor: "#0f172a",
+  dropShadowBlur: 6,
+  dropShadowAlpha: 0.65,
+  dropShadowDistance: 0,
+});
+
+const hudAccentStyle = new PIXI.TextStyle({
+  ...hudTextStyle.toJSON(),
+  fill: "#f472b6",
+});
+
 const renderObjects = {
   backgroundContainer: new PIXI.Container(),
   grid: new PIXI.Graphics(),
@@ -120,26 +138,11 @@ function setupScene() {
   );
 
   renderObjects.hudLayer.addChild(renderObjects.hudBg);
-  renderObjects.hudLabels.wave = new PIXI.Text({
-    text: "",
-    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
-  });
-  renderObjects.hudLabels.kills = new PIXI.Text({
-    text: "",
-    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
-  });
-  renderObjects.hudLabels.fragments = new PIXI.Text({
-    text: "",
-    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
-  });
-  renderObjects.hudLabels.essence = new PIXI.Text({
-    text: "",
-    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
-  });
-  renderObjects.hudLabels.gain = new PIXI.Text({
-    text: "",
-    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#f472b6" }
-  });
+  renderObjects.hudLabels.wave = new PIXI.Text({ text: "", style: hudTextStyle });
+  renderObjects.hudLabels.kills = new PIXI.Text({ text: "", style: hudTextStyle });
+  renderObjects.hudLabels.fragments = new PIXI.Text({ text: "", style: hudTextStyle });
+  renderObjects.hudLabels.essence = new PIXI.Text({ text: "", style: hudTextStyle });
+  renderObjects.hudLabels.gain = new PIXI.Text({ text: "", style: hudAccentStyle });
 
   const hudEntries = [
     { label: renderObjects.hudLabels.wave, y: 40 },
@@ -177,10 +180,10 @@ const colors = {
   fragment: PIXI.utils.string2hex("#f472b6"),
   fragmentRing: PIXI.utils.string2hex("#f472b6"),
   elite: PIXI.utils.string2hex("#f97316"),
-  hpBg: 0x000000,
+  hpBg: 0x0b1220,
   hpFg: PIXI.utils.string2hex("#22c55e"),
-  hudBg: 0x000000,
-  hudBorder: 0xffffff,
+  hudBg: 0x0f172a,
+  hudBorder: 0xe2e8f0,
 };
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
@@ -646,14 +649,23 @@ function render() {
 
   renderObjects.floatingLayer.removeChildren();
   state.floatingText.forEach((f) => {
+    const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
     const text = new PIXI.Text({
-      text: f.text,
-      style: {
+      text: label,
+      style: new PIXI.TextStyle({
         fontFamily: "Space Grotesk",
         fontSize: 14,
-        fill: f.color,
-      },
+        fill: f.color || "#f8fafc",
+        stroke: "#0f172a",
+        strokeThickness: 2,
+        dropShadow: true,
+        dropShadowColor: "#0f172a",
+        dropShadowBlur: 4,
+        dropShadowAlpha: 0.7,
+        dropShadowDistance: 0,
+      }),
     });
+    text.anchor.set(0.5, 1);
     text.alpha = Math.max(0, f.life);
     text.x = f.x;
     text.y = f.y - (1.5 - f.life) * 24;
