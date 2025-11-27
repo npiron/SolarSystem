@@ -158,13 +158,16 @@ function loadSave() {
   try {
     const save = JSON.parse(raw);
     Object.assign(state.resources, save.resources || {});
+    // Support both save formats: idleMultiplier stored inside resources (current)
+    // or at the root (legacy).
     state.wave = save.wave || state.wave;
     state.player.damage = save.player?.damage ?? state.player.damage;
     state.player.fireDelay = save.player?.fireDelay ?? state.player.fireDelay;
     state.player.projectiles = save.player?.projectiles ?? state.player.projectiles;
     state.player.regen = save.player?.regen ?? state.player.regen;
     state.player.range = save.player?.range ?? state.player.range;
-    state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
+    state.resources.idleMultiplier =
+      save.resources?.idleMultiplier ?? save.idleMultiplier ?? state.resources.idleMultiplier;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
         generators[idx].level = g.level || 0;
@@ -206,7 +209,6 @@ function saveGame() {
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
-    idleMultiplier: state.resources.idleMultiplier,
     lastSeen: Date.now()
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
