@@ -47,10 +47,15 @@ export function formatNumber(value) {
 }
 
 export function addFloatingText(state, text, x, y, color = "#fef08a") {
-  const safeText = typeof text === "string" || typeof text === "number" ? text : text?.label ?? "";
+  const rawLabel = typeof text === "string" || typeof text === "number" ? text : text?.label;
+  if (rawLabel === undefined || rawLabel === null) return;
+  const safeText = typeof rawLabel === "string" || typeof rawLabel === "number" ? rawLabel : "";
+  if (!safeText) return;
+
   if (state.floatingText.length >= FX_BUDGET.floatingText) {
     state.floatingText.shift();
   }
+
   const life = state.visualsLow ? 0.9 : 1.4;
   state.floatingText.push({ text: safeText, x, y, life, color });
 }

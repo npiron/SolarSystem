@@ -31,13 +31,13 @@ const arenaLayers = {
 const hudTextStyle = new PIXI.TextStyle({
   fontFamily: "Space Grotesk",
   fontSize: 16,
-  fill: "#e2e8f0",
-  stroke: "#0f172a",
-  strokeThickness: 3,
+  fill: "#f8fafc",
+  stroke: "#0b1220",
+  strokeThickness: 4,
   dropShadow: true,
-  dropShadowColor: "#0f172a",
+  dropShadowColor: "#0b1220",
   dropShadowBlur: 6,
-  dropShadowAlpha: 0.65,
+  dropShadowAlpha: 0.75,
   dropShadowDistance: 0,
 });
 
