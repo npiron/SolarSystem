@@ -28,7 +28,154 @@ const arenaLayers = {
   overlay: new PIXI.Container(),
 };
 
+const renderObjects = {
+  backgroundContainer: new PIXI.Container(),
+  grid: new PIXI.Graphics(),
+  pattern: null,
+  aura: new PIXI.Graphics(),
+  playerSprite: null,
+  playerFallback: new PIXI.Graphics(),
+  bullets: new PIXI.Graphics(),
+  bulletsGlow: new PIXI.Graphics(),
+  fragments: new PIXI.Graphics(),
+  fragmentRings: new PIXI.Graphics(),
+  enemies: new PIXI.Graphics(),
+  enemyHp: new PIXI.Graphics(),
+  floatingLayer: new PIXI.Container(),
+  hudLayer: new PIXI.Container(),
+  hudBg: new PIXI.Graphics(),
+  hudLabels: {
+    wave: null,
+    kills: null,
+    fragments: null,
+    essence: null,
+    gain: null,
+  },
+};
+
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
+
+function buildBackground(width, height) {
+  renderObjects.backgroundContainer.removeChildren();
+  renderObjects.pattern = null;
+
+  if (!state.visualsLow) {
+    renderObjects.grid.clear();
+    renderObjects.grid.lineStyle({ color: 0xffffff, alpha: 0.04, width: 1 });
+    for (let x = 0; x < width; x += 60) {
+      renderObjects.grid.moveTo(x, 0);
+      renderObjects.grid.lineTo(x, height);
+    }
+    for (let y = 0; y < height; y += 60) {
+      renderObjects.grid.moveTo(0, y);
+      renderObjects.grid.lineTo(width, y);
+    }
+    renderObjects.backgroundContainer.addChild(renderObjects.grid);
+
+    if (textures.background) {
+      renderObjects.pattern = new PIXI.Sprite(textures.background);
+      renderObjects.pattern.alpha = 0.12;
+      renderObjects.pattern.tint = 0xe8dfce;
+      const scale = Math.max(
+        width / renderObjects.pattern.texture.width,
+        height / renderObjects.pattern.texture.height
+      );
+      renderObjects.pattern.scale.set(scale);
+      renderObjects.pattern.position.set(
+        (width - renderObjects.pattern.width) / 2,
+        (height - renderObjects.pattern.height) / 2
+      );
+      renderObjects.backgroundContainer.addChildAt(renderObjects.pattern, 0);
+    }
+  }
+}
+
+function setupScene() {
+  arenaLayers.background.addChild(renderObjects.backgroundContainer);
+
+  renderObjects.aura.beginFill(colors.player, 0.12);
+  renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+  renderObjects.aura.endFill();
+  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
+  renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
+  renderObjects.aura.lineStyle(0);
+
+  if (textures.player) {
+    renderObjects.playerSprite = new PIXI.Sprite(textures.player);
+    renderObjects.playerSprite.anchor.set(0.5);
+    renderObjects.playerSprite.tint = colors.player;
+  } else {
+    renderObjects.playerFallback.beginFill(colors.player, 1);
+    renderObjects.playerFallback.drawCircle(0, 0, state.player.radius);
+    renderObjects.playerFallback.endFill();
+  }
+
+  const playerContainer = new PIXI.Container();
+  playerContainer.addChild(renderObjects.aura);
+  if (renderObjects.playerSprite) {
+    playerContainer.addChild(renderObjects.playerSprite);
+  } else {
+    playerContainer.addChild(renderObjects.playerFallback);
+  }
+
+  arenaLayers.entities.addChild(
+    playerContainer,
+    renderObjects.bullets,
+    renderObjects.bulletsGlow,
+    renderObjects.fragments,
+    renderObjects.fragmentRings,
+    renderObjects.enemies,
+    renderObjects.enemyHp
+  );
+
+  renderObjects.hudLayer.addChild(renderObjects.hudBg);
+  renderObjects.hudLabels.wave = new PIXI.Text({
+    text: "",
+    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
+  });
+  renderObjects.hudLabels.kills = new PIXI.Text({
+    text: "",
+    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
+  });
+  renderObjects.hudLabels.fragments = new PIXI.Text({
+    text: "",
+    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
+  });
+  renderObjects.hudLabels.essence = new PIXI.Text({
+    text: "",
+    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#e2e8f0" }
+  });
+  renderObjects.hudLabels.gain = new PIXI.Text({
+    text: "",
+    style: { fontFamily: "Space Grotesk", fontSize: 16, fill: "#f472b6" }
+  });
+
+  const hudEntries = [
+    { label: renderObjects.hudLabels.wave, y: 40 },
+    { label: renderObjects.hudLabels.kills, y: 64 },
+    { label: renderObjects.hudLabels.fragments, y: 88 },
+    { label: renderObjects.hudLabels.essence, y: 112 },
+    { label: renderObjects.hudLabels.gain, y: 136 },
+  ];
+
+  hudEntries.forEach(({ label, y }) => {
+    label.x = 24;
+    label.y = y;
+    renderObjects.hudLayer.addChild(label);
+  });
+
+  const x = 12;
+  const y = 12;
+  const w = 210;
+  const h = 150;
+  const r = 10;
+  renderObjects.hudBg.beginFill(colors.hudBg, 0.45);
+  renderObjects.hudBg.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
+  renderObjects.hudBg.drawRoundedRect(x, y, w, h, r);
+  renderObjects.hudBg.endFill();
+
+  arenaLayers.overlay.addChild(renderObjects.floatingLayer, renderObjects.hudLayer);
+}
 
 const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
 const colors = {
@@ -128,6 +275,7 @@ function resizeCanvas(center = false) {
   const width = rect?.width || canvas.width || 960;
   const height = rect?.height || canvas.height || 600;
   app.renderer.resize(width, height);
+  buildBackground(width, height);
   if (center) {
     state.player.x = width / 2;
     state.player.y = height / 2;
@@ -430,208 +578,108 @@ function prestige() {
 function render() {
   const { width, height } = app.renderer;
 
-  arenaLayers.background.removeChildren();
-  arenaLayers.entities.removeChildren();
-  arenaLayers.overlay.removeChildren();
-
-  if (!state.visualsLow) {
-    const background = new PIXI.Container();
-    if (textures.background) {
-      const backgroundSprite = new PIXI.Sprite(textures.background);
-      backgroundSprite.alpha = 0.12;
-      backgroundSprite.tint = 0xe8dfce;
-
-      const scale = Math.max(
-        width / backgroundSprite.texture.width,
-        height / backgroundSprite.texture.height
-      );
-      backgroundSprite.scale.set(scale);
-      backgroundSprite.position.set(
-        (width - backgroundSprite.width) / 2,
-        (height - backgroundSprite.height) / 2
-      );
-
-      background.addChild(backgroundSprite);
-    }
-    const grid = new PIXI.Graphics();
-    grid.lineStyle({ color: 0xffffff, alpha: 0.04, width: 1 });
-    for (let x = 0; x < width; x += 60) {
-      grid.moveTo(x, 0);
-      grid.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += 60) {
-      grid.moveTo(0, y);
-      grid.lineTo(width, y);
-    }
-    background.addChild(grid);
-    arenaLayers.background.addChild(background);
+  if (state.visualsLow) {
+    renderObjects.backgroundContainer.removeChildren();
+  } else if (!renderObjects.backgroundContainer.children.length) {
+    buildBackground(width, height);
+  } else if (renderObjects.pattern) {
+    const scale = Math.max(
+      width / renderObjects.pattern.texture.width,
+      height / renderObjects.pattern.texture.height
+    );
+    renderObjects.pattern.scale.set(scale);
+    renderObjects.pattern.position.set(
+      (width - renderObjects.pattern.width) / 2,
+      (height - renderObjects.pattern.height) / 2
+    );
   }
 
-  const entities = new PIXI.Container();
-  const playerContainer = new PIXI.Container();
-  const aura = new PIXI.Graphics();
-  aura.beginFill(colors.player, 0.12);
-  aura.drawCircle(0, 0, state.player.radius + 16);
-  aura.endFill();
-  aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
-  aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
-  aura.lineStyle(0);
-  aura.position.set(state.player.x, state.player.y);
-  playerContainer.addChild(aura);
+  renderObjects.aura.clear();
+  renderObjects.aura.beginFill(colors.player, 0.12);
+  renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+  renderObjects.aura.endFill();
+  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
+  renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
+  renderObjects.aura.lineStyle(0);
+  renderObjects.aura.position.set(state.player.x, state.player.y);
 
-  if (textures.player) {
-    const player = new PIXI.Sprite(textures.player);
-    player.anchor.set(0.5);
-    player.tint = colors.player;
-    player.width = state.player.radius * 3;
-    player.height = state.player.radius * 3;
-    player.position.set(state.player.x, state.player.y);
-    playerContainer.addChild(player);
+  const sprite = renderObjects.playerSprite;
+  if (sprite) {
+    sprite.width = state.player.radius * 3;
+    sprite.height = state.player.radius * 3;
+    sprite.position.set(state.player.x, state.player.y);
   } else {
-    const fallback = new PIXI.Graphics();
-    fallback.beginFill(colors.player, 1);
-    fallback.drawCircle(0, 0, state.player.radius);
-    fallback.endFill();
-    fallback.position.set(state.player.x, state.player.y);
-    playerContainer.addChild(fallback);
+    renderObjects.playerFallback.position.set(state.player.x, state.player.y);
   }
 
-  entities.addChild(playerContainer);
+  renderObjects.bullets.clear();
+  renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
+  state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
+  renderObjects.bullets.endFill();
 
-  const bulletsLayer = new PIXI.Graphics();
-  bulletsLayer.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
-  state.bullets.forEach((b) => {
-    bulletsLayer.drawCircle(b.x, b.y, 4);
-  });
-  bulletsLayer.endFill();
+  renderObjects.bulletsGlow.clear();
   if (!state.visualsLow) {
-    bulletsLayer.beginFill(colors.bulletHigh, 0.25);
-    state.bullets.forEach((b) => {
-      bulletsLayer.drawCircle(b.x, b.y, 8);
-    });
-    bulletsLayer.endFill();
+    renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
+    state.bullets.forEach((b) => renderObjects.bulletsGlow.drawCircle(b.x, b.y, 8));
+    renderObjects.bulletsGlow.endFill();
   }
-  entities.addChild(bulletsLayer);
 
-  const fragmentsLayer = new PIXI.Container();
+  renderObjects.fragments.clear();
+  renderObjects.fragments.beginFill(colors.fragment);
   state.fragmentsOrbs.forEach((f) => {
-    if (textures.fragment) {
-      const frag = new PIXI.Sprite(textures.fragment);
-      frag.anchor.set(0.5);
-      frag.tint = colors.fragment;
-      frag.width = 14;
-      frag.height = 14;
-      frag.position.set(f.x, f.y);
-      fragmentsLayer.addChild(frag);
-    } else {
-      const frag = new PIXI.Graphics();
-      frag.beginFill(colors.fragment);
-      frag.drawCircle(0, 0, 6);
-      frag.endFill();
-      frag.position.set(f.x, f.y);
-      fragmentsLayer.addChild(frag);
-    }
-    if (!state.visualsLow) {
-      const ring = new PIXI.Graphics();
-      ring.lineStyle({ color: colors.fragmentRing, alpha: 0.5, width: 2 });
-      ring.drawCircle(f.x, f.y, 11);
-      fragmentsLayer.addChild(ring);
-    }
+    renderObjects.fragments.drawCircle(f.x, f.y, 6);
   });
-  entities.addChild(fragmentsLayer);
+  renderObjects.fragments.endFill();
 
-  const enemiesLayer = new PIXI.Container();
+  renderObjects.fragmentRings.clear();
+  if (!state.visualsLow) {
+    renderObjects.fragmentRings.lineStyle({ color: colors.fragmentRing, alpha: 0.5, width: 2 });
+    state.fragmentsOrbs.forEach((f) => {
+      renderObjects.fragmentRings.drawCircle(f.x, f.y, 11);
+    });
+    renderObjects.fragmentRings.lineStyle(0);
+  }
+
+  renderObjects.enemies.clear();
+  renderObjects.enemyHp.clear();
   state.enemies.forEach((e, idx) => {
-    if (textures.enemy) {
-      const enemy = new PIXI.Sprite(textures.enemy);
-      enemy.anchor.set(0.5);
-      enemy.tint = e.elite ? colors.elite : paletteHex[idx % paletteHex.length];
-      enemy.width = e.radius * 2.4;
-      enemy.height = e.radius * 2.4;
-      enemy.position.set(e.x, e.y);
-      enemiesLayer.addChild(enemy);
-    } else {
-      const enemy = new PIXI.Graphics();
-      enemy.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
-      enemy.drawCircle(0, 0, e.radius);
-      enemy.endFill();
-      enemy.position.set(e.x, e.y);
-      enemiesLayer.addChild(enemy);
-    }
-    if (!state.visualsLow || e.hitThisFrame) {
-      const hpBg = new PIXI.Graphics();
-      hpBg.beginFill(colors.hpBg, 0.4);
-      hpBg.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
-      hpBg.endFill();
-      enemiesLayer.addChild(hpBg);
+    renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+    renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+    renderObjects.enemies.endFill();
 
-      const hpFg = new PIXI.Graphics();
-      hpFg.beginFill(colors.hpFg);
-      hpFg.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
-      hpFg.endFill();
-      enemiesLayer.addChild(hpFg);
+    if (!state.visualsLow || e.hitThisFrame) {
+      renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
+      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
+      renderObjects.enemyHp.endFill();
+
+      renderObjects.enemyHp.beginFill(colors.hpFg);
+      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
+      renderObjects.enemyHp.endFill();
     }
   });
-  entities.addChild(enemiesLayer);
 
-  arenaLayers.entities.addChild(entities);
-
-  const floatingLayer = new PIXI.Container();
+  renderObjects.floatingLayer.removeChildren();
   state.floatingText.forEach((f) => {
     const text = new PIXI.Text({
       text: f.text,
       style: {
         fontFamily: "Space Grotesk",
         fontSize: 14,
-        fill: f.color
-      }
+        fill: f.color,
+      },
     });
     text.alpha = Math.max(0, f.life);
     text.x = f.x;
     text.y = f.y - (1.5 - f.life) * 24;
-    floatingLayer.addChild(text);
-  });
-  arenaLayers.overlay.addChild(floatingLayer);
-
-  const hudLayer = new PIXI.Container();
-  const hud = new PIXI.Graphics();
-  const x = 12;
-  const y = 12;
-  const w = 210;
-  const h = 150;
-  const r = 10;
-  hud.beginFill(colors.hudBg, 0.45);
-  hud.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
-  hud.drawRoundedRect(x, y, w, h, r);
-  hud.endFill();
-  hudLayer.addChild(hud);
-
-  const hudTexts = [
-    { text: `${icons.wave} Vague ${state.wave.toFixed(1)}`, y: 40, color: "#e2e8f0" },
-    { text: `⚔️ Kills ${state.runStats.kills}`, y: 64, color: "#e2e8f0" },
-    { text: `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, y: 88, color: "#e2e8f0" },
-    { text: `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, y: 112, color: "#e2e8f0" }
-  ];
-
-  if (state.gainTicker.fragments > 0) {
-    hudTexts.push({ text: `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, y: 136, color: "#f472b6" });
-  }
-
-  hudTexts.forEach(({ text, y: ty, color }) => {
-    const label = new PIXI.Text({
-      text,
-      style: {
-        fontFamily: "Space Grotesk",
-        fontSize: 16,
-        fill: color
-      }
-    });
-    label.x = 24;
-    label.y = ty;
-    hudLayer.addChild(label);
+    renderObjects.floatingLayer.addChild(text);
   });
 
-  arenaLayers.overlay.addChild(hudLayer);
+  renderObjects.hudLabels.wave.text = `${icons.wave} Vague ${state.wave.toFixed(1)}`;
+  renderObjects.hudLabels.kills.text = `⚔️ Kills ${state.runStats.kills}`;
+  renderObjects.hudLabels.fragments.text = `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`;
+  renderObjects.hudLabels.essence.text = `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`;
+  renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
+  renderObjects.hudLabels.gain.visible = state.gainTicker.fragments > 0;
 }
 
 app.ticker.add((delta) => {
@@ -668,6 +716,7 @@ function initUI() {
   togglePerfBtn.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
+    buildBackground(app.renderer.width, app.renderer.height);
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
     );
@@ -704,6 +753,8 @@ function initUI() {
 async function bootstrap() {
   resizeCanvas(true);
   await loadTextures();
+  setupScene();
+  buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
   initUI();
   window.addEventListener("resize", () => resizeCanvas());
