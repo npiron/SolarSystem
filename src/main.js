@@ -21,6 +21,10 @@ const assetPaths = {
   enemy: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1173.png", import.meta.url).href
 };
 const textures = {};
+const spritePools = {
+  fragments: [],
+  enemies: []
+};
 
 const arenaLayers = {
   background: new PIXI.Container(),
@@ -69,8 +73,18 @@ const renderObjects = {
   playerFallback: new PIXI.Graphics(),
   bullets: new PIXI.Graphics(),
   bulletsGlow: new PIXI.Graphics(),
+  fragmentSprites: new PIXI.ParticleContainer(FX_BUDGET.fragments, {
+    scale: true,
+    alpha: true,
+    tint: true
+  }),
   fragments: new PIXI.Graphics(),
   fragmentRings: new PIXI.Graphics(),
+  enemySprites: new PIXI.ParticleContainer(400, {
+    scale: true,
+    alpha: true,
+    tint: true
+  }),
   enemies: new PIXI.Graphics(),
   enemyHp: new PIXI.Graphics(),
   floatingLayer: new PIXI.Container(),
@@ -86,6 +100,18 @@ const renderObjects = {
 };
 
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
+
+function recycleSprites(container, pool) {
+  const removed = container.removeChildren();
+  removed.forEach((sprite) => pool.push(sprite));
+}
+
+function acquireSprite(pool, texture, tint = 0xffffff) {
+  const sprite = pool.pop() || new PIXI.Sprite(texture);
+  sprite.anchor.set(0.5);
+  sprite.tint = tint;
+  return sprite;
+}
 
 function buildBackground(width, height) {
   renderObjects.backgroundContainer.removeChildren();
@@ -145,8 +171,10 @@ function setupScene() {
     playerContainer,
     renderObjects.bullets,
     renderObjects.bulletsGlow,
+    renderObjects.fragmentSprites,
     renderObjects.fragments,
     renderObjects.fragmentRings,
+    renderObjects.enemySprites,
     renderObjects.enemies,
     renderObjects.enemyHp
   );
@@ -693,8 +721,9 @@ function render() {
 
   const sprite = renderObjects.playerSprite;
   if (sprite) {
-    sprite.width = state.player.radius * 3;
-    sprite.height = state.player.radius * 3;
+    const baseSize = textures.player?.width || sprite.width || 64;
+    const scale = (state.player.radius * 3) / baseSize;
+    sprite.scale.set(scale);
     sprite.position.set(state.player.x, state.player.y);
   } else {
     renderObjects.playerFallback.position.set(state.player.x, state.player.y);
@@ -712,12 +741,29 @@ function render() {
     renderObjects.bulletsGlow.endFill();
   }
 
-  renderObjects.fragments.clear();
-  renderObjects.fragments.beginFill(colors.fragment);
-  state.fragmentsOrbs.forEach((f) => {
-    renderObjects.fragments.drawCircle(f.x, f.y, 6);
-  });
-  renderObjects.fragments.endFill();
+  const hasFragmentSprites = Boolean(textures.fragment);
+  renderObjects.fragmentSprites.visible = hasFragmentSprites;
+  renderObjects.fragments.visible = !hasFragmentSprites;
+
+  if (hasFragmentSprites) {
+    recycleSprites(renderObjects.fragmentSprites, spritePools.fragments);
+    state.fragmentsOrbs.forEach((f) => {
+      const spriteFragment = acquireSprite(spritePools.fragments, textures.fragment, colors.fragment);
+      const baseSize = textures.fragment.width || 64;
+      const scale = 12 / baseSize;
+      spriteFragment.alpha = state.visualsLow ? 0.85 : 1;
+      spriteFragment.scale.set(scale);
+      spriteFragment.position.set(f.x, f.y);
+      renderObjects.fragmentSprites.addChild(spriteFragment);
+    });
+  } else {
+    renderObjects.fragments.clear();
+    renderObjects.fragments.beginFill(colors.fragment);
+    state.fragmentsOrbs.forEach((f) => {
+      renderObjects.fragments.drawCircle(f.x, f.y, 6);
+    });
+    renderObjects.fragments.endFill();
+  }
 
   renderObjects.fragmentRings.clear();
   if (!state.visualsLow) {
@@ -728,13 +774,33 @@ function render() {
     renderObjects.fragmentRings.lineStyle(0);
   }
 
-  renderObjects.enemies.clear();
-  renderObjects.enemyHp.clear();
-  state.enemies.forEach((e, idx) => {
-    renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
-    renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
-    renderObjects.enemies.endFill();
+  const hasEnemySprites = Boolean(textures.enemy);
+  renderObjects.enemySprites.visible = hasEnemySprites;
+  renderObjects.enemies.visible = !hasEnemySprites;
 
+  if (hasEnemySprites) {
+    recycleSprites(renderObjects.enemySprites, spritePools.enemies);
+    state.enemies.forEach((e, idx) => {
+      const tint = e.elite ? colors.elite : paletteHex[idx % paletteHex.length];
+      const spriteEnemy = acquireSprite(spritePools.enemies, textures.enemy, tint);
+      const baseSize = textures.enemy.width || 64;
+      const scale = (e.radius * 2) / baseSize;
+      spriteEnemy.alpha = state.visualsLow ? 0.7 : 1;
+      spriteEnemy.scale.set(scale);
+      spriteEnemy.position.set(e.x, e.y);
+      renderObjects.enemySprites.addChild(spriteEnemy);
+    });
+  } else {
+    renderObjects.enemies.clear();
+    state.enemies.forEach((e, idx) => {
+      renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+      renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+      renderObjects.enemies.endFill();
+    });
+  }
+
+  renderObjects.enemyHp.clear();
+  state.enemies.forEach((e) => {
     if (!state.visualsLow || e.hitThisFrame) {
       renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
       renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
