@@ -41,12 +41,12 @@ const hudTextOptions = {
   dropShadowDistance: 0,
 };
 
-const hudTextStyle = new PIXI.TextStyle(hudTextOptions);
+const hudTextStyle = { ...hudTextOptions };
 
-const hudAccentStyle = new PIXI.TextStyle({
+const hudAccentStyle = {
   ...hudTextOptions,
   fill: "#f472b6",
-});
+};
 
 const renderObjects = {
   backgroundContainer: new PIXI.Container(),
