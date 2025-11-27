@@ -1,5 +1,5 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
+import { FX_BUDGET, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
