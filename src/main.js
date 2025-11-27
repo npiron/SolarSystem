@@ -437,10 +437,21 @@ function render() {
   if (!state.visualsLow) {
     const background = new PIXI.Container();
     if (textures.background) {
-      const pattern = new PIXI.TilingSprite(textures.background, width, height);
-      pattern.alpha = 0.12;
-      pattern.tint = 0xe8dfce;
-      background.addChild(pattern);
+      const backgroundSprite = new PIXI.Sprite(textures.background);
+      backgroundSprite.alpha = 0.12;
+      backgroundSprite.tint = 0xe8dfce;
+
+      const scale = Math.max(
+        width / backgroundSprite.texture.width,
+        height / backgroundSprite.texture.height
+      );
+      backgroundSprite.scale.set(scale);
+      backgroundSprite.position.set(
+        (width - backgroundSprite.width) / 2,
+        (height - backgroundSprite.height) / 2
+      );
+
+      background.addChild(backgroundSprite);
     }
     const grid = new PIXI.Graphics();
     grid.lineStyle({ color: 0xffffff, alpha: 0.04, width: 1 });
