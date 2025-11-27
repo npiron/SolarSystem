@@ -7,6 +7,12 @@ export const FX_BUDGET = {
   fragments: 200
 };
 
+export const BULLET_LIMITS = {
+  maxSpeed: 520,
+  maxLifetime: 2.4,
+  offscreenPadding: 120
+};
+
 export const palette = ["#22d3ee", "#a78bfa", "#f472b6", "#f97316", "#34d399"];
 export const icons = {
   essence: "⚡",

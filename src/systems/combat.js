@@ -1,4 +1,4 @@
-import { CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.js";
+import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.js";
 import { addFloatingText, registerFragmentGain } from "./hud.js";
 
 function nearestEnemy(state) {
@@ -38,21 +38,24 @@ function fire(state) {
   const baseAngle = baseTrack + state.player.spin;
   const ringStep = TAU / count;
 
+  const bulletSpeed = Math.min(state.player.bulletSpeed, BULLET_LIMITS.maxSpeed);
+  const lifetime = Math.min(1.2 * state.player.range, BULLET_LIMITS.maxLifetime);
+
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= FX_BUDGET.bullets) break;
     const angle = count > 1 ? baseAngle + i * ringStep : baseAngle;
     state.bullets.push({
       x: state.player.x,
       y: state.player.y,
-      dx: Math.cos(angle) * state.player.bulletSpeed,
-      dy: Math.sin(angle) * state.player.bulletSpeed,
-      life: 1.2 * state.player.range,
+      dx: Math.cos(angle) * bulletSpeed,
+      dy: Math.sin(angle) * bulletSpeed,
+      life: lifetime,
       pierce: state.player.pierce
     });
   }
 }
 
-export function updateCombat(state, dt, _canvas) {
+export function updateCombat(state, dt, canvas) {
   state.player.fireTimer -= dt;
   state.player.spin = (state.player.spin + dt * 1.2) % TAU;
 
@@ -67,6 +70,15 @@ export function updateCombat(state, dt, _canvas) {
     b.x += b.dx * dt;
     b.y += b.dy * dt;
     b.life -= dt;
+
+    if (
+      b.x < -BULLET_LIMITS.offscreenPadding ||
+      b.x > canvas.width + BULLET_LIMITS.offscreenPadding ||
+      b.y < -BULLET_LIMITS.offscreenPadding ||
+      b.y > canvas.height + BULLET_LIMITS.offscreenPadding
+    ) {
+      b.life = -1;
+    }
   });
   if (state.bullets.length > FX_BUDGET.bullets) {
     state.bullets.splice(0, state.bullets.length - FX_BUDGET.bullets);
