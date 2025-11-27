@@ -1,4 +1,4 @@
-import { init, GameLoop } from "https://unpkg.com/kontra@9/kontra.mjs";
+import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { STORAGE_KEY, TAU, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
@@ -6,7 +6,36 @@ import { updateCombat } from "./systems/combat.js";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
 import { updateSpawn } from "./systems/spawn.js";
 
-const { canvas, context: ctx } = init("arena");
+const canvas = document.getElementById("arena");
+const app = new PIXI.Application({
+  view: canvas,
+  antialias: true,
+  backgroundAlpha: 0,
+});
+app.stop();
+
+const arenaLayers = {
+  background: new PIXI.Container(),
+  entities: new PIXI.Container(),
+  overlay: new PIXI.Container(),
+};
+
+app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
+
+const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
+const colors = {
+  player: PIXI.utils.string2hex("#22d3ee"),
+  collect: PIXI.utils.string2hex("#34d399"),
+  bulletLow: PIXI.utils.string2hex("#e2e8f0"),
+  bulletHigh: PIXI.utils.string2hex("#fef3c7"),
+  fragment: PIXI.utils.string2hex("#f472b6"),
+  fragmentRing: PIXI.utils.string2hex("#f472b6"),
+  elite: PIXI.utils.string2hex("#f97316"),
+  hpBg: 0x000000,
+  hpFg: PIXI.utils.string2hex("#22c55e"),
+  hudBg: 0x000000,
+  hudBorder: 0xffffff,
+};
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
 const softPrestigeBtn = document.getElementById("softPrestige");
@@ -48,8 +77,8 @@ const state = {
     essence: 0
   },
   player: {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+    x: app.renderer.width / 2,
+    y: app.renderer.height / 2,
     radius: 12,
     hp: 120,
     maxHp: 120,
@@ -81,17 +110,19 @@ const state = {
 };
 
 function clampPlayerToBounds() {
-  state.player.x = Math.max(30, Math.min(canvas.width - 30, state.player.x));
-  state.player.y = Math.max(30, Math.min(canvas.height - 30, state.player.y));
+  const { width, height } = app.renderer;
+  state.player.x = Math.max(30, Math.min(width - 30, state.player.x));
+  state.player.y = Math.max(30, Math.min(height - 30, state.player.y));
 }
 
 function resizeCanvas(center = false) {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  const rect = canvas.parentElement?.getBoundingClientRect();
+  const width = rect?.width || canvas.width || 960;
+  const height = rect?.height || canvas.height || 600;
+  app.renderer.resize(width, height);
   if (center) {
-    state.player.x = canvas.width / 2;
-    state.player.y = canvas.height / 2;
+    state.player.x = width / 2;
+    state.player.y = height / 2;
   }
   clampPlayerToBounds();
 }
@@ -351,8 +382,8 @@ function softReset() {
   state.wave = 1;
   state.player.hp = state.player.maxHp;
   state.player.fireTimer = 0;
-  state.player.x = canvas.width / 2;
-  state.player.y = canvas.height / 2;
+  state.player.x = app.renderer.width / 2;
+  state.player.y = app.renderer.height / 2;
   state.enemies = [];
   state.bullets = [];
   state.floatingText = [];
@@ -377,151 +408,137 @@ function prestige() {
 }
 
 function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const { width, height } = app.renderer;
+
+  arenaLayers.background.removeChildren();
+  arenaLayers.entities.removeChildren();
+  arenaLayers.overlay.removeChildren();
 
   if (!state.visualsLow) {
-    // Background grid
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.03)";
-    for (let x = 0; x < canvas.width; x += 60) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
+    const grid = new PIXI.Graphics();
+    grid.lineStyle({ color: 0xffffff, alpha: 0.03, width: 1 });
+    for (let x = 0; x < width; x += 60) {
+      grid.moveTo(x, 0);
+      grid.lineTo(x, height);
     }
-    for (let y = 0; y < canvas.height; y += 60) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
+    for (let y = 0; y < height; y += 60) {
+      grid.moveTo(0, y);
+      grid.lineTo(width, y);
     }
-    ctx.restore();
+    arenaLayers.background.addChild(grid);
   }
 
-  // Player trail
-  ctx.save();
-  ctx.fillStyle = "rgba(34,211,238,0.15)";
-  ctx.beginPath();
-  ctx.arc(state.player.x, state.player.y, state.player.radius + 12, 0, TAU);
-  ctx.fill();
-  ctx.restore();
+  const entities = new PIXI.Graphics();
+  entities.beginFill(colors.player, 0.15);
+  entities.drawCircle(state.player.x, state.player.y, state.player.radius + 12);
+  entities.endFill();
 
-  // Player
-  if (state.visualsLow) {
-    ctx.fillStyle = "#22d3ee";
-  } else {
-    const gradient = ctx.createRadialGradient(
-      state.player.x - 4,
-      state.player.y - 4,
-      4,
-      state.player.x,
-      state.player.y,
-      state.player.radius * 1.4
-    );
-    gradient.addColorStop(0, "#fff");
-    gradient.addColorStop(0.3, palette[0]);
-    gradient.addColorStop(1, "rgba(255,255,255,0.1)");
-    ctx.fillStyle = gradient;
-  }
-  ctx.beginPath();
-  ctx.arc(state.player.x, state.player.y, state.player.radius, 0, TAU);
-  ctx.fill();
+  entities.beginFill(colors.player, 1);
+  entities.drawCircle(state.player.x, state.player.y, state.player.radius);
+  entities.endFill();
 
-  // Collect radius cue
-  ctx.strokeStyle = "rgba(52,211,153,0.18)";
-  ctx.beginPath();
-  ctx.arc(state.player.x, state.player.y, state.player.collectRadius * 0.4, 0, TAU);
-  ctx.stroke();
+  entities.lineStyle({ color: colors.collect, alpha: 0.18, width: 2 });
+  entities.drawCircle(state.player.x, state.player.y, state.player.collectRadius * 0.4);
+  entities.lineStyle(0);
 
-  // Bullets
-  ctx.fillStyle = state.visualsLow ? "#e2e8f0" : "#fef3c7";
+  entities.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh);
   state.bullets.forEach((b) => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 4, 0, TAU);
-    ctx.fill();
+    entities.drawCircle(b.x, b.y, 4);
   });
+  entities.endFill();
 
-  // Fragments
+  entities.beginFill(colors.fragment);
   state.fragmentsOrbs.forEach((f) => {
-    ctx.fillStyle = "#f472b6";
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, 6, 0, TAU);
-    ctx.fill();
-    if (!state.visualsLow) {
-      ctx.strokeStyle = "rgba(244,114,182,0.4)";
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, 10, 0, TAU);
-      ctx.stroke();
-    }
+    entities.drawCircle(f.x, f.y, 6);
   });
+  entities.endFill();
+  if (!state.visualsLow) {
+    entities.lineStyle({ color: colors.fragmentRing, alpha: 0.4, width: 2 });
+    state.fragmentsOrbs.forEach((f) => {
+      entities.drawCircle(f.x, f.y, 10);
+    });
+    entities.lineStyle(0);
+  }
 
-  // Enemies
   state.enemies.forEach((e, idx) => {
-    ctx.fillStyle = e.elite ? "#f97316" : palette[idx % palette.length];
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, e.radius, 0, TAU);
-    ctx.fill();
+    entities.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+    entities.drawCircle(e.x, e.y, e.radius);
+    entities.endFill();
     if (!state.visualsLow || e.hitThisFrame) {
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
-      ctx.fillStyle = "#22c55e";
-      ctx.fillRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
+      entities.beginFill(colors.hpBg, 0.4);
+      entities.drawRect(e.x - e.radius, e.y - e.radius - 10, e.radius * 2, 6);
+      entities.endFill();
+      entities.beginFill(colors.hpFg);
+      entities.drawRect(e.x - e.radius, e.y - e.radius - 10, (e.hp / e.maxHp) * e.radius * 2, 6);
+      entities.endFill();
     }
   });
 
-  // Floating texts
-  ctx.font = "14px 'Space Grotesk', sans-serif";
-  state.floatingText.forEach((f) => {
-    ctx.globalAlpha = Math.max(0, f.life);
-    ctx.fillStyle = f.color;
-    ctx.fillText(f.text, f.x, f.y - (1.5 - f.life) * 24);
-  });
-  ctx.globalAlpha = 1;
+  arenaLayers.entities.addChild(entities);
 
-  // HUD overlay
-  ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 1;
+  const floatingLayer = new PIXI.Container();
+  state.floatingText.forEach((f) => {
+    const text = new PIXI.Text({
+      text: f.text,
+      style: {
+        fontFamily: "Space Grotesk",
+        fontSize: 14,
+        fill: f.color
+      }
+    });
+    text.alpha = Math.max(0, f.life);
+    text.x = f.x;
+    text.y = f.y - (1.5 - f.life) * 24;
+    floatingLayer.addChild(text);
+  });
+  arenaLayers.overlay.addChild(floatingLayer);
+
+  const hudLayer = new PIXI.Container();
+  const hud = new PIXI.Graphics();
   const x = 12;
   const y = 12;
   const w = 210;
   const h = 150;
   const r = 10;
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "16px 'Space Grotesk', sans-serif";
-  ctx.fillText(`${icons.wave} Vague ${state.wave.toFixed(1)}`, 24, 40);
-  ctx.fillText(`⚔️ Kills ${state.runStats.kills}`, 24, 64);
-  ctx.fillText(`${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, 24, 88);
-  ctx.fillText(`${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, 24, 112);
+  hud.beginFill(colors.hudBg, 0.45);
+  hud.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
+  hud.drawRoundedRect(x, y, w, h, r);
+  hud.endFill();
+  hudLayer.addChild(hud);
+
+  const hudTexts = [
+    { text: `${icons.wave} Vague ${state.wave.toFixed(1)}`, y: 40, color: "#e2e8f0" },
+    { text: `⚔️ Kills ${state.runStats.kills}`, y: 64, color: "#e2e8f0" },
+    { text: `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, y: 88, color: "#e2e8f0" },
+    { text: `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, y: 112, color: "#e2e8f0" }
+  ];
+
   if (state.gainTicker.fragments > 0) {
-    ctx.fillStyle = "#f472b6";
-    ctx.fillText(`⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, 24, 136);
+    hudTexts.push({ text: `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, y: 136, color: "#f472b6" });
   }
-  ctx.restore();
+
+  hudTexts.forEach(({ text, y: ty, color }) => {
+    const label = new PIXI.Text({
+      text,
+      style: {
+        fontFamily: "Space Grotesk",
+        fontSize: 16,
+        fill: color
+      }
+    });
+    label.x = 24;
+    label.y = ty;
+    hudLayer.addChild(label);
+  });
+
+  arenaLayers.overlay.addChild(hudLayer);
 }
 
-const loop = GameLoop({
-  update(dt) {
-    const clamped = Math.min(0.05, dt);
-    update(clamped);
-    updateHud(state, hudContext);
-  },
-  render() {
-    render();
-  }
+app.ticker.add((delta) => {
+  const dt = Math.min(0.05, delta / 60);
+  update(dt);
+  updateHud(state, hudContext);
+  render();
 });
 
 function initUI() {
@@ -589,7 +606,7 @@ function bootstrap() {
   loadSave();
   initUI();
   window.addEventListener("resize", () => resizeCanvas());
-  loop.start();
+  app.start();
   setInterval(saveGame, 5000);
 }
 
