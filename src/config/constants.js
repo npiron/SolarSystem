@@ -1,6 +1,7 @@
 export const STORAGE_KEY = "neo-survivors-save";
 export const TAU = Math.PI * 2;
 export const CELL_SIZE = 80;
+export const VERSION = "v0.1.0";
 export const FX_BUDGET = {
   floatingText: 80,
   bullets: 520,
