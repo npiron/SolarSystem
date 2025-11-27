@@ -43,10 +43,22 @@ const hudTextOptions = {
 
 const hudTextStyle = new PIXI.TextStyle(hudTextOptions);
 
+// PIXI v7 n'inclut pas `toJSON` sur TextStyle, mais le constructeur de Text
+// tente de l'appeler pour sérialiser le style. Sans ce shim, l'initialisation
+// du HUD plante et empêche le jeu de se charger. On ajoute donc une version
+// minimale qui renvoie simplement les options actuelles.
+if (typeof hudTextStyle.toJSON !== "function") {
+  hudTextStyle.toJSON = () => ({ ...hudTextOptions });
+}
+
 const hudAccentStyle = new PIXI.TextStyle({
   ...hudTextOptions,
   fill: "#f472b6",
 });
+
+if (typeof hudAccentStyle.toJSON !== "function") {
+  hudAccentStyle.toJSON = () => ({ ...hudTextOptions, fill: "#f472b6" });
+}
 
 const renderObjects = {
   backgroundContainer: new PIXI.Container(),
