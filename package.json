@@ -1,0 +1,12 @@
+{
+  "name": "neo-survivors-idle",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "vitest": "^1.6.0"
+  }
+}
