@@ -1,5 +1,10 @@
 # Neo Survivors Idle
 
+[![Tests](https://github.com/OWNER/SolarSystem/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/test.yml)
+[![Pages](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml)
+[![Release](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : progression sauvegardée dans le navigateur via `localStorage`.
 
 ## Lancer
@@ -14,6 +19,13 @@ Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie autom
 1. Dans l'onglet **Settings > Pages** du dépôt, choisir **Source: GitHub Actions**.
 2. Pousser sur `main` (ou `work`) : le workflow génère l'artefact et déploie sur GitHub Pages.
 3. L'URL finale est de la forme `https://<utilisateur>.github.io/<nom-du-depot>/` et sert directement `index.html` à la racine.
+
+## Automatisation CI/CD
+
+- **Tests** : le workflow `Test` (branches `main` et `work`, PR) installe les dépendances via `npm ci` et exécute `npm test`.
+- **Pages** : `Deploy Pages` publie automatiquement la version statique dès qu'un commit arrive sur `main` ou `work`.
+- **Release** : pousser un tag `v*.*.*` déclenche `Release` qui archive le dépôt et génère une Release GitHub avec notes automatiques.
+- **Maintenance** : Dependabot (`.github/dependabot.yml`) peut être activé pour tenir `npm` et les actions GitHub à jour de manière hebdomadaire.
 
 ## Releases, tags et patch notes
 
