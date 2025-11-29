@@ -47,6 +47,28 @@ Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie autom
 
 Le canvas de l'arène tourne sur [PixiJS](https://pixijs.com/), une bibliothèque WebGL/Canvas open source qui gère la boucle de rendu 2D côté client sans dépendances serveur.
 
+### Alternatives au Canvas pour le développement de jeux
+
+Il existe plusieurs technologies alternatives au Canvas HTML5 pour créer des jeux vidéo dans le navigateur :
+
+| Technologie | Description | Cas d'usage |
+|-------------|-------------|-------------|
+| **WebGL** | API bas-niveau pour le rendu 3D/2D accéléré par GPU. PixiJS l'utilise en interne. | Jeux 2D/3D haute performance |
+| **WebGPU** | Successeur de WebGL, plus moderne et performant (support navigateur en cours). | Jeux 3D avancés, calcul GPU |
+| **SVG** | Graphiques vectoriels animables via CSS/JS. Léger pour les éléments UI. | Jeux simples, interfaces |
+| **CSS 3D** | Transformations et animations CSS pures. | Jeux de cartes, puzzles légers |
+| **DOM animé** | Manipulation du DOM avec JS/CSS. Plus lent mais simple. | Prototypes, jeux casual |
+
+#### Frameworks et moteurs populaires
+
+- **[Three.js](https://threejs.org/)** : Moteur 3D WebGL puissant pour les jeux 3D.
+- **[Babylon.js](https://www.babylonjs.com/)** : Moteur 3D complet avec physique intégrée.
+- **[Phaser](https://phaser.io/)** : Framework 2D très populaire, basé sur Canvas/WebGL.
+- **[Godot (export HTML5)](https://godotengine.org/)** : Moteur de jeu complet exportant vers WebAssembly.
+- **[Unity WebGL](https://unity.com/)** : Export de jeux Unity vers le navigateur via WebAssembly.
+
+Ce projet utilise PixiJS car il offre un excellent compromis entre performance (WebGL) et simplicité d'utilisation pour les jeux 2D, tout en restant 100% client-side sans dépendances serveur.
+
 Un bouton « Mode perfo » dans le header coupe certains effets visuels, regroupe les gains flottants et maintient la lisibilité même quand des centaines d'entités sont actives.
 
 ## Aperçu rapide
