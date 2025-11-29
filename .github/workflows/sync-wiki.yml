@@ -1,0 +1,64 @@
+name: Sync Wiki
+
+# This workflow syncs markdown files from the wiki/ folder to the GitHub Wiki.
+# 
+# IMPORTANT: To enable this workflow, you must:
+# 1. Create a wiki page manually first (GitHub requires at least one wiki page to exist)
+# 2. Create a Personal Access Token (PAT) with 'repo' scope
+# 3. Add it as a repository secret named 'WIKI_TOKEN'
+#
+# The default GITHUB_TOKEN does not have write access to the wiki repository.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'wiki/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+
+      - name: Checkout wiki repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki-repo
+          # Note: WIKI_TOKEN must be a PAT with repo scope
+          # The default GITHUB_TOKEN cannot write to the wiki
+          token: ${{ secrets.WIKI_TOKEN }}
+
+      - name: Copy wiki files
+        run: |
+          # Copy all markdown files from wiki/ to wiki-repo/
+          # Use nullglob to handle empty directory gracefully
+          shopt -s nullglob
+          files=(wiki/*.md)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No markdown files found in wiki/"
+            exit 0
+          fi
+          cp -v "${files[@]}" wiki-repo/
+          
+      - name: Commit and push to wiki
+        run: |
+          cd wiki-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if there are changes to commit
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          git commit -m "Sync wiki content from main repository"
+          git push

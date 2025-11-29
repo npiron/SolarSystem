@@ -4,22 +4,22 @@
 [![Pages](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml)
 [![Release](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Wiki](https://img.shields.io/badge/📖_Wiki-Documentation-blue)](wiki/Home.md)
+[![Wiki](https://img.shields.io/badge/📖_Wiki-Documentation-blue)](../../wiki)
 
 Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : progression sauvegardée dans le navigateur via `localStorage`.
 
 ## 📖 Documentation
 
-Une documentation complète du jeu est disponible dans le [**Wiki**](wiki/Home.md) :
+Une documentation complète du jeu est disponible dans le [**Wiki GitHub**](../../wiki) :
 
-- 🚀 [Démarrage rapide](wiki/Démarrage-Rapide.md) - Comment lancer et jouer
-- ⚔️ [Système de combat](wiki/Système-de-Combat.md) - Mécaniques de combat
-- 💰 [Ressources et économie](wiki/Ressources-et-Économie.md) - Gestion des ressources
-- 🏭 [Générateurs](wiki/Générateurs.md) - Production passive
-- ⬆️ [Améliorations](wiki/Améliorations.md) - Upgrades de combat
-- 🌳 [Arbre de talents](wiki/Arbre-de-Talents.md) - Synergies persistantes
-- ⟳ [Prestige](wiki/Prestige-Consolidation.md) - Système de Consolidation
-- ❓ [FAQ](wiki/FAQ.md) - Questions fréquentes
+- 🚀 [Démarrage rapide](../../wiki/D%C3%A9marrage-Rapide) - Comment lancer et jouer
+- ⚔️ [Système de combat](../../wiki/Syst%C3%A8me-de-Combat) - Mécaniques de combat
+- 💰 [Ressources et économie](../../wiki/Ressources-et-%C3%89conomie) - Gestion des ressources
+- 🏭 [Générateurs](../../wiki/G%C3%A9n%C3%A9rateurs) - Production passive
+- ⬆️ [Améliorations](../../wiki/Am%C3%A9liorations) - Upgrades de combat
+- 🌳 [Arbre de talents](../../wiki/Arbre-de-Talents) - Synergies persistantes
+- ⟳ [Prestige](../../wiki/Prestige-Consolidation) - Système de Consolidation
+- ❓ [FAQ](../../wiki/FAQ) - Questions fréquentes
 
 ## Lancer
 
@@ -39,6 +39,7 @@ Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie autom
 - **Tests** : le workflow `Test` (branches `main` et `work`, PR) installe les dépendances via `npm ci` et exécute `npm test`.
 - **Pages** : `Deploy Pages` publie automatiquement la version statique dès qu'un commit arrive sur `main` ou `work`.
 - **Release** : pousser un tag `v*.*.*` déclenche `Release` qui archive le dépôt et génère une Release GitHub avec notes automatiques.
+- **Wiki sync** : le workflow `Sync Wiki` synchronise automatiquement le contenu du dossier `wiki/` vers le Wiki GitHub. Voir les instructions dans le fichier de workflow pour l'activation.
 - **Maintenance** : Dependabot (`.github/dependabot.yml`) peut être activé pour tenir `npm` et les actions GitHub à jour de manière hebdomadaire.
 
 ## Releases, tags et patch notes
