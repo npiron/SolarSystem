@@ -1,4 +1,6 @@
-export function createUpgrades() {
+import type { PlayerStats, Upgrade } from "../types/index.ts";
+
+export function createUpgrades(): Upgrade[] {
   return [
     {
       id: "attack",
@@ -8,7 +10,7 @@ export function createUpgrades() {
       baseCost: 30,
       level: 0,
       max: 50,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.damage *= 1.25;
       }
     },
@@ -20,7 +22,7 @@ export function createUpgrades() {
       baseCost: 45,
       level: 0,
       max: 40,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.fireDelay *= 0.85;
       }
     },
@@ -32,7 +34,7 @@ export function createUpgrades() {
       baseCost: 50,
       level: 0,
       max: 15,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.regen += 3;
       }
     },
@@ -44,7 +46,7 @@ export function createUpgrades() {
       baseCost: 120,
       level: 0,
       max: 20,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.projectiles += 1;
       }
     },
@@ -56,7 +58,7 @@ export function createUpgrades() {
       baseCost: 80,
       level: 0,
       max: 25,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.range *= 1.2;
       }
     },
@@ -68,7 +70,7 @@ export function createUpgrades() {
       baseCost: 140,
       level: 0,
       max: 20,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.bulletSpeed *= 1.15;
       }
     },
@@ -80,7 +82,7 @@ export function createUpgrades() {
       baseCost: 200,
       level: 0,
       max: 20,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.critChance = Math.min(0.9, state.player.critChance + 0.04);
         state.player.critMultiplier = 2.2;
       }
@@ -93,7 +95,7 @@ export function createUpgrades() {
       baseCost: 220,
       level: 0,
       max: 12,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.damageReduction = Math.min(0.7, state.player.damageReduction + 0.05);
       }
     },
@@ -105,7 +107,7 @@ export function createUpgrades() {
       baseCost: 260,
       level: 0,
       max: 10,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.pierce += 1;
       }
     },
@@ -117,7 +119,7 @@ export function createUpgrades() {
       baseCost: 140,
       level: 0,
       max: 25,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.collectRadius *= 1.12;
       }
     },
@@ -129,7 +131,7 @@ export function createUpgrades() {
       baseCost: 100,
       level: 0,
       max: 15,
-      apply: (state) => {
+      apply: (state: { player: PlayerStats }) => {
         state.player.speed *= 1.08;
       }
     }

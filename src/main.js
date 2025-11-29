@@ -1,15 +1,15 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { GlowFilter, KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
-import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
-import { createGenerators } from "./config/generators.js";
-import { TALENT_RESET_COST } from "./config/talents.js";
-import { createUpgrades } from "./config/upgrades.js";
-import { updateCombat } from "./systems/combat.js";
-import { initAssist } from "./systems/assist.js";
-import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
-import { updateSpawn } from "./systems/spawn.js";
-import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.js";
+import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
+import { createGenerators } from "./config/generators.ts";
+import { TALENT_RESET_COST } from "./config/talents.ts";
+import { createUpgrades } from "./config/upgrades.ts";
+import { updateCombat } from "./systems/combat.ts";
+import { initAssist } from "./systems/assist.ts";
+import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.ts";
+import { updateSpawn } from "./systems/spawn.ts";
+import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
 import {
   computeTalentBonuses,
   canUnlockTalent,
@@ -17,7 +17,7 @@ import {
   prerequisitesMet,
   resetTalents,
   unlockTalent
-} from "./systems/talents.js";
+} from "./systems/talents.ts";
 
 const canvas = document.getElementById("arena");
 const app = new PIXI.Application({

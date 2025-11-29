@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TALENT_RESET_COST } from "../src/config/talents.js";
+import { TALENT_RESET_COST } from "../src/config/talents.ts";
 import {
   canUnlockTalent,
   computeTalentBonuses,
@@ -7,7 +7,7 @@ import {
   prerequisitesMet,
   resetTalents,
   unlockTalent,
-} from "../src/systems/talents.js";
+} from "../src/systems/talents.ts";
 
 describe("talent system", () => {
   it("hydrates talent tree with saved progress", () => {

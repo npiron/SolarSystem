@@ -1,8 +1,9 @@
-import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.js";
-import { addFloatingText, registerFragmentGain } from "./hud.js";
+import type { Bullet, Canvas, Enemy, GameState } from "../types/index.ts";
+import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.ts";
+import { addFloatingText, registerFragmentGain } from "./hud.ts";
 
-function nearestEnemy(state) {
-  let closest = null;
+function nearestEnemy(state: GameState): Enemy | null {
+  let closest: Enemy | null = null;
   let bestDist = Infinity;
   state.enemies.forEach((e) => {
     const dx = e.x - state.player.x;
@@ -16,22 +17,7 @@ function nearestEnemy(state) {
   return closest;
 }
 
-function nearestFragment(state) {
-  let closest = null;
-  let bestDist = Infinity;
-  state.fragmentsOrbs.forEach((f) => {
-    const dx = f.x - state.player.x;
-    const dy = f.y - state.player.y;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      closest = f;
-    }
-  });
-  return closest;
-}
-
-function fire(state) {
+function fire(state: GameState): void {
   const target = nearestEnemy(state);
   const count = Math.max(1, state.player.projectiles);
   const baseTrack = target ? Math.atan2(target.y - state.player.y, target.x - state.player.x) : state.time * 0.9;
@@ -44,18 +30,19 @@ function fire(state) {
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= FX_BUDGET.bullets) break;
     const angle = count > 1 ? baseAngle + i * ringStep : baseAngle;
-    state.bullets.push({
+    const bullet: Bullet = {
       x: state.player.x,
       y: state.player.y,
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
       pierce: state.player.pierce
-    });
+    };
+    state.bullets.push(bullet);
   }
 }
 
-export function updateCombat(state, dt, canvas) {
+export function updateCombat(state: GameState, dt: number, canvas: Canvas): void {
   state.player.fireTimer -= dt;
   state.player.spin = (state.player.spin + dt * 1.2) % TAU;
 
@@ -116,12 +103,12 @@ export function updateCombat(state, dt, canvas) {
     e.y += Math.sin(angle) * e.speed * dt;
   });
 
-  const enemyBuckets = new Map();
-  const bucketKey = (x, y) => `${Math.floor(x / CELL_SIZE)},${Math.floor(y / CELL_SIZE)}`;
-  const neighborKeys = (x, y) => {
+  const enemyBuckets = new Map<string, Enemy[]>();
+  const bucketKey = (x: number, y: number): string => `${Math.floor(x / CELL_SIZE)},${Math.floor(y / CELL_SIZE)}`;
+  const neighborKeys = (x: number, y: number): string[] => {
     const cx = Math.floor(x / CELL_SIZE);
     const cy = Math.floor(y / CELL_SIZE);
-    const keys = [];
+    const keys: string[] = [];
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
         keys.push(`${cx + dx},${cy + dy}`);
@@ -133,7 +120,7 @@ export function updateCombat(state, dt, canvas) {
   state.enemies.forEach((enemy) => {
     const key = bucketKey(enemy.x, enemy.y);
     if (!enemyBuckets.has(key)) enemyBuckets.set(key, []);
-    enemyBuckets.get(key).push(enemy);
+    enemyBuckets.get(key)!.push(enemy);
   });
 
   state.enemies.forEach((enemy) => (enemy.hitThisFrame = false));
