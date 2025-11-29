@@ -1,10 +1,24 @@
-const quickSteps = [
+import type { AssistConfig, AssistUi, GameState, Upgrade } from "../types/index.js";
+
+interface QuickStep {
+  id: string;
+  label: string;
+}
+
+interface MilestoneDefinition {
+  id: string;
+  label: string;
+  detail: string;
+  check: (state: GameState, upgrades?: Upgrade[]) => boolean;
+}
+
+const quickSteps: QuickStep[] = [
   { id: "shot", label: "Tir auto lancé : vise les vagues pour ramasser des ✦" },
   { id: "purchase", label: "Acheter un générateur ⚡ ou une upgrade ✦" },
   { id: "prestige", label: "Lancer une Consolidation quand les vagues coincent" }
 ];
 
-const milestoneDefinitions = [
+const milestoneDefinitions: MilestoneDefinition[] = [
   { id: "wave10", label: "Atteindre la vague 10", detail: "Les ennemis deviennent sérieux, pense aux dégâts.", check: (state) => state.assist.bestWave >= 10 },
   { id: "wave25", label: "Atteindre la vague 25", detail: "Zone idéale pour consolider et doubler le passif.", check: (state) => state.assist.bestWave >= 25 },
   { id: "wave50", label: "Atteindre la vague 50", detail: "Ton build devient vraiment puissant à ce stade.", check: (state) => state.assist.bestWave >= 50 },
@@ -14,7 +28,7 @@ const milestoneDefinitions = [
   { id: "prestige", label: "Première Consolidation", detail: "Le multiplicateur passif se cumule run après run.", check: (state) => state.assist.firstPrestige }
 ];
 
-function isStepDone(state, id) {
+function isStepDone(state: GameState, id: string): boolean {
   switch (id) {
     case "shot":
       return state.assist.firstShot;
@@ -27,7 +41,7 @@ function isStepDone(state, id) {
   }
 }
 
-function renderQuickHelp(state, quickHelpList) {
+function renderQuickHelp(state: GameState, quickHelpList: HTMLElement | null): void {
   if (!quickHelpList) return;
   quickHelpList.innerHTML = "";
   quickSteps.forEach((step) => {
@@ -38,7 +52,7 @@ function renderQuickHelp(state, quickHelpList) {
   });
 }
 
-function renderMilestones(state, milestoneList, upgrades) {
+function renderMilestones(state: GameState, milestoneList: HTMLElement | null, upgrades: Upgrade[]): void {
   if (!milestoneList) return;
   milestoneList.innerHTML = "";
   milestoneDefinitions.forEach((def) => {
@@ -53,7 +67,7 @@ function renderMilestones(state, milestoneList, upgrades) {
   });
 }
 
-function showBubble(container, target, text) {
+function showBubble(container: HTMLElement | null, target: HTMLElement | null | undefined, text: string): void {
   if (!container || !target) return;
   const rect = target.getBoundingClientRect();
   const bubble = document.createElement("div");
@@ -69,18 +83,18 @@ function showBubble(container, target, text) {
   }, 4200);
 }
 
-export function initAssist(state, { quickHelpList, milestoneList, bubbleContainer, anchors, upgrades }) {
+export function initAssist(state: GameState, { quickHelpList, milestoneList, bubbleContainer, anchors, upgrades }: AssistConfig): AssistUi {
   renderQuickHelp(state, quickHelpList);
   renderMilestones(state, milestoneList, upgrades);
 
-  function recordShot() {
+  function recordShot(): void {
     if (state.assist.firstShot) return;
     state.assist.firstShot = true;
     renderQuickHelp(state, quickHelpList);
     showBubble(bubbleContainer, anchors?.arena, "Tir automatique en route ! Vise les drops ✦");
   }
 
-  function recordPurchase() {
+  function recordPurchase(): void {
     const firstPurchase = !state.assist.firstPurchase;
     if (firstPurchase) {
       state.assist.firstPurchase = true;
@@ -91,7 +105,7 @@ export function initAssist(state, { quickHelpList, milestoneList, bubbleContaine
     renderMilestones(state, milestoneList, upgrades);
   }
 
-  function recordPrestige() {
+  function recordPrestige(): void {
     const firstPrestige = !state.assist.firstPrestige;
     if (firstPrestige) {
       state.assist.firstPrestige = true;
@@ -101,7 +115,7 @@ export function initAssist(state, { quickHelpList, milestoneList, bubbleContaine
     renderMilestones(state, milestoneList, upgrades);
   }
 
-  function trackWave(wave) {
+  function trackWave(wave: number): void {
     const rounded = Math.floor(wave);
     if (rounded > (state.assist.bestWave || 1)) {
       state.assist.bestWave = rounded;
@@ -109,7 +123,7 @@ export function initAssist(state, { quickHelpList, milestoneList, bubbleContaine
     }
   }
 
-  function refreshMilestones() {
+  function refreshMilestones(): void {
     renderMilestones(state, milestoneList, upgrades);
   }
 

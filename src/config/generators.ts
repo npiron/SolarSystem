@@ -1,4 +1,6 @@
-export function createGenerators() {
+import type { Generator } from "../types/index.js";
+
+export function createGenerators(): Generator[] {
   return [
     { id: "drone", name: "Drones collecteurs", baseRate: 0.2, rate: 0.2, level: 0, cost: 15 },
     { id: "forge", name: "Forge astrale", baseRate: 0.8, rate: 0.8, level: 0, cost: 60 },

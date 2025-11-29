@@ -8,10 +8,10 @@ import {
   VERSION,
   icons,
   palette,
-} from "../src/config/constants.js";
-import { createGenerators } from "../src/config/generators.js";
-import { createUpgrades } from "../src/config/upgrades.js";
-import { createTalentTree } from "../src/config/talents.js";
+} from "../src/config/constants.ts";
+import { createGenerators } from "../src/config/generators.ts";
+import { createUpgrades } from "../src/config/upgrades.ts";
+import { createTalentTree } from "../src/config/talents.ts";
 
 function cloneState() {
   return {

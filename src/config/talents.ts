@@ -1,4 +1,6 @@
-export function createTalentTree() {
+import type { Talent } from "../types/index.js";
+
+export function createTalentTree(): Talent[] {
   return [
     {
       id: "focus_fulgurant",

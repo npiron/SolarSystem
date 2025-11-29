@@ -6,7 +6,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       all: true,
-      include: ["src/config/**/*.js", "src/systems/talents.js"],
+      include: ["src/config/**/*.ts", "src/systems/talents.ts"],
       exclude: [],
       thresholds: {
         statements: 80,
