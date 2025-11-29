@@ -1,5 +1,6 @@
 import { FX_BUDGET, icons } from "../config/constants.js";
 import { packSize, spawnRate } from "./spawn.js";
+import { playCollect } from "./sound.js";
 
 export function formatNumber(value) {
   const suffixes = [
@@ -63,6 +64,9 @@ export function addFloatingText(state, text, x, y, color = "#fef08a") {
 export function registerFragmentGain(state, value, x, y, silent = false) {
   state.resources.fragments += value;
   state.runStats.fragments += value;
+  if (!silent) {
+    playCollect();
+  }
   if (silent || state.visualsLow || state.floatingText.length >= FX_BUDGET.floatingText) {
     state.gainTicker.fragments += value;
     state.gainTicker.timer = 1.2;

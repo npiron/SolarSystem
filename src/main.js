@@ -7,6 +7,7 @@ import { updateCombat } from "./systems/combat.js";
 import { initAssist } from "./systems/assist.js";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
 import { updateSpawn } from "./systems/spawn.js";
+import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.js";
 import {
   computeTalentBonuses,
   canUnlockTalent,
@@ -283,6 +284,7 @@ const colors = {
 };
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
+const toggleSoundBtn = document.getElementById("toggleSound");
 const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
@@ -383,6 +385,9 @@ const state = {
   prestigeCooldown: 0,
   dead: false,
   visualsLow: false,
+  audio: {
+    enabled: true,
+  },
   performance: {
     fps: 0,
     history: [],
@@ -456,6 +461,7 @@ function loadSave() {
     const save = JSON.parse(raw);
     Object.assign(state.resources, save.resources || {});
     state.wave = save.wave || state.wave;
+    state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
     state.player.damage = save.player?.damage ?? state.player.damage;
     state.player.fireDelay = save.player?.fireDelay ?? state.player.fireDelay;
     state.player.projectiles = save.player?.projectiles ?? state.player.projectiles;
@@ -516,6 +522,7 @@ function saveGame() {
   const data = {
     resources: state.resources,
     wave: state.wave,
+    audio: { enabled: state.audio.enabled },
     player: {
       damage: state.player.damage,
       fireDelay: state.player.fireDelay,
@@ -691,6 +698,7 @@ function buyGenerator(gen) {
   gen.cost = Math.ceil(gen.cost * 1.35 + gen.level * 2);
   gen.rate = computeGeneratorRate(gen);
   refreshGeneratorRates();
+  playPurchase();
   assistUi.recordPurchase();
 }
 
@@ -728,6 +736,7 @@ function buyUpgrade(upgrade) {
   upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
   applyProgressionEffects();
   upgrade.apply(state);
+  playPurchase();
   assistUi.recordPurchase();
 }
 
@@ -759,6 +768,7 @@ function buyTalent(talent) {
   if (!unlockTalent(talent, talents, state)) return false;
   applyProgressionEffects();
   refreshGeneratorRates();
+  playPurchase();
   return true;
 }
 
@@ -898,6 +908,7 @@ function prestige() {
   refreshGeneratorRates();
   softReset();
   state.prestigeCooldown = 8;
+  playPrestige();
   assistUi.recordPrestige();
   saveGame();
   renderGenerators();
@@ -1052,9 +1063,32 @@ app.ticker.add((delta) => {
 });
 
 function initUI() {
+  const syncSoundToggle = () => {
+    if (!toggleSoundBtn) return;
+    toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
+  };
+
+  const armAudioUnlock = () => {
+    const unlock = () => resumeAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+  };
+
+  armAudioUnlock();
+  syncSoundToggle();
+
   pauseBtn.addEventListener("click", () => {
     state.running = !state.running;
     pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
+    saveGame();
+  });
+
+  toggleSoundBtn?.addEventListener("click", () => {
+    state.audio.enabled = !state.audio.enabled;
+    resumeAudio();
+    setAudioEnabled(state.audio.enabled);
+    syncSoundToggle();
+    playUiToggle();
     saveGame();
   });
 
@@ -1089,6 +1123,7 @@ function initUI() {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
     buildBackground(app.renderer.width, app.renderer.height);
+    playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
     );
@@ -1137,6 +1172,8 @@ async function bootstrap() {
   setupScene();
   buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
+  initSound(state.audio.enabled);
+  setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
     quickHelpList,
     milestoneList,
