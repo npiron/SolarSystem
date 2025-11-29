@@ -1,5 +1,5 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { FX_BUDGET, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
+import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
@@ -398,6 +398,16 @@ async function loadTextures() {
   });
 }
 
+function formatDuration(seconds) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const parts = [];
+  if (hours) parts.push(`${hours}h`);
+  if (minutes || !parts.length) parts.push(`${minutes}m`);
+  return parts.join(" ");
+}
+
 function loadSave() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return;
@@ -438,7 +448,11 @@ function loadSave() {
     const now = Date.now();
     if (save.lastSeen) {
       const elapsed = Math.max(0, (now - save.lastSeen) / 1000);
-      grantOfflineGains(elapsed);
+      const offlineSeconds = Math.min(MAX_OFFLINE_SECONDS, elapsed);
+      grantOfflineGains(offlineSeconds);
+      if (elapsed > MAX_OFFLINE_SECONDS) {
+        debugPing(state, `⏳ Gains hors-ligne plafonnés à ${formatDuration(MAX_OFFLINE_SECONDS)}`, "#fbbf24");
+      }
     }
   } catch (err) {
     console.warn("Save corrupted", err);
