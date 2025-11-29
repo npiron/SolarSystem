@@ -1,5 +1,5 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { GlowFilter, KawaseBlurFilter, NoiseFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
+import { GlowFilter, KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
@@ -336,7 +336,7 @@ const fx = {
   auraGlow: null,
   hudGlow: null,
   bloom: new KawaseBlurFilter([0, 1], 6),
-  noise: new NoiseFilter(0.05)
+  noise: new PIXI.filters.NoiseFilter(0.05)
 };
 
 let auraPulseTween;
