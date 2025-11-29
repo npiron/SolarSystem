@@ -29,7 +29,7 @@ jobs:
       - name: Checkout wiki repository
         uses: actions/checkout@v4
         with:
-          repository: npiron/SolarSystem.wiki.git
+          repository: npiron/SolarSystem.wiki
           path: wiki-repo
           # Note: WIKI_TOKEN must be a PAT with repo scope
           # The default GITHUB_TOKEN cannot write to the wiki
