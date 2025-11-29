@@ -1,4 +1,8 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
+import { GlowFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-glow@7.4.2/+esm";
+import { KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-kawase-blur@7.4.2/+esm";
+import { NoiseFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-noise@7.4.2/+esm";
+import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { TALENT_RESET_COST } from "./config/talents.js";
@@ -100,6 +104,7 @@ const renderObjects = {
   grid: new PIXI.Graphics(),
   pattern: null,
   aura: new PIXI.Graphics(),
+  playerContainer: null,
   playerSprite: null,
   playerFallback: new PIXI.Graphics(),
   bullets: new PIXI.Graphics(),
@@ -190,6 +195,51 @@ function buildBackground(width, height) {
   }
 }
 
+function refreshHudPulse() {
+  if (auraPulseTween) {
+    auraPulseTween.kill();
+    auraPulseTween = null;
+  }
+  if (!renderObjects.aura) return;
+  renderObjects.aura.scale.set(1);
+  if (state.addons.hudPulse && state.addons.glow && !state.visualsLow) {
+    auraPulseTween = gsap.to(renderObjects.aura.scale, {
+      x: 1.08,
+      y: 1.08,
+      duration: 1.6,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut"
+    });
+  }
+}
+
+function applyAddonFilters() {
+  ensureFilters();
+  const allowHeavyFx = !state.visualsLow;
+  if (renderObjects.playerContainer) {
+    renderObjects.playerContainer.filters = allowHeavyFx && state.addons.glow ? [fx.auraGlow] : null;
+  }
+
+  const bloomFilters = allowHeavyFx && state.addons.bloom ? [fx.bloom] : null;
+  renderObjects.fragmentSprites.filters = bloomFilters;
+  renderObjects.fragmentRings.filters = bloomFilters;
+  renderObjects.bulletsGlow.filters = bloomFilters;
+
+  renderObjects.backgroundContainer.filters = state.addons.grain ? [fx.noise] : null;
+  renderObjects.hudLayer.filters = allowHeavyFx && state.addons.glow ? [fx.hudGlow] : null;
+
+  if (renderObjects.hudBg) {
+    gsap.to(renderObjects.hudBg, {
+      alpha: state.addons.glow ? 0.54 : 0.36,
+      duration: 0.3,
+      ease: "sine.out"
+    });
+  }
+
+  refreshHudPulse();
+}
+
 function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
@@ -217,6 +267,7 @@ function setupScene() {
   } else {
     playerContainer.addChild(renderObjects.playerFallback);
   }
+  renderObjects.playerContainer = playerContainer;
 
   arenaLayers.entities.addChild(
     playerContainer,
@@ -282,6 +333,36 @@ const colors = {
   hudBg: PIXI.utils.string2hex("#0d1530"),
   hudBorder: PIXI.utils.string2hex("#e2e8f0"),
 };
+
+const fx = {
+  auraGlow: null,
+  hudGlow: null,
+  bloom: new KawaseBlurFilter([0, 1], 6),
+  noise: new NoiseFilter(0.05)
+};
+
+let auraPulseTween;
+
+function ensureFilters() {
+  if (!fx.auraGlow) {
+    fx.auraGlow = new GlowFilter({
+      distance: 16,
+      outerStrength: 2.6,
+      innerStrength: 0.6,
+      color: colors.player,
+      quality: 0.25
+    });
+  }
+  if (!fx.hudGlow) {
+    fx.hudGlow = new GlowFilter({
+      distance: 10,
+      outerStrength: 1.6,
+      innerStrength: 0.4,
+      color: colors.hudBorder,
+      quality: 0.2
+    });
+  }
+}
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
 const toggleSoundBtn = document.getElementById("toggleSound");
@@ -289,6 +370,10 @@ const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
 const toggleFpsBtn = document.getElementById("toggleFps");
+const toggleGlowFxBtn = document.getElementById("toggleGlowFx");
+const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
+const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
+const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
 const versionBadge = document.getElementById("versionBadge");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
@@ -393,6 +478,12 @@ const state = {
     history: [],
     maxSamples: 240,
     graphVisible: false
+  },
+  addons: {
+    glow: true,
+    bloom: true,
+    grain: false,
+    hudPulse: true
   }
 };
 
@@ -424,6 +515,7 @@ function resizeCanvas(center = false) {
   if (state.performance.graphVisible) {
     drawFpsGraph();
   }
+  applyAddonFilters();
 }
 
 const uiRefs = {
@@ -462,6 +554,7 @@ function loadSave() {
     Object.assign(state.resources, save.resources || {});
     state.wave = save.wave || state.wave;
     state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
+    state.addons = { ...state.addons, ...save.addons };
     state.player.damage = save.player?.damage ?? state.player.damage;
     state.player.fireDelay = save.player?.fireDelay ?? state.player.fireDelay;
     state.player.projectiles = save.player?.projectiles ?? state.player.projectiles;
@@ -547,6 +640,7 @@ function saveGame() {
       bestWave: state.assist.bestWave,
       completed: state.assist.completed
     },
+    addons: state.addons,
     lastSeen: Date.now()
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1066,6 +1160,21 @@ function initUI() {
     toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
   };
 
+  const syncAddonToggles = () => {
+    if (toggleGlowFxBtn) toggleGlowFxBtn.textContent = state.addons.glow ? "✨ Aura ON" : "✨ Aura OFF";
+    if (toggleBloomFxBtn) toggleBloomFxBtn.textContent = state.addons.bloom ? "🌟 Bloom ON" : "🌟 Bloom OFF";
+    if (toggleGrainFxBtn) toggleGrainFxBtn.textContent = state.addons.grain ? "🎞️ Grain ON" : "🎞️ Grain OFF";
+    if (toggleHudPulseBtn) toggleHudPulseBtn.textContent = state.addons.hudPulse ? "💫 Pulse ON" : "💫 Pulse OFF";
+  };
+
+  const toggleAddon = (key) => {
+    state.addons[key] = !state.addons[key];
+    syncAddonToggles();
+    applyAddonFilters();
+    playUiToggle();
+    saveGame();
+  };
+
   const armAudioUnlock = () => {
     const unlock = () => resumeAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -1074,6 +1183,7 @@ function initUI() {
 
   armAudioUnlock();
   syncSoundToggle();
+  syncAddonToggles();
 
   pauseBtn.addEventListener("click", () => {
     state.running = !state.running;
@@ -1089,6 +1199,11 @@ function initUI() {
     playUiToggle();
     saveGame();
   });
+
+  toggleGlowFxBtn?.addEventListener("click", () => toggleAddon("glow"));
+  toggleBloomFxBtn?.addEventListener("click", () => toggleAddon("bloom"));
+  toggleGrainFxBtn?.addEventListener("click", () => toggleAddon("grain"));
+  toggleHudPulseBtn?.addEventListener("click", () => toggleAddon("hudPulse"));
 
   resetProgressBtn.addEventListener("click", () => {
     if (confirm("Effacer la sauvegarde et recommencer ?")) {
@@ -1121,6 +1236,7 @@ function initUI() {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
     buildBackground(app.renderer.width, app.renderer.height);
+    applyAddonFilters();
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
@@ -1170,6 +1286,7 @@ async function bootstrap() {
   setupScene();
   buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
+  applyAddonFilters();
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
