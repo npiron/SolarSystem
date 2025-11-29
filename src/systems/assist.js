@@ -79,24 +79,31 @@ export function initAssist(state, { quickHelpList, milestoneList, bubbleContaine
   }
 
   function recordPurchase() {
-    if (state.assist.firstPurchase) return;
-    state.assist.firstPurchase = true;
-    renderQuickHelp(state, quickHelpList);
-    const target = anchors?.generators || anchors?.upgrades;
-    showBubble(bubbleContainer, target, "Achats validés : ta production monte.");
+    const firstPurchase = !state.assist.firstPurchase;
+    if (firstPurchase) {
+      state.assist.firstPurchase = true;
+      renderQuickHelp(state, quickHelpList);
+      const target = anchors?.generators || anchors?.upgrades;
+      showBubble(bubbleContainer, target, "Achats validés : ta production monte.");
+    }
+    renderMilestones(state, milestoneList, upgrades);
   }
 
   function recordPrestige() {
-    if (state.assist.firstPrestige) return;
-    state.assist.firstPrestige = true;
-    renderQuickHelp(state, quickHelpList);
-    showBubble(bubbleContainer, anchors?.prestige, "Prestige doux : multiplicateur passif gagné !");
+    const firstPrestige = !state.assist.firstPrestige;
+    if (firstPrestige) {
+      state.assist.firstPrestige = true;
+      renderQuickHelp(state, quickHelpList);
+      showBubble(bubbleContainer, anchors?.prestige, "Prestige doux : multiplicateur passif gagné !");
+    }
+    renderMilestones(state, milestoneList, upgrades);
   }
 
   function trackWave(wave) {
     const rounded = Math.floor(wave);
     if (rounded > (state.assist.bestWave || 1)) {
       state.assist.bestWave = rounded;
+      renderMilestones(state, milestoneList, upgrades);
     }
   }
 
