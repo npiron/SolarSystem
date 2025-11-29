@@ -15,3 +15,16 @@ export type {
   DOMElements,
   UIRefs
 } from "./elements.ts";
+
+export {
+  createUICardRefs,
+  renderGeneratorCards,
+  renderUpgradeCards,
+  renderTalentCards,
+} from "./cards.ts";
+
+export type {
+  UICardRefs,
+  CardCallbacks,
+  TalentRenderOptions,
+} from "./cards.ts";
