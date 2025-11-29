@@ -120,6 +120,18 @@ export function createUpgrades() {
       apply: (state) => {
         state.player.collectRadius *= 1.12;
       }
+    },
+    {
+      id: "speed",
+      name: "Propulseurs quantiques",
+      description: "+8% vitesse de déplacement",
+      cost: 100,
+      baseCost: 100,
+      level: 0,
+      max: 15,
+      apply: (state) => {
+        state.player.speed *= 1.08;
+      }
     }
   ];
 }

@@ -7,8 +7,10 @@ const quickSteps = [
 const milestoneDefinitions = [
   { id: "wave10", label: "Atteindre la vague 10", detail: "Les ennemis deviennent sérieux, pense aux dégâts.", check: (state) => state.assist.bestWave >= 10 },
   { id: "wave25", label: "Atteindre la vague 25", detail: "Zone idéale pour consolider et doubler le passif.", check: (state) => state.assist.bestWave >= 25 },
+  { id: "wave50", label: "Atteindre la vague 50", detail: "Ton build devient vraiment puissant à ce stade.", check: (state) => state.assist.bestWave >= 50 },
   { id: "aoe", label: "Débloquer Pulsar chaotique", detail: "+1 projectile pour snowball les vagues.", check: (_, upgrades) => (upgrades?.find((u) => u.id === "aoe")?.level || 0) >= 1 },
   { id: "collect", label: "Rayon de collecte niveau 3", detail: "Aspire les ✦ sans traverser l'arène.", check: (_, upgrades) => (upgrades?.find((u) => u.id === "collect")?.level || 0) >= 3 },
+  { id: "speed", label: "Propulseurs niveau 3", detail: "Esquive plus vite pour survivre plus longtemps.", check: (_, upgrades) => (upgrades?.find((u) => u.id === "speed")?.level || 0) >= 3 },
   { id: "prestige", label: "Première Consolidation", detail: "Le multiplicateur passif se cumule run après run.", check: (state) => state.assist.firstPrestige }
 ];
 
