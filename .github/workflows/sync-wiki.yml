@@ -28,8 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for WIKI_TOKEN
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
         run: |
-          if [ -z "${{ secrets.WIKI_TOKEN }}" ]; then
+          if [ -z "$WIKI_TOKEN" ]; then
             echo "::error::WIKI_TOKEN secret is not configured. Please create a Personal Access Token with 'repo' scope and add it as a repository secret named 'WIKI_TOKEN'. See workflow comments for instructions."
             exit 1
           fi
@@ -74,7 +76,7 @@ jobs:
           git commit -m "Sync wiki content from main repository"
           
           # Attempt to push and provide helpful error message if it fails
-          if ! git push 2>&1; then
+          if ! git push; then
             echo ""
             echo "::error::Failed to push to wiki repository. This is usually caused by:"
             echo "::error::1. The WIKI_TOKEN does not have 'repo' scope - regenerate with full repo access"
