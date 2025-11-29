@@ -27,22 +27,7 @@ const app = new PIXI.Application({
 });
 app.stop();
 
-const assetPaths = {
-  background: new URL("../public/assets/Medieval RTS/Preview_KenneyNL.png", import.meta.url).href,
-  player: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1181.png", import.meta.url).href,
-  fragment: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1805.png", import.meta.url).href,
-  enemy: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1173.png", import.meta.url).href,
-};
-const spriteScales = {
-  player: 1.2,
-  enemy: 1.1,
-  fragment: 1.4,
-};
-const textures = {};
-const spritePools = {
-  fragments: [],
-  enemies: []
-};
+
 
 const floatingTextPool = [];
 const floatingTextStyleCache = new Map();
@@ -100,25 +85,13 @@ if (typeof hudAccentStyle.toJSON !== "function") {
 const renderObjects = {
   backgroundContainer: new PIXI.Container(),
   grid: new PIXI.Graphics(),
-  pattern: null,
   aura: new PIXI.Graphics(),
   playerContainer: null,
-  playerSprite: null,
-  playerFallback: new PIXI.Graphics(),
+  player: new PIXI.Graphics(),
   bullets: new PIXI.Graphics(),
   bulletsGlow: new PIXI.Graphics(),
-  fragmentSprites: new PIXI.ParticleContainer(FX_BUDGET.fragments, {
-    scale: true,
-    alpha: true,
-    tint: true
-  }),
   fragments: new PIXI.Graphics(),
   fragmentRings: new PIXI.Graphics(),
-  enemySprites: new PIXI.ParticleContainer(400, {
-    scale: true,
-    alpha: true,
-    tint: true
-  }),
   enemies: new PIXI.Graphics(),
   enemyHp: new PIXI.Graphics(),
   floatingLayer: new PIXI.Container(),
@@ -134,18 +107,6 @@ const renderObjects = {
 };
 
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
-
-function recycleSprites(container, pool) {
-  const removed = container.removeChildren();
-  removed.forEach((sprite) => pool.push(sprite));
-}
-
-function acquireSprite(pool, texture, tint = 0xffffff) {
-  const sprite = pool.pop() || new PIXI.Sprite(texture);
-  sprite.anchor.set(0.5);
-  sprite.tint = tint;
-  return sprite;
-}
 
 function getFloatingTextStyle(color = floatingTextStyleOptions.fill) {
   const key = color || floatingTextStyleOptions.fill;
@@ -168,7 +129,6 @@ function acquireFloatingText(color) {
 
 function buildBackground(width, height) {
   renderObjects.backgroundContainer.removeChildren();
-  renderObjects.pattern = null;
 
   if (!state.visualsLow) {
     renderObjects.grid.clear();
@@ -182,14 +142,6 @@ function buildBackground(width, height) {
       renderObjects.grid.lineTo(width, y);
     }
     renderObjects.backgroundContainer.addChild(renderObjects.grid);
-
-    if (textures.background) {
-      renderObjects.pattern = new PIXI.TilingSprite(textures.background, width, height);
-      renderObjects.pattern.alpha = 0.4;
-      renderObjects.pattern.tint = 0xffffff;
-      renderObjects.pattern.blendMode = PIXI.BLEND_MODES.ADD;
-      renderObjects.backgroundContainer.addChildAt(renderObjects.pattern, 0);
-    }
   }
 }
 
