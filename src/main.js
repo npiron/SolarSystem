@@ -735,7 +735,6 @@ function buyUpgrade(upgrade) {
   upgrade.level += 1;
   upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
   applyProgressionEffects();
-  upgrade.apply(state);
   playPurchase();
   assistUi.recordPurchase();
 }
@@ -882,7 +881,6 @@ function update(dt) {
   state.runStats.fragments += passiveFragments;
 
   updateFloatingText(state, dt);
-  assistUi.refreshMilestones();
 }
 
 function softReset() {
