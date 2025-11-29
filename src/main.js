@@ -1278,6 +1278,17 @@ function initUI() {
   renderGenerators();
   renderUpgrades();
   renderTalents();
+
+  // Initialize collapsible sections
+  document.querySelectorAll('.stat-block.collapsible').forEach((block) => {
+    const header = block.querySelector('h2');
+    if (header) {
+      header.addEventListener('click', (e) => {
+        e.stopPropagation();
+        block.classList.toggle('collapsed');
+      });
+    }
+  });
 }
 
 async function bootstrap() {

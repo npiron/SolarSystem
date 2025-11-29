@@ -67,21 +67,21 @@
         <div class="stat-row muted"><span><span class="icon">🌀</span> Spawn</span><span id="spawnRate">0/s</span></div>
       </div>
 
-      <div class="stat-block">
+      <div class="stat-block collapsible collapsed" data-collapsible>
         <h2>Performance</h2>
         <div class="stat-row"><span><span class="icon">🎞️</span> FPS</span><span id="fpsValue">--</span></div>
         <button id="toggleFps" class="ghost small">📈 Afficher le graph</button>
-        <canvas id="fpsGraph" class="fps-chart" width="260" height="120"></canvas>
+        <canvas id="fpsGraph" class="fps-chart" width="260" height="80"></canvas>
       </div>
 
-      <div class="stat-block">
+      <div class="stat-block collapsible collapsed" data-collapsible>
         <h2>Addons visuels</h2>
-        <p class="muted">Filtres PIXI optionnels pour un rendu plus arcade.</p>
+        <p class="muted">Filtres PIXI optionnels.</p>
         <div class="debug-grid">
           <button id="toggleGlowFx" class="ghost">✨ Aura</button>
           <button id="toggleBloomFx" class="ghost">🌟 Bloom</button>
           <button id="toggleGrainFx" class="ghost">🎞️ Grain</button>
-          <button id="toggleHudPulse" class="ghost">💫 Pulse HUD</button>
+          <button id="toggleHudPulse" class="ghost">💫 Pulse</button>
         </div>
       </div>
 
@@ -103,19 +103,17 @@
     <section class="panel upgrades">
       <div class="stat-block assist">
         <h2>Aide rapide</h2>
-        <p class="muted">Rappels pour les premières actions clés.</p>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
 
       <div class="stat-block assist">
         <h2>Jalons</h2>
-        <p class="muted">Cibles de run : vagues atteintes et upgrades clés.</p>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>
 
-      <div class="stat-block">
+      <div class="stat-block collapsible" data-collapsible>
         <h2>Arbre de talents</h2>
-        <p class="muted">Investis des fragments pour débloquer des synergies (dégâts, cadence, économie, défense). Les talents sont persistants tant que tu ne les réinitialises pas.</p>
+        <p class="muted">Synergies persistantes : dégâts, cadence, économie, défense.</p>
         <div id="talents" class="talent-grid"></div>
         <div class="talent-actions">
           <p id="talentStatus" class="muted"></p>
@@ -123,43 +121,43 @@
         </div>
       </div>
       <div class="stat-block">
-        <h2>Améliorations de combat</h2>
+        <h2>Améliorations</h2>
         <div id="upgrades" class="list"></div>
       </div>
       <div class="stat-block">
-        <h2>Prestige doux</h2>
-        <p class="muted">Réduit ta vague à 1 mais augmente la puissance passive. Parfait pour scaler à l'infini.</p>
+        <h2>Prestige</h2>
+        <p class="muted">Réduit ta vague à 1 mais boost le passif.</p>
         <button id="softPrestige" class="secondary">⟳ Consolidation</button>
-        <button id="restartRun" class="ghost">↻ Relancer la run</button>
+        <button id="restartRun" class="ghost">↻ Relancer</button>
       </div>
 
-      <div class="stat-block">
+      <div class="stat-block collapsible collapsed" data-collapsible>
         <h2>Comment jouer</h2>
         <ul class="guide">
-          <li>Investis l'Essence (⚡) dans la production passive, puis utilise les Fragments (✦) pour renforcer le combat.</li>
-          <li>Les vagues montent sans fin : quand c'est trop dur, lance une Consolidation pour booster le passif et repartir.</li>
-          <li>Chaque ennemi détruit lâche des Fragments visibles dans l'arène : ta bille essaie de les aspirer automatiquement grâce au rayon de collecte.</li>
-          <li>Ton tir tourne constamment : les projectiles partent en cercle et peuvent infliger des coups critiques selon tes upgrades.</li>
-          <li>Des élites surgissent régulièrement : elles donnent plus mais frappent plus fort. Pense à la défense, à la vitesse de projectile et à la collecte.</li>
-          <li>Besoin de fluidité ? Active le mode perfo : effets réduits, gains regroupés, l'arène reste lisible même avec des centaines d'entités.</li>
+          <li>Investis l'Essence (⚡) dans la production passive, puis les Fragments (✦) pour le combat.</li>
+          <li>Les vagues montent sans fin : lance une Consolidation pour booster le passif et repartir.</li>
+          <li>Chaque ennemi détruit lâche des Fragments que ta bille aspire automatiquement.</li>
+          <li>Ton tir tourne constamment et peut infliger des coups critiques.</li>
+          <li>Des élites surgissent : elles donnent plus mais frappent plus fort.</li>
+          <li>Mode perfo : effets réduits pour plus de fluidité.</li>
         </ul>
       </div>
 
-      <div class="stat-block debug">
+      <div class="stat-block collapsible collapsed debug" data-collapsible>
         <h2>Debug</h2>
-        <p class="muted">Boutons de test (local uniquement) pour accélérer les vérifications.</p>
+        <p class="muted">Boutons de test local.</p>
         <div class="debug-grid">
           <button id="debugGiveEssence" class="ghost">+1M ⚡</button>
           <button id="debugGiveFragments" class="ghost">+1M ✦</button>
           <button id="debugSkipWave" class="ghost">+10 vagues</button>
-          <button id="debugNuke" class="ghost">☄️ Clear ennemis</button>
+          <button id="debugNuke" class="ghost">☄️ Clear</button>
         </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Made for fun. Pas de serveur, pas de compte : tout reste dans tes cookies.</p>
+    <p>Made for fun · Pas de serveur · Tout reste dans tes cookies</p>
   </footer>
 
   <div id="versionBadge" class="version-badge"></div>
