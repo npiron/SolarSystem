@@ -420,7 +420,8 @@ const BASE_PLAYER_STATS = {
   pierce: 0,
   collectRadius: 90,
   critChance: 0.08,
-  critMultiplier: 2
+  critMultiplier: 2,
+  speed: 95
 };
 
 if (versionBadge) {
@@ -448,7 +449,6 @@ const state = {
     ...BASE_PLAYER_STATS,
     hp: 120,
     maxHp: 120,
-    speed: 95,
     fireTimer: 0,
     spin: 0
   },
@@ -568,6 +568,7 @@ function loadSave() {
     state.player.collectRadius = save.player?.collectRadius ?? state.player.collectRadius;
     state.player.critChance = save.player?.critChance ?? state.player.critChance;
     state.player.critMultiplier = save.player?.critMultiplier ?? state.player.critMultiplier;
+    state.player.speed = save.player?.speed ?? state.player.speed;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
@@ -629,7 +630,8 @@ function saveGame() {
       pierce: state.player.pierce,
       collectRadius: state.player.collectRadius,
       critChance: state.player.critChance,
-      critMultiplier: state.player.critMultiplier
+      critMultiplier: state.player.critMultiplier,
+      speed: state.player.speed
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),

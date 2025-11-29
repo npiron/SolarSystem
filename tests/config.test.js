@@ -27,6 +27,7 @@ function cloneState() {
       damageReduction: 0.68,
       pierce: 0,
       collectRadius: 50,
+      speed: 100,
     },
   };
 }
@@ -47,8 +48,8 @@ describe("config factories", () => {
 
   it("creates generator definitions with default values", () => {
     const generators = createGenerators();
-    expect(generators).toHaveLength(3);
-    expect(generators.map((g) => g.id)).toEqual(["drone", "forge", "spires"]);
+    expect(generators).toHaveLength(4);
+    expect(generators.map((g) => g.id)).toEqual(["drone", "forge", "spires", "nexus"]);
     expect(generators[0]).toMatchObject({
       name: "Drones collecteurs",
       baseRate: 0.2,
@@ -79,6 +80,7 @@ describe("config factories", () => {
     expect(state.player.damageReduction).toBeCloseTo(0.7);
     expect(state.player.pierce).toBe(1);
     expect(state.player.collectRadius).toBeCloseTo(56);
+    expect(state.player.speed).toBeCloseTo(108);
   });
 
   it("exposes a consistent talent tree structure", () => {
