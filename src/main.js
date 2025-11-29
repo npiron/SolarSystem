@@ -1,10 +1,19 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { FX_BUDGET, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
+import { TALENT_RESET_COST } from "./config/talents.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
 import { updateSpawn } from "./systems/spawn.js";
+import {
+  computeTalentBonuses,
+  canUnlockTalent,
+  hydrateTalents,
+  prerequisitesMet,
+  resetTalents,
+  unlockTalent
+} from "./systems/talents.js";
 
 const canvas = document.getElementById("arena");
 const app = new PIXI.Application({
@@ -296,11 +305,30 @@ const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators");
 const upgradesContainer = document.getElementById("upgrades");
+const talentsContainer = document.getElementById("talents");
+const resetTalentsBtn = document.getElementById("resetTalents");
+const talentStatusEl = document.getElementById("talentStatus");
 const fpsValueEl = document.getElementById("fpsValue");
 const fpsCanvas = document.getElementById("fpsGraph");
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
+let talents = hydrateTalents();
+let talentBonuses = computeTalentBonuses(talents);
+
+const BASE_PLAYER_STATS = {
+  damage: 12,
+  fireDelay: 0.65,
+  projectiles: 1,
+  regen: 2,
+  range: 1,
+  bulletSpeed: 260,
+  damageReduction: 0,
+  pierce: 0,
+  collectRadius: 90,
+  critChance: 0.08,
+  critMultiplier: 2
+};
 
 if (versionBadge) {
   versionBadge.textContent = VERSION;
@@ -324,27 +352,20 @@ const state = {
     x: app.renderer.width / 2,
     y: app.renderer.height / 2,
     radius: 12,
+    ...BASE_PLAYER_STATS,
     hp: 120,
     maxHp: 120,
     speed: 95,
-    damage: 12,
-    fireDelay: 0.65,
     fireTimer: 0,
-    projectiles: 1,
-    regen: 2,
-    range: 1,
-    bulletSpeed: 260,
-    damageReduction: 0,
-    pierce: 0,
-    collectRadius: 90,
-    critChance: 0.08,
-    critMultiplier: 2,
     spin: 0
   },
   resources: {
     essence: 0,
     fragments: 0,
     idleMultiplier: 1
+  },
+  talents: {
+    bonuses: talentBonuses
   },
   spawnTimer: 0,
   overlayFade: 0.12,
@@ -383,7 +404,8 @@ function resizeCanvas(center = false) {
 
 const uiRefs = {
   generatorButtons: new Map(),
-  upgradeButtons: new Map()
+  upgradeButtons: new Map(),
+  talentButtons: new Map()
 };
 
 async function loadTextures() {
@@ -420,7 +442,7 @@ function loadSave() {
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
         generators[idx].level = g.level || 0;
-        generators[idx].rate = generators[idx].baseRate * Math.pow(1.12, generators[idx].level) * state.resources.idleMultiplier;
+        generators[idx].rate = computeGeneratorRate(generators[idx]);
         generators[idx].cost = g.cost || generators[idx].cost;
       }
     });
@@ -434,7 +456,12 @@ function loadSave() {
         upgrade.cost = entry.cost || upgrade.cost;
       }
     });
-    applyUpgradeEffects();
+    talents = hydrateTalents(save.talents);
+    hudContext.talents = talents;
+    talentBonuses = computeTalentBonuses(talents);
+    state.talents.bonuses = talentBonuses;
+    applyProgressionEffects();
+    refreshGeneratorRates();
     const now = Date.now();
     if (save.lastSeen) {
       const elapsed = Math.max(0, (now - save.lastSeen) / 1000);
@@ -464,6 +491,7 @@ function saveGame() {
     },
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
+    talents: talents.map((talent) => ({ id: talent.id, unlocked: talent.unlocked })),
     idleMultiplier: state.resources.idleMultiplier,
     lastSeen: Date.now()
   };
@@ -480,28 +508,43 @@ function grantOfflineGains(seconds) {
   state.runStats.fragments += earnedFragments;
 }
 
-function applyUpgradeEffects() {
-  // Reset to base before reapplying
-  state.player.damage = 12;
-  state.player.fireDelay = 0.65;
-  state.player.projectiles = 1;
-  state.player.regen = 2;
-  state.player.range = 1;
-  state.player.bulletSpeed = 260;
-  state.player.damageReduction = 0;
-  state.player.pierce = 0;
-  state.player.collectRadius = 90;
-  state.player.critChance = 0.08;
-  state.player.critMultiplier = 2;
+function applyProgressionEffects() {
+  Object.entries(BASE_PLAYER_STATS).forEach(([key, value]) => {
+    state.player[key] = value;
+  });
+
   upgrades.forEach((upgrade) => {
     for (let i = 0; i < upgrade.level; i++) {
       upgrade.apply(state);
     }
   });
+
+  talentBonuses = computeTalentBonuses(talents);
+  state.talents.bonuses = talentBonuses;
+
+  state.player.damage *= talentBonuses.damage;
+  state.player.fireDelay *= talentBonuses.fireDelay;
+  state.player.projectiles += talentBonuses.projectiles;
+  state.player.regen += talentBonuses.regen;
+  state.player.damageReduction = Math.min(0.85, state.player.damageReduction + talentBonuses.damageReduction);
+  state.player.collectRadius *= talentBonuses.collectRadius;
+  state.player.critChance = Math.min(0.95, state.player.critChance + talentBonuses.critChance);
+  state.player.critMultiplier *= talentBonuses.critMultiplier;
+  state.player.bulletSpeed *= talentBonuses.bulletSpeed;
+}
+
+function computeGeneratorRate(generator) {
+  return generator.baseRate * Math.pow(1.12, generator.level) * state.resources.idleMultiplier * talentBonuses.economy;
+}
+
+function refreshGeneratorRates() {
+  generators.forEach((gen) => {
+    gen.rate = computeGeneratorRate(gen);
+  });
 }
 
 function computeIdleRate() {
-  return generators.reduce((sum, g) => sum + g.rate * g.level, 0);
+  return generators.reduce((sum, g) => sum + computeGeneratorRate(g) * g.level, 0);
 }
 
 function recordFpsSample() {
@@ -589,7 +632,9 @@ const hudContext = {
   uiRefs,
   generators,
   upgrades,
-  computeIdleRate
+  talents,
+  computeIdleRate,
+  canUnlockTalent
 };
 
 function buyGenerator(gen) {
@@ -597,7 +642,8 @@ function buyGenerator(gen) {
   state.resources.essence -= gen.cost;
   gen.level += 1;
   gen.cost = Math.ceil(gen.cost * 1.35 + gen.level * 2);
-  gen.rate = gen.baseRate * Math.pow(1.12, gen.level) * state.resources.idleMultiplier;
+  gen.rate = computeGeneratorRate(gen);
+  refreshGeneratorRates();
 }
 
 function renderGenerators() {
@@ -607,6 +653,7 @@ function renderGenerators() {
     const card = document.createElement("div");
     card.className = "card";
     const info = document.createElement("div");
+    gen.rate = computeGeneratorRate(gen);
     const production = gen.rate * gen.level;
     info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · Produit ${formatNumber(production)} ${icons.essence}/s</p>`;
     const btn = document.createElement("button");
@@ -631,7 +678,7 @@ function buyUpgrade(upgrade) {
   state.resources.fragments -= upgrade.cost;
   upgrade.level += 1;
   upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
-  upgrade.apply(state);
+  applyProgressionEffects();
 }
 
 function renderUpgrades() {
@@ -656,6 +703,65 @@ function renderUpgrades() {
     upgradesContainer.appendChild(card);
     uiRefs.upgradeButtons.set(up.id, btn);
   });
+}
+
+function buyTalent(talent) {
+  if (!unlockTalent(talent, talents, state)) return false;
+  applyProgressionEffects();
+  refreshGeneratorRates();
+  return true;
+}
+
+function renderTalents() {
+  if (!talentsContainer) return;
+  talentsContainer.innerHTML = "";
+  uiRefs.talentButtons.clear();
+  let unlockedCount = 0;
+
+  talents.forEach((talent) => {
+    if (talent.unlocked) unlockedCount += 1;
+    const card = document.createElement("button");
+    card.className = "talent-node";
+    if (talent.unlocked) card.classList.add("active");
+    card.dataset.synergy = talent.synergy;
+
+    const prereqNames = (talent.requires || [])
+      .map((id) => talents.find((t) => t.id === id)?.name)
+      .filter(Boolean);
+    const canUnlock = canUnlockTalent(talent, talents, state.resources);
+
+    card.innerHTML = `
+      <div class="talent-header">
+        <div>
+          <p class="eyebrow">${talent.synergy}</p>
+          <h3>${talent.name}</h3>
+        </div>
+        <span class="cost">${icons.fragments} ${formatNumber(talent.cost)}</span>
+      </div>
+      <p class="muted">${talent.description}</p>
+      <p class="prereq">Prérequis : ${prereqNames.length ? prereqNames.join(", ") : "aucun"}</p>
+    `;
+
+    card.disabled = talent.unlocked || !canUnlock;
+
+    card.addEventListener("click", () => {
+      if (!buyTalent(talent)) return;
+      renderTalents();
+      renderUpgrades();
+      saveGame();
+    });
+
+    talentsContainer.appendChild(card);
+    uiRefs.talentButtons.set(talent.id, card);
+  });
+
+  if (talentStatusEl) {
+    talentStatusEl.textContent = `${unlockedCount}/${talents.length} talents actifs`;
+  }
+  if (resetTalentsBtn) {
+    resetTalentsBtn.textContent = `🔄 Reset (${formatNumber(TALENT_RESET_COST)} ${icons.fragments})`;
+    resetTalentsBtn.disabled = unlockedCount === 0 || state.resources.fragments < TALENT_RESET_COST;
+  }
 }
 
 function nearestFragment() {
@@ -733,9 +839,7 @@ function softReset() {
 function prestige() {
   const bonus = 1 + Math.sqrt(state.wave) * 0.25;
   state.resources.idleMultiplier *= bonus;
-  generators.forEach((g) => {
-    g.rate = g.baseRate * Math.pow(1.12, g.level) * state.resources.idleMultiplier;
-  });
+  refreshGeneratorRates();
   softReset();
   state.prestigeCooldown = 8;
   saveGame();
@@ -914,6 +1018,16 @@ function initUI() {
     saveGame();
   });
 
+  resetTalentsBtn?.addEventListener("click", () => {
+    if (!resetTalents(talents, state)) return;
+    applyProgressionEffects();
+    refreshGeneratorRates();
+    renderTalents();
+    renderGenerators();
+    renderUpgrades();
+    saveGame();
+  });
+
   togglePerfBtn.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
@@ -939,6 +1053,7 @@ function initUI() {
   debugBtns.giveFragments?.addEventListener("click", () => {
     state.resources.fragments += 1_000_000;
     renderUpgrades();
+    renderTalents();
     saveGame();
     debugPing(state, "+1M ✦", undefined, () => updateHud(state, hudContext));
   });
@@ -956,6 +1071,7 @@ function initUI() {
 
   renderGenerators();
   renderUpgrades();
+  renderTalents();
 }
 
 async function bootstrap() {
