@@ -166,6 +166,78 @@ p { margin: 0; }
   gap: 8px;
 }
 
+.talent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.talent-node {
+  text-align: left;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.85));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 8px 20px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  width: 100%;
+}
+
+.talent-node .eyebrow {
+  margin-bottom: 0;
+}
+
+.talent-node.active {
+  border-color: rgba(255, 209, 102, 0.7);
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(145deg, rgba(255, 209, 102, 0.16), rgba(125, 211, 252, 0.14), rgba(30, 41, 59, 0.92));
+}
+
+.talent-node[data-synergy="dégâts"] {
+  border-color: rgba(255, 122, 195, 0.5);
+}
+
+.talent-node[data-synergy="cadence"] {
+  border-color: rgba(125, 211, 252, 0.5);
+}
+
+.talent-node[data-synergy="économie"] {
+  border-color: rgba(255, 209, 102, 0.5);
+}
+
+.talent-node[data-synergy="défense"] {
+  border-color: rgba(110, 231, 183, 0.45);
+}
+
+.talent-node h3 {
+  margin: 2px 0;
+}
+
+.talent-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.talent-header .cost {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.talent-node .prereq {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.talent-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  gap: 8px;
+}
+
 .card {
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 14px;

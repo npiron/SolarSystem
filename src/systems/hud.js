@@ -90,7 +90,7 @@ export function updateFloatingText(state, dt) {
   }
 }
 
-export function updateHud(state, { elements, uiRefs, generators, upgrades, computeIdleRate }) {
+export function updateHud(state, { elements, uiRefs, generators, upgrades, talents, computeIdleRate, canUnlockTalent }) {
   const { essenceEl, fragmentsEl, idleRateEl, waveEl, hpEl, dpsEl, damageRow, spawnRateEl, pauseBtn, softPrestigeBtn, statusEl } = elements;
 
   essenceEl.textContent = formatNumber(state.resources.essence);
@@ -123,6 +123,12 @@ export function updateHud(state, { elements, uiRefs, generators, upgrades, compu
     const up = upgrades.find((u) => u.id === id);
     if (!up) return;
     btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
+  });
+
+  uiRefs.talentButtons?.forEach((btn, id) => {
+    const talent = talents.find((t) => t.id === id);
+    if (!talent) return;
+    btn.disabled = talent.unlocked || !canUnlockTalent(talent, talents, state.resources);
   });
 
   if (state.prestigeCooldown > 0) {
