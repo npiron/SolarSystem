@@ -66,8 +66,11 @@ export const phaseMilestones = [
   }
 ];
 
-export function getNextPhase(currentWave, completed = []) {
-  return phaseMilestones.find((phase) => currentWave < phase.wave && !completed.includes(phase.id));
+export function getNextPhase(currentWave, completed = [], includeReached = false) {
+  return phaseMilestones.find((phase) => {
+    const waveCondition = includeReached ? currentWave >= phase.wave : currentWave < phase.wave;
+    return waveCondition && !completed.includes(phase.id);
+  });
 }
 
 export function spawnEnemy(state, canvas, options = {}) {
@@ -120,11 +123,10 @@ export function updateSpawn(state, dt, canvas) {
 
   state.phase.hudTimer = Math.max(0, state.phase.hudTimer - dt);
 
-  const nextPhase = phaseMilestones.find(
-    (phase) => state.wave >= phase.wave && !state.phase.completed.includes(phase.id) && (!state.phase.active || state.phase.active.id !== phase.id)
-  );
+  const nextPhase = getNextPhase(state.wave, state.phase.completed, true);
+  const pendingPhase = nextPhase && (!state.phase.active || state.phase.active.id !== nextPhase.id);
 
-  if (!state.phase.active && nextPhase) {
+  if (!state.phase.active && pendingPhase) {
     state.phase.active = { ...nextPhase, spawned: 0 };
     state.phase.announcement = `${nextPhase.name} (${nextPhase.type}) en approche !`;
     state.phase.hudTimer = 5.5;

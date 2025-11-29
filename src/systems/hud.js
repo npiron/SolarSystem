@@ -128,7 +128,7 @@ export function updateHud(state, { elements, uiRefs, generators, upgrades, compu
   document.getElementById("collect").textContent = `${Math.round(state.player.collectRadius)}px`;
 
   const activePhase = state.phase?.active;
-  const nextPhase = getNextPhase(state.wave, state.phase?.completed || []);
+  const nextPhase = getNextPhase(state.wave, state.phase?.completed || [], true);
   if (phaseEl) {
     if (activePhase) {
       phaseEl.textContent = `${activePhase.name} (${activePhase.type})`;

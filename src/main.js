@@ -928,7 +928,7 @@ function render() {
   renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
   renderObjects.hudLabels.gain.visible = state.gainTicker.fragments > 0;
   const activePhase = state.phase?.active;
-  const nextPhase = getNextPhase(state.wave, state.phase?.completed || []);
+  const nextPhase = getNextPhase(state.wave, state.phase?.completed || [], true);
   const reward = state.phase?.lastReward;
   if (state.phase?.hudTimer > 0 && state.phase?.announcement) {
     renderObjects.hudLabels.phase.text = `🚨 ${state.phase.announcement}`;
