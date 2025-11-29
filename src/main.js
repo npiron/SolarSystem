@@ -34,15 +34,15 @@ const spritePools = {
 const floatingTextPool = [];
 const floatingTextStyleCache = new Map();
 const floatingTextStyleOptions = {
-  fontFamily: "Cinzel, EB Garamond, serif",
-  fontSize: 12,
-  fill: "#f8fafc",
-  stroke: "#0f172a",
-  strokeThickness: 2,
+  fontFamily: "Fredoka, Baloo 2, Nunito, sans-serif",
+  fontSize: 13,
+  fill: "#fff7ed",
+  stroke: "#0b1024",
+  strokeThickness: 3,
   dropShadow: true,
-  dropShadowColor: "#0f172a",
-  dropShadowBlur: 3,
-  dropShadowAlpha: 0.7,
+  dropShadowColor: "#0b1024",
+  dropShadowBlur: 4,
+  dropShadowAlpha: 0.75,
   dropShadowDistance: 0,
 };
 
@@ -53,14 +53,14 @@ const arenaLayers = {
 };
 
 const hudTextOptions = {
-  fontFamily: "Cinzel, EB Garamond, serif",
-  fontSize: 14,
-  fill: "#ffffff",
-  stroke: "#0b1220",
+  fontFamily: "Baloo 2, Fredoka, Nunito, sans-serif",
+  fontSize: 15,
+  fill: "#fff7ed",
+  stroke: "#0b1024",
   strokeThickness: 3,
   dropShadow: true,
-  dropShadowColor: "#0b1220",
-  dropShadowBlur: 4,
+  dropShadowColor: "#0b1024",
+  dropShadowBlur: 5,
   dropShadowAlpha: 0.9,
   dropShadowDistance: 0,
 };
@@ -158,7 +158,7 @@ function buildBackground(width, height) {
 
   if (!state.visualsLow) {
     renderObjects.grid.clear();
-    renderObjects.grid.lineStyle({ color: 0xb4c6fc, alpha: 0.06, width: 2 });
+    renderObjects.grid.lineStyle({ color: 0xffd166, alpha: 0.08, width: 2 });
     for (let x = 0; x < width; x += 64) {
       renderObjects.grid.moveTo(x, 0);
       renderObjects.grid.lineTo(x, height);
@@ -182,10 +182,10 @@ function buildBackground(width, height) {
 function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
-  renderObjects.aura.beginFill(colors.player, 0.12);
+  renderObjects.aura.beginFill(colors.player, 0.18);
   renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
   renderObjects.aura.endFill();
-  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
+  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.28, width: 3 });
   renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
   renderObjects.aura.lineStyle(0);
 
@@ -259,17 +259,17 @@ function setupScene() {
 
 const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
 const colors = {
-  player: PIXI.utils.string2hex("#22d3ee"),
-  collect: PIXI.utils.string2hex("#34d399"),
-  bulletLow: PIXI.utils.string2hex("#e2e8f0"),
-  bulletHigh: PIXI.utils.string2hex("#fef3c7"),
-  fragment: PIXI.utils.string2hex("#f472b6"),
-  fragmentRing: PIXI.utils.string2hex("#f472b6"),
-  elite: PIXI.utils.string2hex("#f97316"),
-  hpBg: 0x0b1220,
-  hpFg: PIXI.utils.string2hex("#22c55e"),
-  hudBg: 0x0f172a,
-  hudBorder: 0xe2e8f0,
+  player: PIXI.utils.string2hex("#7dd3fc"),
+  collect: PIXI.utils.string2hex("#6ee7b7"),
+  bulletLow: PIXI.utils.string2hex("#fff7ed"),
+  bulletHigh: PIXI.utils.string2hex("#ffd166"),
+  fragment: PIXI.utils.string2hex("#ff7ac3"),
+  fragmentRing: PIXI.utils.string2hex("#ff7ac3"),
+  elite: PIXI.utils.string2hex("#ff9d6c"),
+  hpBg: PIXI.utils.string2hex("#0b1226"),
+  hpFg: PIXI.utils.string2hex("#a3e635"),
+  hudBg: PIXI.utils.string2hex("#0d1530"),
+  hudBorder: PIXI.utils.string2hex("#e2e8f0"),
 };
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
