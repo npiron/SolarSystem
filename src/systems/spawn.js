@@ -1,12 +1,21 @@
+const MAX_PACK_SIZE = 6;
+
 export function spawnRate(state) {
   return Math.min(10, 1.6 + state.wave * 0.1);
 }
 
 export function packSize(state) {
-  return Math.max(1, Math.floor(state.wave / 10));
+  const growth = Math.pow(Math.max(0, state.wave - 1) / 12, 0.65);
+  return Math.min(MAX_PACK_SIZE, Math.max(1, Math.floor(1 + growth)));
 }
 
-export function spawnEnemy(state, canvas) {
+function eliteChance(state, pack) {
+  const packPressure = pack >= MAX_PACK_SIZE ? 0.05 : (pack / MAX_PACK_SIZE) * 0.02;
+  const chance = 0.12 + state.wave * 0.0018 + packPressure;
+  return Math.min(0.65, chance);
+}
+
+export function spawnEnemy(state, canvas, chance) {
   const margin = 20;
   const side = Math.floor(Math.random() * 4);
   let x = 0;
@@ -16,7 +25,7 @@ export function spawnEnemy(state, canvas) {
   if (side === 2) { x = margin; y = Math.random() * canvas.height; }
   if (side === 3) { x = canvas.width - margin; y = Math.random() * canvas.height; }
 
-  const elite = Math.random() < 0.12 + state.wave * 0.002;
+  const elite = Math.random() < chance;
   const hp = (20 + state.wave * 7) * (elite ? 2.8 : 1);
   const speed = (40 + state.wave * 1.8) * (elite ? 0.9 : 1);
   const fireDelay = Math.max(1.2, (elite ? 3 : 4) - state.wave * 0.06);
@@ -40,8 +49,9 @@ export function updateSpawn(state, dt, canvas) {
 
   const rate = spawnRate(state);
   const pack = packSize(state);
+  const chance = eliteChance(state, pack);
   for (let i = 0; i < pack; i++) {
-    spawnEnemy(state, canvas);
+    spawnEnemy(state, canvas, chance);
   }
   state.spawnTimer = 1 / rate;
 }
