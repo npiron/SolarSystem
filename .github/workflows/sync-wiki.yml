@@ -4,8 +4,12 @@ name: Sync Wiki
 # 
 # IMPORTANT: To enable this workflow, you must:
 # 1. Create a wiki page manually first (GitHub requires at least one wiki page to exist)
-# 2. Create a Personal Access Token (PAT) with 'repo' scope
+# 2. Create a Personal Access Token (PAT) with 'repo' scope (Full control of private repositories)
+#    - Go to https://github.com/settings/tokens
+#    - Generate new token (classic) with 'repo' scope
 # 3. Add it as a repository secret named 'WIKI_TOKEN'
+#    - Go to repository Settings > Secrets and variables > Actions
+#    - Create new repository secret named 'WIKI_TOKEN'
 #
 # The default GITHUB_TOKEN does not have write access to the wiki repository.
 
@@ -23,13 +27,20 @@ jobs:
   sync-wiki:
     runs-on: ubuntu-latest
     steps:
+      - name: Check for WIKI_TOKEN
+        run: |
+          if [ -z "${{ secrets.WIKI_TOKEN }}" ]; then
+            echo "::error::WIKI_TOKEN secret is not configured. Please create a Personal Access Token with 'repo' scope and add it as a repository secret named 'WIKI_TOKEN'. See workflow comments for instructions."
+            exit 1
+          fi
+
       - name: Checkout main repository
         uses: actions/checkout@v4
 
       - name: Checkout wiki repository
         uses: actions/checkout@v4
         with:
-          repository: npiron/SolarSystem.wiki
+          repository: ${{ github.repository }}.wiki
           path: wiki-repo
           # Note: WIKI_TOKEN must be a PAT with repo scope
           # The default GITHUB_TOKEN cannot write to the wiki
@@ -61,4 +72,13 @@ jobs:
           fi
           
           git commit -m "Sync wiki content from main repository"
-          git push
+          
+          # Attempt to push and provide helpful error message if it fails
+          if ! git push 2>&1; then
+            echo ""
+            echo "::error::Failed to push to wiki repository. This is usually caused by:"
+            echo "::error::1. The WIKI_TOKEN does not have 'repo' scope - regenerate with full repo access"
+            echo "::error::2. The wiki has not been initialized - create at least one wiki page manually first"
+            echo "::error::3. The token has expired - generate a new token"
+            exit 1
+          fi
