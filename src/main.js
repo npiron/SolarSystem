@@ -172,7 +172,7 @@ function applyAddonFilters() {
   }
 
   const bloomFilters = allowHeavyFx && state.addons.bloom ? [fx.bloom] : null;
-  renderObjects.fragmentSprites.filters = bloomFilters;
+  renderObjects.fragments.filters = bloomFilters;
   renderObjects.fragmentRings.filters = bloomFilters;
   renderObjects.bulletsGlow.filters = bloomFilters;
 
@@ -200,33 +200,22 @@ function setupScene() {
   renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
   renderObjects.aura.lineStyle(0);
 
-  if (textures.player) {
-    renderObjects.playerSprite = new PIXI.Sprite(textures.player);
-    renderObjects.playerSprite.anchor.set(0.5);
-    renderObjects.playerSprite.tint = colors.player;
-  } else {
-    renderObjects.playerFallback.beginFill(colors.player, 1);
-    renderObjects.playerFallback.drawCircle(0, 0, state.player.radius);
-    renderObjects.playerFallback.endFill();
-  }
+  // Draw the player as a vector circle
+  renderObjects.player.beginFill(colors.player, 1);
+  renderObjects.player.drawCircle(0, 0, state.player.radius);
+  renderObjects.player.endFill();
 
   const playerContainer = new PIXI.Container();
   playerContainer.addChild(renderObjects.aura);
-  if (renderObjects.playerSprite) {
-    playerContainer.addChild(renderObjects.playerSprite);
-  } else {
-    playerContainer.addChild(renderObjects.playerFallback);
-  }
+  playerContainer.addChild(renderObjects.player);
   renderObjects.playerContainer = playerContainer;
 
   arenaLayers.entities.addChild(
     playerContainer,
     renderObjects.bullets,
     renderObjects.bulletsGlow,
-    renderObjects.fragmentSprites,
     renderObjects.fragments,
     renderObjects.fragmentRings,
-    renderObjects.enemySprites,
     renderObjects.enemies,
     renderObjects.enemyHp
   );
@@ -965,10 +954,6 @@ function render() {
     renderObjects.backgroundContainer.removeChildren();
   } else if (!renderObjects.backgroundContainer.children.length) {
     buildBackground(width, height);
-  } else if (renderObjects.pattern) {
-    renderObjects.pattern.width = width;
-    renderObjects.pattern.height = height;
-    renderObjects.pattern.tilePosition.set(state.time * -60, state.time * 48);
   }
 
   renderObjects.aura.clear();
@@ -980,16 +965,8 @@ function render() {
   renderObjects.aura.lineStyle(0);
   renderObjects.aura.position.set(state.player.x, state.player.y);
 
-  const sprite = renderObjects.playerSprite;
-  if (sprite) {
-    const baseSize = textures.player?.width || sprite.width || 64;
-    const scale = ((state.player.radius * 3.6) / baseSize) * spriteScales.player;
-    sprite.scale.set(scale);
-    sprite.rotation = state.time * 0.8;
-    sprite.position.set(state.player.x, state.player.y);
-  } else {
-    renderObjects.playerFallback.position.set(state.player.x, state.player.y);
-  }
+  // Update player position using vector graphics
+  renderObjects.player.position.set(state.player.x, state.player.y);
 
   renderObjects.bullets.clear();
   renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
@@ -1003,30 +980,13 @@ function render() {
     renderObjects.bulletsGlow.endFill();
   }
 
-  const hasFragmentSprites = Boolean(textures.fragment);
-  renderObjects.fragmentSprites.visible = hasFragmentSprites;
-  renderObjects.fragments.visible = !hasFragmentSprites;
-
-  if (hasFragmentSprites) {
-    recycleSprites(renderObjects.fragmentSprites, spritePools.fragments);
-    state.fragmentsOrbs.forEach((f) => {
-      const spriteFragment = acquireSprite(spritePools.fragments, textures.fragment, colors.fragment);
-      const baseSize = textures.fragment.width || 64;
-      const scale = (22 / baseSize) * spriteScales.fragment;
-      spriteFragment.alpha = state.visualsLow ? 0.85 : 1;
-      spriteFragment.scale.set(scale);
-      spriteFragment.rotation = state.time * 1.6;
-      spriteFragment.position.set(f.x, f.y);
-      renderObjects.fragmentSprites.addChild(spriteFragment);
-    });
-  } else {
-    renderObjects.fragments.clear();
-    renderObjects.fragments.beginFill(colors.fragment);
-    state.fragmentsOrbs.forEach((f) => {
-      renderObjects.fragments.drawCircle(f.x, f.y, 6);
-    });
-    renderObjects.fragments.endFill();
-  }
+  // Render fragments using vector graphics only
+  renderObjects.fragments.clear();
+  renderObjects.fragments.beginFill(colors.fragment);
+  state.fragmentsOrbs.forEach((f) => {
+    renderObjects.fragments.drawCircle(f.x, f.y, 6);
+  });
+  renderObjects.fragments.endFill();
 
   renderObjects.fragmentRings.clear();
   if (!state.visualsLow) {
@@ -1037,31 +997,13 @@ function render() {
     renderObjects.fragmentRings.lineStyle(0);
   }
 
-  const hasEnemySprites = Boolean(textures.enemy);
-  renderObjects.enemySprites.visible = hasEnemySprites;
-  renderObjects.enemies.visible = !hasEnemySprites;
-
-  if (hasEnemySprites) {
-    recycleSprites(renderObjects.enemySprites, spritePools.enemies);
-    state.enemies.forEach((e, idx) => {
-      const tint = e.elite ? colors.elite : paletteHex[idx % paletteHex.length];
-      const spriteEnemy = acquireSprite(spritePools.enemies, textures.enemy, tint);
-      const baseSize = textures.enemy.width || 64;
-      const scale = ((e.radius * 2.6) / baseSize) * spriteScales.enemy;
-      spriteEnemy.alpha = state.visualsLow ? 0.7 : 1;
-      spriteEnemy.scale.set(scale);
-      spriteEnemy.rotation = state.time * 0.6 + idx * 0.1;
-      spriteEnemy.position.set(e.x, e.y);
-      renderObjects.enemySprites.addChild(spriteEnemy);
-    });
-  } else {
-    renderObjects.enemies.clear();
-    state.enemies.forEach((e, idx) => {
-      renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
-      renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
-      renderObjects.enemies.endFill();
-    });
-  }
+  // Render enemies using vector graphics only
+  renderObjects.enemies.clear();
+  state.enemies.forEach((e, idx) => {
+    renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+    renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+    renderObjects.enemies.endFill();
+  });
 
   renderObjects.enemyHp.clear();
   state.enemies.forEach((e) => {
