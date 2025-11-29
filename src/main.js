@@ -1,7 +1,4 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-// Use the bundled pixi-filters package which includes all filters with dependencies pre-bundled.
-// This avoids ESM resolution issues where individual @pixi/filter-* packages try to import
-// from @pixi/utils which doesn't export 'deprecation' in its ESM build.
 import { GlowFilter, KawaseBlurFilter, NoiseFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
