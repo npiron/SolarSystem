@@ -4,8 +4,22 @@
 [![Pages](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml)
 [![Release](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Wiki](https://img.shields.io/badge/📖_Wiki-Documentation-blue)](wiki/Home.md)
 
 Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : progression sauvegardée dans le navigateur via `localStorage`.
+
+## 📖 Documentation
+
+Une documentation complète du jeu est disponible dans le [**Wiki**](wiki/Home.md) :
+
+- 🚀 [Démarrage rapide](wiki/Démarrage-Rapide.md) - Comment lancer et jouer
+- ⚔️ [Système de combat](wiki/Système-de-Combat.md) - Mécaniques de combat
+- 💰 [Ressources et économie](wiki/Ressources-et-Économie.md) - Gestion des ressources
+- 🏭 [Générateurs](wiki/Générateurs.md) - Production passive
+- ⬆️ [Améliorations](wiki/Améliorations.md) - Upgrades de combat
+- 🌳 [Arbre de talents](wiki/Arbre-de-Talents.md) - Synergies persistantes
+- ⟳ [Prestige](wiki/Prestige-Consolidation.md) - Système de Consolidation
+- ❓ [FAQ](wiki/FAQ.md) - Questions fréquentes
 
 ## Lancer
 
