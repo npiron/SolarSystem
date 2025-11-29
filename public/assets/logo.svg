@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs>
+    <!-- Gradient for the main orb -->
+    <radialGradient id="orbGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="50%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#ff7ac3"/>
+    </radialGradient>
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Shield shape gradient -->
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#ff9d6c"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background ring with orbital path -->
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#ff7ac3" stroke-width="2" opacity="0.5"/>
+  <circle cx="60" cy="60" r="42" fill="none" stroke="#7dd3fc" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- Central glowing orb (player) -->
+  <circle cx="60" cy="60" r="22" fill="url(#orbGrad)" filter="url(#glow)"/>
+  
+  <!-- Inner highlight -->
+  <circle cx="52" cy="52" r="8" fill="white" opacity="0.4"/>
+  
+  <!-- Orbiting projectiles/bullets -->
+  <g filter="url(#glow)">
+    <circle cx="105" cy="60" r="6" fill="#ffd166"/>
+    <circle cx="60" cy="15" r="5" fill="#ff7ac3"/>
+    <circle cx="15" cy="60" r="5" fill="#7dd3fc"/>
+    <circle cx="60" cy="105" r="4" fill="#a7f3d0"/>
+  </g>
+  
+  <!-- Shooting lines (projectile trails) -->
+  <g opacity="0.6">
+    <line x1="82" y1="60" x2="95" y2="60" stroke="#ffd166" stroke-width="2" stroke-linecap="round"/>
+    <line x1="60" y1="38" x2="60" y2="25" stroke="#ff7ac3" stroke-width="2" stroke-linecap="round"/>
+    <line x1="38" y1="60" x2="25" y2="60" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round"/>
+    <line x1="60" y1="82" x2="60" y2="95" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Small decoration stars -->
+  <g fill="#ffd166" opacity="0.7">
+    <polygon points="95,25 97,30 102,30 98,33 100,38 95,35 90,38 92,33 88,30 93,30" transform="scale(0.6) translate(50,-10)"/>
+    <polygon points="25,95 27,100 32,100 28,103 30,108 25,105 20,108 22,103 18,100 23,100" transform="scale(0.5) translate(-15,85)"/>
+  </g>
+</svg>
