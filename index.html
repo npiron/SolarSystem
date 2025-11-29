@@ -78,6 +78,18 @@
     </section>
 
     <section class="panel upgrades">
+      <div class="stat-block assist">
+        <h2>Aide rapide</h2>
+        <p class="muted">Rappels pour les premières actions clés.</p>
+        <ul id="quickHelpList" class="assist-list"></ul>
+      </div>
+
+      <div class="stat-block assist">
+        <h2>Jalons</h2>
+        <p class="muted">Cibles de run : vagues atteintes et upgrades clés.</p>
+        <ul id="milestoneList" class="assist-list milestones"></ul>
+      </div>
+
       <div class="stat-block">
         <h2>Arbre de talents</h2>
         <p class="muted">Investis des fragments pour débloquer des synergies (dégâts, cadence, économie, défense). Les talents sont persistants tant que tu ne les réinitialises pas.</p>
@@ -128,6 +140,7 @@
   </footer>
 
   <div id="versionBadge" class="version-badge"></div>
+  <div id="assistBubbles" class="assist-bubbles"></div>
 
   <script type="module" src="./src/main.js"></script>
 </body>

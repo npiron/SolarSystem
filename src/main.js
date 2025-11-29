@@ -1,9 +1,10 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { FX_BUDGET, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
+import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
 import { TALENT_RESET_COST } from "./config/talents.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
+import { initAssist } from "./systems/assist.js";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
 import { updateSpawn } from "./systems/spawn.js";
 import {
@@ -310,6 +311,9 @@ const resetTalentsBtn = document.getElementById("resetTalents");
 const talentStatusEl = document.getElementById("talentStatus");
 const fpsValueEl = document.getElementById("fpsValue");
 const fpsCanvas = document.getElementById("fpsGraph");
+const quickHelpList = document.getElementById("quickHelpList");
+const milestoneList = document.getElementById("milestoneList");
+const assistBubbles = document.getElementById("assistBubbles");
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
@@ -365,7 +369,14 @@ const state = {
     idleMultiplier: 1
   },
   talents: {
-    bonuses: talentBonuses
+    bonuses: talentBonuses,
+  },
+  assist: {
+    firstShot: false,
+    firstPurchase: false,
+    firstPrestige: false,
+    bestWave: 1,
+    completed: []
   },
   spawnTimer: 0,
   overlayFade: 0.12,
@@ -378,6 +389,14 @@ const state = {
     maxSamples: 240,
     graphVisible: false
   }
+};
+
+let assistUi = {
+  recordShot: () => {},
+  recordPurchase: () => {},
+  recordPrestige: () => {},
+  trackWave: () => {},
+  refreshMilestones: () => {}
 };
 
 function clampPlayerToBounds() {
@@ -418,6 +437,16 @@ async function loadTextures() {
   entries.forEach(([key, texture]) => {
     textures[key] = texture;
   });
+}
+
+function formatDuration(seconds) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const parts = [];
+  if (hours) parts.push(`${hours}h`);
+  if (minutes || !parts.length) parts.push(`${minutes}m`);
+  return parts.join(" ");
 }
 
 function loadSave() {
@@ -462,10 +491,21 @@ function loadSave() {
     state.talents.bonuses = talentBonuses;
     applyProgressionEffects();
     refreshGeneratorRates();
+    applyUpgradeEffects();
+    state.assist = {
+      ...state.assist,
+      ...save.assist,
+      completed: save.assist?.completed || []
+    };
+    state.assist.bestWave = Math.max(state.assist.bestWave || 1, state.wave || 1);
     const now = Date.now();
     if (save.lastSeen) {
       const elapsed = Math.max(0, (now - save.lastSeen) / 1000);
-      grantOfflineGains(elapsed);
+      const offlineSeconds = Math.min(MAX_OFFLINE_SECONDS, elapsed);
+      grantOfflineGains(offlineSeconds);
+      if (elapsed > MAX_OFFLINE_SECONDS) {
+        debugPing(state, `⏳ Gains hors-ligne plafonnés à ${formatDuration(MAX_OFFLINE_SECONDS)}`, "#fbbf24");
+      }
     }
   } catch (err) {
     console.warn("Save corrupted", err);
@@ -493,6 +533,13 @@ function saveGame() {
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
     talents: talents.map((talent) => ({ id: talent.id, unlocked: talent.unlocked })),
     idleMultiplier: state.resources.idleMultiplier,
+    assist: {
+      firstShot: state.assist.firstShot,
+      firstPurchase: state.assist.firstPurchase,
+      firstPrestige: state.assist.firstPrestige,
+      bestWave: state.assist.bestWave,
+      completed: state.assist.completed
+    },
     lastSeen: Date.now()
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -644,6 +691,7 @@ function buyGenerator(gen) {
   gen.cost = Math.ceil(gen.cost * 1.35 + gen.level * 2);
   gen.rate = computeGeneratorRate(gen);
   refreshGeneratorRates();
+  assistUi.recordPurchase();
 }
 
 function renderGenerators() {
@@ -679,6 +727,8 @@ function buyUpgrade(upgrade) {
   upgrade.level += 1;
   upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
   applyProgressionEffects();
+  upgrade.apply(state);
+  assistUi.recordPurchase();
 }
 
 function renderUpgrades() {
@@ -802,7 +852,12 @@ function update(dt) {
 
   updateCombat(state, dt, canvas);
 
+  if (!state.assist.firstShot && state.bullets.length > 0) {
+    assistUi.recordShot();
+  }
+
   state.wave += dt * 0.15;
+  assistUi.trackWave(state.wave);
 
   if (state.prestigeCooldown > 0) {
     state.prestigeCooldown = Math.max(0, state.prestigeCooldown - dt);
@@ -817,6 +872,7 @@ function update(dt) {
   state.runStats.fragments += passiveFragments;
 
   updateFloatingText(state, dt);
+  assistUi.refreshMilestones();
 }
 
 function softReset() {
@@ -842,6 +898,7 @@ function prestige() {
   refreshGeneratorRates();
   softReset();
   state.prestigeCooldown = 8;
+  assistUi.recordPrestige();
   saveGame();
   renderGenerators();
 }
@@ -1080,6 +1137,19 @@ async function bootstrap() {
   setupScene();
   buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
+  assistUi = initAssist(state, {
+    quickHelpList,
+    milestoneList,
+    bubbleContainer: assistBubbles,
+    anchors: {
+      arena: canvas,
+      generators: generatorsContainer,
+      upgrades: upgradesContainer,
+      prestige: softPrestigeBtn
+    },
+    upgrades,
+    generators
+  });
   initUI();
   window.addEventListener("resize", () => resizeCanvas());
   app.start();
