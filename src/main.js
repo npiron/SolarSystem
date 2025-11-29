@@ -1,6 +1,8 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { GlowFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-glow@7.4.2/+esm";
-import { KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-kawase-blur@7.4.2/+esm";
+// Note: @pixi/filter-glow and @pixi/filter-kawase-blur use different versioning than pixi.js.
+// These 5.x versions are compatible with pixi.js 7.x (peer dep: @pixi/core ^7.0.0).
+import { GlowFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-glow@5.2.1/+esm";
+import { KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-kawase-blur@5.1.1/+esm";
 import { NoiseFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-noise@7.4.2/+esm";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
