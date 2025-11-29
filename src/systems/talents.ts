@@ -6,10 +6,11 @@ export { TALENT_RESET_COST };
 export function hydrateTalents(saved?: SavedTalent[] | null): Talent[] {
   const tree = createTalentTree();
   if (!saved) return tree.map((t) => ({ ...t, unlocked: false }));
-  return tree.map((talent) => {
-    const match = saved.find((s) => s.id === talent.id);
-    return { ...talent, unlocked: match?.unlocked ?? false };
-  });
+  const saveMap = new Map(saved.map((entry) => [entry.id, entry.unlocked]));
+  return tree.map((talent) => ({
+    ...talent,
+    unlocked: saveMap.get(talent.id) ?? false
+  }));
 }
 
 export function prerequisitesMet(talent: Talent, talents: Talent[]): boolean {
