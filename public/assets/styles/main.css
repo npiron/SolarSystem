@@ -322,6 +322,72 @@ button:disabled {
   pointer-events: none;
 }
 
+.assist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assist-list li {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff7ed;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.assist-list li.done {
+  border-color: rgba(109, 231, 183, 0.5);
+  color: #d1fae5;
+}
+
+.assist-list.milestones li {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.assist-list .status {
+  font-weight: 800;
+  color: var(--secondary);
+  min-width: 20px;
+  text-align: center;
+}
+
+.assist-bubbles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.assist-bubble {
+  position: absolute;
+  transform: translate(-50%, -10px);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 209, 102, 0.3), transparent 55%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: #fff7ed;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-width: 280px;
+  text-align: center;
+}
+
+.assist-bubble.visible {
+  opacity: 1;
+  transform: translate(-50%, -18px);
+}
+
 .muted { color: var(--muted); }
 
 @media (max-width: 1200px) {

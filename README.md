@@ -41,6 +41,11 @@ Un bouton « Mode perfo » dans le header coupe certains effets visuels, reg
 
 L'interface affiche trois colonnes pleine hauteur : statistiques et production passive à gauche, l'arène centrale plein écran où le personnage auto-mouvant survit en boucle, puis les améliorations et le bouton de prestige doux à droite. Tout tourne en local (HTML/CSS/JS) et se sauvegarde dans `localStorage` sans serveur.
 
+## Aide contextuelle et jalons
+
+- Un panneau « Aide rapide » coche automatiquement tes premières étapes (tir auto, premier achat, première consolidation) grâce à des bulles qui s'affichent sur l'arène, les boutons d'achat et la Consolidation.
+- Un tracker de jalons dans la colonne de droite rappelle les vagues franchies et les upgrades clés (Pulsar chaotique, rayon de collecte niveau 3) pour garder l'économie et le prestige alignés.
+
 ## Comment jouer
 
 - ⚡ **Essence** : générée passivement par les bâtiments (Drones, Forge, Spires). Investis-la pour augmenter la production par seconde.
