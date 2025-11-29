@@ -1302,9 +1302,14 @@ function initUI() {
       block.classList.toggle('collapsed', collapsibleStates[key]);
     }
     
-    header.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Add keyboard accessibility attributes
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('role', 'button');
+    header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
+    
+    const toggleCollapsed = () => {
       block.classList.toggle('collapsed');
+      header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
       
       // Save state
       try {
@@ -1312,6 +1317,19 @@ function initUI() {
         localStorage.setItem(COLLAPSIBLE_KEY, JSON.stringify(collapsibleStates));
       } catch (err) {
         console.warn('Failed to save collapsible state:', err);
+      }
+    };
+    
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleCollapsed();
+    });
+    
+    // Add keyboard support for Enter and Space keys
+    header.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleCollapsed();
       }
     });
   });
