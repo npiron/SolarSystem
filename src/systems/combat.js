@@ -31,6 +31,41 @@ function nearestFragment(state) {
   return closest;
 }
 
+function resolveSpecialAttack(state, enemy) {
+  const attack = enemy.specialAttack;
+  if (!attack) return;
+  const dx = enemy.x - state.player.x;
+  const dy = enemy.y - state.player.y;
+  const dist = Math.hypot(dx, dy) || 1;
+
+  if (attack.kind === "shockwave" || attack.kind === "beam") {
+    const within = dist < attack.radius;
+    if (within) {
+      const dmg = attack.damage * (1 + state.wave * 0.02) * (attack.kind === "beam" ? 1.2 : 1);
+      state.player.hp -= dmg;
+      if (!state.visualsLow) {
+        addFloatingText(state, `-${dmg.toFixed(0)} HP`, enemy.x, enemy.y - 6, "#fca5a5");
+      }
+    }
+  }
+
+  if (attack.kind === "fragment-burst" && state.fragmentsOrbs.length < FX_BUDGET.fragments) {
+    for (let i = 0; i < attack.shards; i++) {
+      state.fragmentsOrbs.push({
+        x: enemy.x,
+        y: enemy.y,
+        value: 6 + state.wave * 0.8,
+        vx: (Math.random() - 0.5) * 80,
+        vy: (Math.random() - 0.5) * 80,
+        life: 12
+      });
+    }
+    if (!state.visualsLow) {
+      addFloatingText(state, "Fragments !", enemy.x, enemy.y - enemy.radius - 10, "#22d3ee");
+    }
+  }
+}
+
 function fire(state) {
   const target = nearestEnemy(state);
   const count = Math.max(1, state.player.projectiles);
@@ -114,6 +149,24 @@ export function updateCombat(state, dt, canvas) {
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
     e.x += Math.cos(angle) * e.speed * dt;
     e.y += Math.sin(angle) * e.speed * dt;
+  });
+
+  state.enemies.forEach((enemy) => {
+    if (!enemy.specialAttack) return;
+    if (enemy.telegraph > 0) {
+      enemy.telegraph = Math.max(0, enemy.telegraph - dt);
+      if (enemy.telegraph === 0) {
+        resolveSpecialAttack(state, enemy);
+      }
+      return;
+    }
+    if (enemy.specialTimer !== null && enemy.specialTimer !== undefined) {
+      enemy.specialTimer -= dt;
+      if (enemy.specialTimer <= 0) {
+        enemy.telegraph = enemy.specialAttack.telegraph || 1;
+        enemy.specialTimer = enemy.specialAttack.cooldown;
+      }
+    }
   });
 
   const enemyBuckets = new Map();

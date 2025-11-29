@@ -4,7 +4,7 @@ import { createGenerators } from "./config/generators.js";
 import { createUpgrades } from "./config/upgrades.js";
 import { updateCombat } from "./systems/combat.js";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.js";
-import { updateSpawn } from "./systems/spawn.js";
+import { getNextPhase, updateSpawn } from "./systems/spawn.js";
 
 const canvas = document.getElementById("arena");
 const app = new PIXI.Application({
@@ -19,16 +19,20 @@ const assetPaths = {
   player: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1181.png", import.meta.url).href,
   fragment: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1805.png", import.meta.url).href,
   enemy: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1173.png", import.meta.url).href,
+  boss: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1203.png", import.meta.url).href,
+  event: new URL("../public/assets/Free - Raven Fantasy Icons/Separated Files/64x64/fc1360.png", import.meta.url).href,
 };
 const spriteScales = {
   player: 1.2,
   enemy: 1.1,
   fragment: 1.4,
+  boss: 1.28,
+  event: 1.1,
 };
 const textures = {};
 const spritePools = {
   fragments: [],
-  enemies: []
+  enemies: [],
 };
 
 const floatingTextPool = [];
@@ -100,6 +104,7 @@ const renderObjects = {
   }),
   fragments: new PIXI.Graphics(),
   fragmentRings: new PIXI.Graphics(),
+  telegraphGraphics: new PIXI.Graphics(),
   enemySprites: new PIXI.ParticleContainer(400, {
     scale: true,
     alpha: true,
@@ -116,6 +121,8 @@ const renderObjects = {
     fragments: null,
     essence: null,
     gain: null,
+    phase: null,
+    reward: null,
   },
 };
 
@@ -128,6 +135,7 @@ function recycleSprites(container, pool) {
 
 function acquireSprite(pool, texture, tint = 0xffffff) {
   const sprite = pool.pop() || new PIXI.Sprite(texture);
+  sprite.texture = texture;
   sprite.anchor.set(0.5);
   sprite.tint = tint;
   return sprite;
@@ -211,13 +219,14 @@ function setupScene() {
     playerContainer,
     renderObjects.bullets,
     renderObjects.bulletsGlow,
-    renderObjects.fragmentSprites,
-    renderObjects.fragments,
-    renderObjects.fragmentRings,
-    renderObjects.enemySprites,
-    renderObjects.enemies,
-    renderObjects.enemyHp
-  );
+  renderObjects.fragmentSprites,
+  renderObjects.fragments,
+  renderObjects.fragmentRings,
+  renderObjects.telegraphGraphics,
+  renderObjects.enemySprites,
+  renderObjects.enemies,
+  renderObjects.enemyHp
+);
 
   renderObjects.hudLayer.addChild(renderObjects.hudBg);
   renderObjects.hudLabels.wave = new PIXI.Text({ text: "", style: hudTextStyle });
@@ -225,6 +234,8 @@ function setupScene() {
   renderObjects.hudLabels.fragments = new PIXI.Text({ text: "", style: hudTextStyle });
   renderObjects.hudLabels.essence = new PIXI.Text({ text: "", style: hudTextStyle });
   renderObjects.hudLabels.gain = new PIXI.Text({ text: "", style: hudAccentStyle });
+  renderObjects.hudLabels.phase = new PIXI.Text({ text: "", style: hudTextStyle });
+  renderObjects.hudLabels.reward = new PIXI.Text({ text: "", style: hudAccentStyle });
 
   const hudEntries = [
     { label: renderObjects.hudLabels.wave, y: 28 },
@@ -232,6 +243,8 @@ function setupScene() {
     { label: renderObjects.hudLabels.fragments, y: 68 },
     { label: renderObjects.hudLabels.essence, y: 88 },
     { label: renderObjects.hudLabels.gain, y: 108 },
+    { label: renderObjects.hudLabels.phase, y: 128 },
+    { label: renderObjects.hudLabels.reward, y: 148 },
   ];
 
   hudEntries.forEach(({ label, y }) => {
@@ -243,7 +256,7 @@ function setupScene() {
   const x = 12;
   const y = 12;
   const w = 190;
-  const h = 126;
+  const h = 176;
   const r = 10;
   renderObjects.hudBg.beginFill(colors.hudBg, 0.45);
   renderObjects.hudBg.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
@@ -294,6 +307,9 @@ const dpsEl = document.getElementById("dps");
 const damageRow = document.getElementById("damageRow");
 const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
+const phaseEl = document.getElementById("phaseState");
+const phaseRewardEl = document.getElementById("phaseReward");
+const phaseAnnouncementEl = document.getElementById("phaseAnnouncement");
 const generatorsContainer = document.getElementById("generators");
 const upgradesContainer = document.getElementById("upgrades");
 const fpsValueEl = document.getElementById("fpsValue");
@@ -319,6 +335,13 @@ const state = {
     kills: 0,
     fragments: 0,
     essence: 0
+  },
+  phase: {
+    active: null,
+    completed: [],
+    announcement: "",
+    hudTimer: 0,
+    lastReward: null
   },
   player: {
     x: app.renderer.width / 2,
@@ -417,6 +440,11 @@ function loadSave() {
     state.player.critChance = save.player?.critChance ?? state.player.critChance;
     state.player.critMultiplier = save.player?.critMultiplier ?? state.player.critMultiplier;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
+    state.phase.completed = save.phase?.completed || [];
+    state.phase.lastReward = save.phase?.lastReward || null;
+    state.phase.active = null;
+    state.phase.announcement = "";
+    state.phase.hudTimer = 0;
     save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
         generators[idx].level = g.level || 0;
@@ -465,6 +493,7 @@ function saveGame() {
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
     idleMultiplier: state.resources.idleMultiplier,
+    phase: { completed: state.phase.completed, lastReward: state.phase.lastReward },
     lastSeen: Date.now()
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -584,7 +613,10 @@ const hudContext = {
     spawnRateEl,
     pauseBtn,
     softPrestigeBtn,
-    statusEl
+    statusEl,
+    phaseEl,
+    phaseRewardEl,
+    phaseAnnouncementEl
   },
   uiRefs,
   generators,
@@ -725,6 +757,7 @@ function softReset() {
   state.fragmentsOrbs = [];
   state.gainTicker = { fragments: 0, essence: 0, timer: 0 };
   state.runStats = { kills: 0, fragments: 0, essence: 0 };
+  state.phase = { active: null, completed: [], announcement: "", hudTimer: 0, lastReward: null };
   state.spawnTimer = 0;
   state.dead = false;
   state.running = true;
@@ -821,6 +854,17 @@ function render() {
     renderObjects.fragmentRings.lineStyle(0);
   }
 
+  renderObjects.telegraphGraphics.clear();
+  renderObjects.telegraphGraphics.lineStyle({ color: colors.elite, alpha: 0.22, width: 2 });
+  state.enemies.forEach((enemy) => {
+    if (!enemy.specialAttack || enemy.telegraph <= 0) return;
+    const color = enemy.telegraphColor ?? colors.elite;
+    const progress = enemy.specialAttack.telegraph ? enemy.telegraph / enemy.specialAttack.telegraph : 1;
+    renderObjects.telegraphGraphics.lineStyle({ color, alpha: 0.4 + (1 - progress) * 0.35, width: 3 });
+    renderObjects.telegraphGraphics.drawCircle(enemy.x, enemy.y, enemy.specialAttack.radius);
+    renderObjects.telegraphGraphics.lineStyle({ color: colors.elite, alpha: 0.22, width: 2 });
+  });
+
   const hasEnemySprites = Boolean(textures.enemy);
   renderObjects.enemySprites.visible = hasEnemySprites;
   renderObjects.enemies.visible = !hasEnemySprites;
@@ -828,10 +872,14 @@ function render() {
   if (hasEnemySprites) {
     recycleSprites(renderObjects.enemySprites, spritePools.enemies);
     state.enemies.forEach((e, idx) => {
-      const tint = e.elite ? colors.elite : paletteHex[idx % paletteHex.length];
-      const spriteEnemy = acquireSprite(spritePools.enemies, textures.enemy, tint);
-      const baseSize = textures.enemy.width || 64;
-      const scale = ((e.radius * 2.6) / baseSize) * spriteScales.enemy;
+      const texture =
+        (e.variant === "boss" && textures.boss) ||
+        (e.variant === "event" && textures.event) ||
+        textures.enemy;
+      const tint = e.variant === "boss" ? colors.elite : e.variant === "event" ? 0x38bdf8 : paletteHex[idx % paletteHex.length];
+      const spriteEnemy = acquireSprite(spritePools.enemies, texture, tint);
+      const baseSize = texture?.width || 64;
+      const scale = ((e.radius * 2.6) / baseSize) * (spriteScales[e.variant] || spriteScales.enemy);
       spriteEnemy.alpha = state.visualsLow ? 0.7 : 1;
       spriteEnemy.scale.set(scale);
       spriteEnemy.rotation = state.time * 0.6 + idx * 0.1;
@@ -879,6 +927,21 @@ function render() {
   renderObjects.hudLabels.essence.text = `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`;
   renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
   renderObjects.hudLabels.gain.visible = state.gainTicker.fragments > 0;
+  const activePhase = state.phase?.active;
+  const nextPhase = getNextPhase(state.wave, state.phase?.completed || []);
+  const reward = state.phase?.lastReward;
+  if (state.phase?.hudTimer > 0 && state.phase?.announcement) {
+    renderObjects.hudLabels.phase.text = `🚨 ${state.phase.announcement}`;
+  } else if (activePhase) {
+    renderObjects.hudLabels.phase.text = `🚩 ${activePhase.name} (${activePhase.type})`;
+  } else if (nextPhase) {
+    renderObjects.hudLabels.phase.text = `🧭 Prochaine phase : vague ${nextPhase.wave}`;
+  } else {
+    renderObjects.hudLabels.phase.text = "🧭 Phases bouclées";
+  }
+  renderObjects.hudLabels.reward.text = reward
+    ? `🎁 ${formatNumber(reward.essence)} ⚡ / ${formatNumber(reward.fragments)} ✦`
+    : "🎁 Récompense en attente";
 }
 
 app.ticker.add((delta) => {

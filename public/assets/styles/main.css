@@ -264,6 +264,11 @@ button:disabled {
   opacity: 1;
 }
 
+.overlay .status.phase {
+  color: #c084fc;
+  text-shadow: 0 0 12px rgba(192, 132, 252, 0.4);
+}
+
 .guide {
   margin: 8px 0 0;
   padding-left: 18px;

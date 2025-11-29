@@ -1,5 +1,5 @@
 import { FX_BUDGET, icons } from "../config/constants.js";
-import { packSize, spawnRate } from "./spawn.js";
+import { getNextPhase, packSize, spawnRate } from "./spawn.js";
 
 export function formatNumber(value) {
   const suffixes = [
@@ -91,7 +91,22 @@ export function updateFloatingText(state, dt) {
 }
 
 export function updateHud(state, { elements, uiRefs, generators, upgrades, computeIdleRate }) {
-  const { essenceEl, fragmentsEl, idleRateEl, waveEl, hpEl, dpsEl, damageRow, spawnRateEl, pauseBtn, softPrestigeBtn, statusEl } = elements;
+  const {
+    essenceEl,
+    fragmentsEl,
+    idleRateEl,
+    waveEl,
+    hpEl,
+    dpsEl,
+    damageRow,
+    spawnRateEl,
+    pauseBtn,
+    softPrestigeBtn,
+    statusEl,
+    phaseEl,
+    phaseRewardEl,
+    phaseAnnouncementEl
+  } = elements;
 
   essenceEl.textContent = formatNumber(state.resources.essence);
   fragmentsEl.textContent = formatNumber(state.resources.fragments);
@@ -111,6 +126,29 @@ export function updateHud(state, { elements, uiRefs, generators, upgrades, compu
   document.getElementById("shield").textContent = `${Math.round(state.player.damageReduction * 100)}%`;
   document.getElementById("crit").textContent = `${Math.round(state.player.critChance * 100)}% x${state.player.critMultiplier.toFixed(1)}`;
   document.getElementById("collect").textContent = `${Math.round(state.player.collectRadius)}px`;
+
+  const activePhase = state.phase?.active;
+  const nextPhase = getNextPhase(state.wave, state.phase?.completed || []);
+  if (phaseEl) {
+    if (activePhase) {
+      phaseEl.textContent = `${activePhase.name} (${activePhase.type})`;
+    } else if (nextPhase) {
+      phaseEl.textContent = `Vague ${nextPhase.wave} : ${nextPhase.name}`;
+    } else {
+      phaseEl.textContent = "Toutes les phases franchies";
+    }
+  }
+  if (phaseRewardEl) {
+    const reward = state.phase?.lastReward;
+    phaseRewardEl.textContent = reward
+      ? `+${formatNumber(reward.essence)} ⚡ / +${formatNumber(reward.fragments)} ✦`
+      : "—";
+  }
+  if (phaseAnnouncementEl) {
+    const message = state.phase?.hudTimer > 0 ? state.phase?.announcement : "";
+    phaseAnnouncementEl.textContent = message || "";
+    phaseAnnouncementEl.classList.toggle("visible", Boolean(message));
+  }
 
   pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
 
