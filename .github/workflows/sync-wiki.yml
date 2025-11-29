@@ -16,6 +16,9 @@ on:
       - 'wiki/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   sync-wiki:
     runs-on: ubuntu-latest
