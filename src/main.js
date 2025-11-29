@@ -31,6 +31,21 @@ const spritePools = {
   enemies: []
 };
 
+const floatingTextPool = [];
+const floatingTextStyleCache = new Map();
+const floatingTextStyleOptions = {
+  fontFamily: "Cinzel, EB Garamond, serif",
+  fontSize: 12,
+  fill: "#f8fafc",
+  stroke: "#0f172a",
+  strokeThickness: 2,
+  dropShadow: true,
+  dropShadowColor: "#0f172a",
+  dropShadowBlur: 3,
+  dropShadowAlpha: 0.7,
+  dropShadowDistance: 0,
+};
+
 const arenaLayers = {
   background: new PIXI.Container(),
   entities: new PIXI.Container(),
@@ -116,6 +131,25 @@ function acquireSprite(pool, texture, tint = 0xffffff) {
   sprite.anchor.set(0.5);
   sprite.tint = tint;
   return sprite;
+}
+
+function getFloatingTextStyle(color = floatingTextStyleOptions.fill) {
+  const key = color || floatingTextStyleOptions.fill;
+  if (!floatingTextStyleCache.has(key)) {
+    const style = new PIXI.TextStyle({ ...floatingTextStyleOptions, fill: key });
+    if (typeof style.toJSON !== "function") {
+      style.toJSON = () => ({ ...floatingTextStyleOptions, fill: key });
+    }
+    floatingTextStyleCache.set(key, style);
+  }
+  return floatingTextStyleCache.get(key);
+}
+
+function acquireFloatingText(color) {
+  const text = floatingTextPool.pop() || new PIXI.Text({ text: "", style: getFloatingTextStyle(color) });
+  text.anchor.set(0.5, 1);
+  text.style = getFloatingTextStyle(color);
+  return text;
 }
 
 function buildBackground(width, height) {
@@ -826,25 +860,13 @@ function render() {
     }
   });
 
-  renderObjects.floatingLayer.removeChildren();
+  const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
+  recycledFloatingText.forEach((text) => floatingTextPool.push(text));
+
   state.floatingText.forEach((f) => {
     const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
-    const text = new PIXI.Text({
-      text: label,
-      style: new PIXI.TextStyle({
-        fontFamily: "Cinzel, EB Garamond, serif",
-        fontSize: 12,
-        fill: f.color || "#f8fafc",
-        stroke: "#0f172a",
-        strokeThickness: 2,
-        dropShadow: true,
-        dropShadowColor: "#0f172a",
-        dropShadowBlur: 3,
-        dropShadowAlpha: 0.7,
-        dropShadowDistance: 0,
-      }),
-    });
-    text.anchor.set(0.5, 1);
+    const text = acquireFloatingText(f.color);
+    text.text = label;
     text.alpha = Math.max(0, f.life);
     text.x = f.x;
     text.y = f.y - (1.5 - f.life) * 24;
