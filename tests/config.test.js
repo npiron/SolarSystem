@@ -52,10 +52,10 @@ describe("config factories", () => {
     expect(generators.map((g) => g.id)).toEqual(["drone", "forge", "spires", "nexus"]);
     expect(generators[0]).toMatchObject({
       name: "Drones collecteurs",
-      baseRate: 0.2,
-      rate: 0.2,
+      baseRate: 0.25,
+      rate: 0.25,
       level: 0,
-      cost: 15,
+      cost: 12,
     });
 
     const anotherCall = createGenerators();
@@ -69,18 +69,18 @@ describe("config factories", () => {
 
     upgrades.forEach((upgrade) => upgrade.apply(state));
 
-    expect(state.player.damage).toBeCloseTo(125);
-    expect(state.player.fireDelay).toBeCloseTo(1.7);
-    expect(state.player.regen).toBe(3);
+    expect(state.player.damage).toBeCloseTo(115);
+    expect(state.player.fireDelay).toBeCloseTo(1.8);
+    expect(state.player.regen).toBe(2);
     expect(state.player.projectiles).toBe(2);
-    expect(state.player.range).toBeCloseTo(120);
-    expect(state.player.bulletSpeed).toBeCloseTo(115);
+    expect(state.player.range).toBeCloseTo(115);
+    expect(state.player.bulletSpeed).toBeCloseTo(112);
     expect(state.player.critChance).toBeCloseTo(0.9);
     expect(state.player.critMultiplier).toBeCloseTo(2.2);
     expect(state.player.damageReduction).toBeCloseTo(0.7);
     expect(state.player.pierce).toBe(1);
-    expect(state.player.collectRadius).toBeCloseTo(56);
-    expect(state.player.speed).toBeCloseTo(108);
+    expect(state.player.collectRadius).toBeCloseTo(55);
+    expect(state.player.speed).toBeCloseTo(106);
   });
 
   it("exposes a consistent talent tree structure", () => {

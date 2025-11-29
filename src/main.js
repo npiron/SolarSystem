@@ -682,7 +682,7 @@ function applyProgressionEffects() {
 }
 
 function computeGeneratorRate(generator) {
-  return generator.baseRate * Math.pow(1.12, generator.level) * state.resources.idleMultiplier * talentBonuses.economy;
+  return generator.baseRate * Math.pow(1.10, generator.level) * state.resources.idleMultiplier * talentBonuses.economy;
 }
 
 function refreshGeneratorRates() {
@@ -789,7 +789,7 @@ function buyGenerator(gen) {
   if (state.resources.essence < gen.cost) return;
   state.resources.essence -= gen.cost;
   gen.level += 1;
-  gen.cost = Math.ceil(gen.cost * 1.35 + gen.level * 2);
+  gen.cost = Math.ceil(gen.cost * 1.30 + gen.level * 1.5);
   gen.rate = computeGeneratorRate(gen);
   refreshGeneratorRates();
   playPurchase();
@@ -827,7 +827,7 @@ function buyUpgrade(upgrade) {
   if (state.resources.fragments < upgrade.cost) return;
   state.resources.fragments -= upgrade.cost;
   upgrade.level += 1;
-  upgrade.cost = Math.ceil(upgrade.cost * 1.45 + upgrade.level * 3);
+  upgrade.cost = Math.ceil(upgrade.cost * 1.40 + upgrade.level * 2.5);
   applyProgressionEffects();
   playPurchase();
   assistUi.recordPurchase();
@@ -995,11 +995,11 @@ function softReset() {
 }
 
 function prestige() {
-  const bonus = 1 + Math.sqrt(state.wave) * 0.25;
+  const bonus = 1 + Math.pow(state.wave, 0.45) * 0.20;
   state.resources.idleMultiplier *= bonus;
   refreshGeneratorRates();
   softReset();
-  state.prestigeCooldown = 8;
+  state.prestigeCooldown = 10;
   playPrestige();
   assistUi.recordPrestige();
   saveGame();
