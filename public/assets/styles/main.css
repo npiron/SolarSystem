@@ -203,8 +203,9 @@ p { margin: 0; }
 }
 
 /* Collapsible sections */
-.stat-block.collapsible {
+.stat-block.collapsible > h2 {
   cursor: pointer;
+  margin-bottom: 0;
 }
 
 .stat-block.collapsible > h2::before {
@@ -218,13 +219,16 @@ p { margin: 0; }
   content: "▶";
 }
 
-.stat-block.collapsible.collapsed > *:not(h2) {
-  display: none;
+.stat-block.collapsible > *:not(h2) {
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+  opacity: 1;
 }
 
-.stat-block.collapsible > h2 {
-  margin-bottom: 0;
-  cursor: pointer;
+.stat-block.collapsible.collapsed > *:not(h2) {
+  max-height: 0;
+  opacity: 0;
 }
 
 .stat-block.collapsible:not(.collapsed) > h2 {

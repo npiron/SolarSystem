@@ -1279,15 +1279,41 @@ function initUI() {
   renderUpgrades();
   renderTalents();
 
-  // Initialize collapsible sections
-  document.querySelectorAll('.stat-block.collapsible').forEach((block) => {
-    const header = block.querySelector('h2');
-    if (header) {
-      header.addEventListener('click', (e) => {
-        e.stopPropagation();
-        block.classList.toggle('collapsed');
-      });
+  // Initialize collapsible sections with state persistence
+  const COLLAPSIBLE_KEY = 'neo-survivors-collapsible';
+  let collapsibleStates = {};
+  try {
+    const saved = localStorage.getItem(COLLAPSIBLE_KEY);
+    if (saved) {
+      collapsibleStates = JSON.parse(saved);
     }
+  } catch (e) {
+    console.warn('Failed to load collapsible states:', e);
+  }
+
+  document.querySelectorAll('.stat-block.collapsible').forEach((block, index) => {
+    const header = block.querySelector('h2');
+    if (!header) return;
+    
+    const key = header.textContent.replace(/[▶▼\s]/g, '').trim() || `section-${index}`;
+    
+    // Restore saved state if available
+    if (collapsibleStates[key] !== undefined) {
+      block.classList.toggle('collapsed', collapsibleStates[key]);
+    }
+    
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
+      block.classList.toggle('collapsed');
+      
+      // Save state
+      try {
+        collapsibleStates[key] = block.classList.contains('collapsed');
+        localStorage.setItem(COLLAPSIBLE_KEY, JSON.stringify(collapsibleStates));
+      } catch (err) {
+        console.warn('Failed to save collapsible state:', err);
+      }
+    });
   });
 }
 
