@@ -1,5 +1,5 @@
-import type { Resources, SavedTalent, Talent, TalentBonuses } from "../types/index.js";
-import { createTalentTree, TALENT_RESET_COST } from "../config/talents.js";
+import type { Resources, SavedTalent, Talent, TalentBonuses } from "../types/index.ts";
+import { createTalentTree, TALENT_RESET_COST } from "../config/talents.ts";
 
 export { TALENT_RESET_COST };
 

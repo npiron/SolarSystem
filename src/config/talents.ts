@@ -1,4 +1,4 @@
-import type { Talent } from "../types/index.js";
+import type { Talent } from "../types/index.ts";
 
 export function createTalentTree(): Talent[] {
   return [

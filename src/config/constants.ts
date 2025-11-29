@@ -1,4 +1,4 @@
-import type { BulletLimits, FxBudget, Icons } from "../types/index.js";
+import type { BulletLimits, FxBudget, Icons } from "../types/index.ts";
 
 export const STORAGE_KEY = "neo-survivors-save";
 export const TAU = Math.PI * 2;

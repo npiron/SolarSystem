@@ -1,4 +1,4 @@
-import type { Canvas, Enemy, GameState } from "../types/index.js";
+import type { Canvas, Enemy, GameState } from "../types/index.ts";
 
 const MAX_PACK_SIZE = 6;
 

@@ -1,6 +1,6 @@
-import type { Bullet, Canvas, Enemy, GameState } from "../types/index.js";
-import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.js";
-import { addFloatingText, registerFragmentGain } from "./hud.js";
+import type { Bullet, Canvas, Enemy, GameState } from "../types/index.ts";
+import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.ts";
+import { addFloatingText, registerFragmentGain } from "./hud.ts";
 
 function nearestEnemy(state: GameState): Enemy | null {
   let closest: Enemy | null = null;

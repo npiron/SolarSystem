@@ -1,4 +1,4 @@
-import type { Generator } from "../types/index.js";
+import type { Generator } from "../types/index.ts";
 
 export function createGenerators(): Generator[] {
   return [

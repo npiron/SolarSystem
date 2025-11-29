@@ -1,7 +1,7 @@
-import type { GameState, HudContext } from "../types/index.js";
-import { FX_BUDGET, icons } from "../config/constants.js";
-import { packSize, spawnRate } from "./spawn.js";
-import { playCollect } from "./sound.js";
+import type { GameState, HudContext } from "../types/index.ts";
+import { FX_BUDGET, icons } from "../config/constants.ts";
+import { packSize, spawnRate } from "./spawn.ts";
+import { playCollect } from "./sound.ts";
 
 export function formatNumber(value: number): string {
   const suffixes = [

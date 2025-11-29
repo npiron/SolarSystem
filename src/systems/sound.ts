@@ -14,7 +14,7 @@ const soundState: SoundState = {
 
 function ensureAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const Ctx = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return null;
   if (!soundState.context) {
     const context = new Ctx({ latencyHint: "interactive" });

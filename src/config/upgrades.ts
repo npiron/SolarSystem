@@ -1,4 +1,4 @@
-import type { PlayerStats, Upgrade } from "../types/index.js";
+import type { PlayerStats, Upgrade } from "../types/index.ts";
 
 export function createUpgrades(): Upgrade[] {
   return [

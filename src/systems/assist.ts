@@ -1,4 +1,4 @@
-import type { AssistConfig, AssistUi, GameState, Upgrade } from "../types/index.js";
+import type { AssistConfig, AssistUi, GameState, Upgrade } from "../types/index.ts";
 
 interface QuickStep {
   id: string;
