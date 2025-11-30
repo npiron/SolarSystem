@@ -1,5 +1,6 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { palette } from "../config/constants.ts";
+export { hexStringToVec4, hexToVec4 } from "./colorUtils.ts";
 
 export const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
 

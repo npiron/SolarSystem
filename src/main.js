@@ -19,7 +19,7 @@ import {
 } from "./systems/talents.ts";
 import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
-import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
+import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
 
 const canvas = document.getElementById("arena");
@@ -1141,6 +1141,20 @@ function render() {
       })
     );
 
+    // Render floating text using native WebGL2 text renderer
+    state.floatingText.forEach((f) => {
+      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
+      if (!label) return;
+      const textColor = hexStringToVec4(f.color || "#fef08a", Math.max(0, f.life));
+      webgl2Renderer.pushText({
+        text: label,
+        x: f.x,
+        y: f.y - (1.5 - f.life) * 24,
+        color: textColor,
+        alpha: Math.max(0, f.life)
+      });
+    });
+
     webgl2Renderer.render();
   }
 
@@ -1157,18 +1171,25 @@ function render() {
     }
   });
 
-  const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
-  recycledFloatingText.forEach((text) => releaseFloatingText(text));
+  // Only use PixiJS floating text when WebGL2 is not available
+  if (!usingWebgl2) {
+    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
+    recycledFloatingText.forEach((text) => releaseFloatingText(text));
 
-  state.floatingText.forEach((f) => {
-    const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
-    const text = acquireFloatingText(f.color);
-    text.text = label;
-    text.alpha = Math.max(0, f.life);
-    text.x = f.x;
-    text.y = f.y - (1.5 - f.life) * 24;
-    renderObjects.floatingLayer.addChild(text);
-  });
+    state.floatingText.forEach((f) => {
+      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
+      const text = acquireFloatingText(f.color);
+      text.text = label;
+      text.alpha = Math.max(0, f.life);
+      text.x = f.x;
+      text.y = f.y - (1.5 - f.life) * 24;
+      renderObjects.floatingLayer.addChild(text);
+    });
+  } else {
+    // Clear PixiJS floating text layer when using WebGL2
+    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
+    recycledFloatingText.forEach((text) => releaseFloatingText(text));
+  }
 
   renderObjects.hudLabels.wave.text = `${icons.wave} Vague ${state.wave.toFixed(1)}`;
   renderObjects.hudLabels.kills.text = `⚔️ Kills ${state.runStats.kills}`;

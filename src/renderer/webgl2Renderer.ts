@@ -1,5 +1,6 @@
 import { createProgram } from "./shaders.ts";
 import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
+import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
 
 const GRID_SPACING = 64;
 const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
@@ -14,6 +15,8 @@ type CircleInstance = {
     scale: number;
   };
 };
+
+export type { TextInstance };
 
 const FLOATS_PER_CIRCLE = 12;
 
@@ -52,6 +55,9 @@ export class WebGL2Renderer {
   private circlesData: Float32Array;
   private circlesCapacity = 0;
   private circlesCount = 0;
+
+  // Text rendering
+  private textRenderer: WebGL2TextRenderer;
 
   private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
@@ -95,6 +101,9 @@ export class WebGL2Renderer {
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.STENCIL_TEST);
     gl.clearColor(0, 0, 0, 0);
+
+    // Initialize text renderer
+    this.textRenderer = new WebGL2TextRenderer(gl, dpr);
   }
 
   setEnabled(enabled: boolean) {
@@ -122,6 +131,7 @@ export class WebGL2Renderer {
 
   beginFrame() {
     this.circlesCount = 0;
+    this.textRenderer.beginFrame();
   }
 
   pushCircle(circle: CircleInstance) {
@@ -146,6 +156,14 @@ export class WebGL2Renderer {
     this.circlesCount += 1;
   }
 
+  /**
+   * Add text to be rendered this frame
+   */
+  pushText(text: TextInstance) {
+    if (!this.enabled) return;
+    this.textRenderer.pushText(text);
+  }
+
   render() {
     if (!this.enabled) return;
     const gl = this.gl;
@@ -165,6 +183,9 @@ export class WebGL2Renderer {
 
     // Render circles on top
     this.renderCircles();
+
+    // Render text last (on top of everything)
+    this.textRenderer.render(this.resolution);
   }
 
   clear() {
@@ -172,6 +193,27 @@ export class WebGL2Renderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+
+  /**
+   * Clean up WebGL resources
+   */
+  dispose() {
+    const gl = this.gl;
+    
+    // Dispose text renderer
+    this.textRenderer.dispose();
+    
+    // Clean up grid resources
+    if (this.gridVao) gl.deleteVertexArray(this.gridVao);
+    if (this.gridBuffer) gl.deleteBuffer(this.gridBuffer);
+    if (this.gridProgram) gl.deleteProgram(this.gridProgram);
+    
+    // Clean up circles resources
+    if (this.circlesVao) gl.deleteVertexArray(this.circlesVao);
+    if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);
+    if (this.circlesInstanceBuffer) gl.deleteBuffer(this.circlesInstanceBuffer);
+    if (this.circlesProgram) gl.deleteProgram(this.circlesProgram);
   }
 
   private renderGrid() {
