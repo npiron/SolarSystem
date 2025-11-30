@@ -1,63 +1,16 @@
 import { createProgram } from "./shaders.ts";
+import { textVertexShader, textFragmentShader } from "./webgl2TextShaders.ts";
+import { generateFontAtlas } from "./webgl2FontAtlas.ts";
+import type { GlyphMetrics, TextStyle, TextInstance } from "./webgl2TextTypes.ts";
+import {
+  DEFAULT_STYLE,
+  FLOATS_PER_VERTEX,
+  VERTICES_PER_QUAD,
+  FLOATS_PER_QUAD
+} from "./webgl2TextTypes.ts";
 
-/**
- * Text instance for batched rendering
- */
-export type TextInstance = {
-  text: string;
-  x: number;
-  y: number;
-  color: readonly [number, number, number, number];
-  scale?: number;
-  alpha?: number;
-};
-
-/**
- * Style configuration for text rendering
- */
-export type TextStyle = {
-  fontFamily: string;
-  fontSize: number;
-  strokeColor: readonly [number, number, number, number];
-  strokeThickness: number;
-  dropShadow: boolean;
-  dropShadowColor: readonly [number, number, number, number];
-  dropShadowBlur: number;
-  dropShadowOffset: readonly [number, number];
-};
-
-const DEFAULT_STYLE: TextStyle = {
-  fontFamily: "Fredoka, Baloo 2, Nunito, sans-serif",
-  fontSize: 13,
-  strokeColor: [11 / 255, 16 / 255, 36 / 255, 1.0],
-  strokeThickness: 3,
-  dropShadow: true,
-  dropShadowColor: [11 / 255, 16 / 255, 36 / 255, 0.75],
-  dropShadowBlur: 4,
-  dropShadowOffset: [0, 0],
-};
-
-/**
- * Glyph metrics stored in the atlas
- */
-type GlyphMetrics = {
-  x: number;      // X position in atlas texture
-  y: number;      // Y position in atlas texture
-  width: number;  // Width of glyph in atlas
-  height: number; // Height of glyph in atlas
-  xOffset: number;
-  yOffset: number;
-  xAdvance: number;
-};
-
-// Characters to include in the font atlas
-const ATLAS_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~⚡✦⚔️🌊⟳⇡🔥💎⏳éèêëàâäùûüôöîïçÉÈÊËÀÂÄÙÛÜÔÖÎÏÇ";
-
-// Number of floats per quad vertex: x, y, u, v, r, g, b, a
-const FLOATS_PER_VERTEX = 8;
-// 6 vertices per quad (2 triangles)
-const VERTICES_PER_QUAD = 6;
-const FLOATS_PER_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_QUAD;
+// Re-export types for convenience
+export type { TextInstance, TextStyle, GlyphMetrics } from "./webgl2TextTypes.ts";
 
 /**
  * Native WebGL2 text renderer using canvas-generated font atlas
@@ -97,7 +50,7 @@ export class WebGL2TextRenderer {
     this.style = { ...DEFAULT_STYLE, ...style };
     
     // Create shader program
-    this.program = createProgram(gl, this.vertexShader(), this.fragmentShader());
+    this.program = createProgram(gl, textVertexShader, textFragmentShader);
     this.vao = gl.createVertexArray();
     this.buffer = gl.createBuffer();
     this.atlasTexture = gl.createTexture();
@@ -116,158 +69,24 @@ export class WebGL2TextRenderer {
     gl.bindVertexArray(null);
     
     // Generate font atlas
-    this.generateFontAtlas();
+    this.initFontAtlas();
   }
   
   /**
-   * Generate font atlas texture using Canvas2D
+   * Initialize font atlas using extracted generator
    */
-  private generateFontAtlas(): void {
+  private initFontAtlas(): void {
     const gl = this.gl;
-    const fontSize = Math.ceil(this.style.fontSize * this.dpr);
-    const padding = Math.ceil(this.style.strokeThickness * this.dpr) + 4;
-    const shadowPadding = this.style.dropShadow ? Math.ceil(this.style.dropShadowBlur * this.dpr) : 0;
-    const totalPadding = padding + shadowPadding;
+    const result = generateFontAtlas(this.style, this.dpr);
     
-    // Create temporary canvas for measuring glyphs
-    const measureCanvas = document.createElement("canvas");
-    const measureCtx = measureCanvas.getContext("2d")!;
-    measureCtx.font = `${fontSize}px ${this.style.fontFamily}`;
-    
-    // Measure all characters
-    const glyphSizes: { char: string; width: number; height: number }[] = [];
-    for (const char of ATLAS_CHARS) {
-      const metrics = measureCtx.measureText(char);
-      const width = Math.ceil(metrics.width) + totalPadding * 2;
-      const height = fontSize + totalPadding * 2;
-      glyphSizes.push({ char, width, height });
-    }
-    
-    // Calculate atlas dimensions (approximate square)
-    // Start with estimated size and increase if needed
-    const totalArea = glyphSizes.reduce((sum, g) => sum + g.width * g.height, 0);
-    let atlasSize = Math.max(256, Math.pow(2, Math.ceil(Math.log2(Math.sqrt(totalArea * 1.3)))));
-    const maxAtlasSize = 4096; // WebGL2 guaranteed minimum texture size
-    
-    // Try to fit all glyphs, increasing atlas size if needed
-    let fitsAll = false;
-    while (!fitsAll && atlasSize <= maxAtlasSize) {
-      let testX = 0;
-      let testY = 0;
-      let testRowHeight = 0;
-      fitsAll = true;
-      
-      for (const glyph of glyphSizes) {
-        if (testX + glyph.width > atlasSize) {
-          testX = 0;
-          testY += testRowHeight;
-          testRowHeight = 0;
-        }
-        if (testY + glyph.height > atlasSize) {
-          fitsAll = false;
-          atlasSize *= 2;
-          break;
-        }
-        testX += glyph.width;
-        testRowHeight = Math.max(testRowHeight, glyph.height);
-      }
-    }
-    
-    if (!fitsAll) {
-      console.warn(`WebGL2TextRenderer: Atlas size ${atlasSize} exceeds maximum, some glyphs may be missing`);
-      atlasSize = maxAtlasSize;
-    }
-    
-    this.atlasWidth = atlasSize;
-    this.atlasHeight = atlasSize;
-    this.lineHeight = fontSize + totalPadding;
-    
-    // Create atlas canvas
-    const atlasCanvas = document.createElement("canvas");
-    atlasCanvas.width = atlasSize;
-    atlasCanvas.height = atlasSize;
-    const ctx = atlasCanvas.getContext("2d")!;
-    
-    // Set rendering style
-    ctx.font = `${fontSize}px ${this.style.fontFamily}`;
-    ctx.textBaseline = "top";
-    ctx.textAlign = "left";
-    
-    // Pack glyphs into atlas
-    let x = 0;
-    let y = 0;
-    let rowHeight = 0;
-    
-    for (const glyph of glyphSizes) {
-      // Check if we need to start a new row
-      if (x + glyph.width > atlasSize) {
-        x = 0;
-        y += rowHeight;
-        rowHeight = 0;
-      }
-      
-      // Check if we've exceeded the atlas height
-      if (y + glyph.height > atlasSize) {
-        console.warn("WebGL2TextRenderer: Atlas overflow, some glyphs may be missing");
-        break;
-      }
-      
-      const glyphX = x + totalPadding;
-      const glyphY = y + totalPadding;
-      
-      // Draw drop shadow
-      if (this.style.dropShadow) {
-        const [sr, sg, sb, sa] = this.style.dropShadowColor;
-        ctx.shadowColor = `rgba(${sr * 255}, ${sg * 255}, ${sb * 255}, ${sa})`;
-        ctx.shadowBlur = this.style.dropShadowBlur * this.dpr;
-        ctx.shadowOffsetX = this.style.dropShadowOffset[0] * this.dpr;
-        ctx.shadowOffsetY = this.style.dropShadowOffset[1] * this.dpr;
-        
-        // Draw shadow pass
-        ctx.fillStyle = "rgba(0,0,0,0)";
-        ctx.strokeStyle = `rgba(${sr * 255}, ${sg * 255}, ${sb * 255}, ${sa * 0.5})`;
-        ctx.lineWidth = this.style.strokeThickness * this.dpr;
-        ctx.strokeText(glyph.char, glyphX, glyphY);
-      }
-      
-      // Reset shadow for main text
-      ctx.shadowColor = "transparent";
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      
-      // Draw stroke
-      if (this.style.strokeThickness > 0) {
-        const [r, g, b, a] = this.style.strokeColor;
-        ctx.strokeStyle = `rgba(${r * 255}, ${g * 255}, ${b * 255}, ${a})`;
-        ctx.lineWidth = this.style.strokeThickness * this.dpr;
-        ctx.lineJoin = "round";
-        ctx.strokeText(glyph.char, glyphX, glyphY);
-      }
-      
-      // Draw fill (white for color multiplication)
-      ctx.fillStyle = "white";
-      ctx.fillText(glyph.char, glyphX, glyphY);
-      
-      // Store glyph metrics
-      const metrics = measureCtx.measureText(glyph.char);
-      this.glyphMetrics.set(glyph.char, {
-        x,
-        y,
-        width: glyph.width,
-        height: glyph.height,
-        xOffset: totalPadding,
-        yOffset: totalPadding,
-        xAdvance: metrics.width,
-      });
-      
-      x += glyph.width;
-      rowHeight = Math.max(rowHeight, glyph.height);
-    }
+    this.atlasWidth = result.atlasWidth;
+    this.atlasHeight = result.atlasHeight;
+    this.lineHeight = result.lineHeight;
+    this.glyphMetrics = result.glyphMetrics;
     
     // Upload atlas to GPU
     gl.bindTexture(gl.TEXTURE_2D, this.atlasTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, result.atlasCanvas);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -424,44 +243,6 @@ export class WebGL2TextRenderer {
     gl.drawArrays(gl.TRIANGLES, 0, this.quadCount * VERTICES_PER_QUAD);
     
     gl.bindVertexArray(null);
-  }
-  
-  /**
-   * Vertex shader for text rendering
-   */
-  private vertexShader(): string {
-    return `#version 300 es
-in vec2 a_position;
-in vec2 a_uv;
-in vec4 a_color;
-uniform vec2 u_resolution;
-out vec2 v_uv;
-out vec4 v_color;
-void main() {
-  vec2 zeroToOne = a_position / u_resolution;
-  vec2 clip = zeroToOne * 2.0 - 1.0;
-  clip.y *= -1.0;
-  gl_Position = vec4(clip, 0.0, 1.0);
-  v_uv = a_uv;
-  v_color = a_color;
-}`;
-  }
-  
-  /**
-   * Fragment shader for text rendering
-   */
-  private fragmentShader(): string {
-    return `#version 300 es
-precision highp float;
-in vec2 v_uv;
-in vec4 v_color;
-uniform sampler2D u_atlas;
-out vec4 outColor;
-void main() {
-  vec4 texColor = texture(u_atlas, v_uv);
-  // Multiply texture by vertex color
-  outColor = vec4(v_color.rgb * texColor.rgb, texColor.a * v_color.a);
-}`;
   }
   
   /**
