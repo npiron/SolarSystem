@@ -1,7 +1,7 @@
 /**
  * Save/Load system for game persistence via localStorage
  */
-import type { GameState, Generator, Talent, Upgrade } from "../types/index.ts";
+import type { GameState, Generator, PlayerStats, Talent, Upgrade } from "../types/index.ts";
 import { MAX_OFFLINE_SECONDS, STORAGE_KEY } from "./constants.ts";
 import { BASE_PLAYER_STATS } from "./player.ts";
 import { hydrateTalents, computeTalentBonuses } from "../systems/talents.ts";
@@ -98,8 +98,9 @@ export function loadSave(
     if (save.player) {
       Object.keys(BASE_PLAYER_STATS).forEach((key) => {
         const k = key as keyof typeof BASE_PLAYER_STATS;
-        if (save.player?.[k] !== undefined) {
-          (state.player as Record<string, number>)[k] = save.player[k]!;
+        const value = save.player?.[k];
+        if (value !== undefined) {
+          (state.player as PlayerStats)[k] = value;
         }
       });
     }

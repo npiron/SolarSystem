@@ -1,9 +1,9 @@
 /**
  * Progression system - handles upgrades, talents, and generator rates
  */
-import type { GameState, Generator, TalentBonuses, Upgrade } from "../types/index.ts";
+import type { GameState, Generator, Talent, TalentBonuses, Upgrade } from "../types/index.ts";
 import { BASE_PLAYER_STATS } from "../config/player.ts";
-import { computeTalentBonuses, type Talent } from "./talents.ts";
+import { computeTalentBonuses } from "./talents.ts";
 
 export function computeGeneratorRate(generator: Generator, idleMultiplier: number, economyBonus: number): number {
   return generator.baseRate * Math.pow(1.10, generator.level) * idleMultiplier * economyBonus;

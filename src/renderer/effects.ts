@@ -32,7 +32,7 @@ export function createEffects(colors: Colors) {
     noise: new PIXI.filters.NoiseFilter(0.05)
   };
 
-  let auraPulseTween: gsap.core.Tween | null = null;
+  let auraPulseTween: ReturnType<typeof gsap.to> | null = null;
 
   function ensureFilters() {
     if (!fx.auraGlow) {

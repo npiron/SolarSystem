@@ -1,6 +1,12 @@
 import { createProgram } from "./shaders.ts";
 import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
+import {
+  gridVertexShader,
+  gridFragmentShader,
+  circlesVertexShader,
+  circlesFragmentShader
+} from "./webgl2Shaders.ts";
 
 const GRID_SPACING = 64;
 const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
@@ -64,7 +70,7 @@ export class WebGL2Renderer {
     this.dpr = dpr;
 
     // Initialize grid program
-    this.gridProgram = createProgram(gl, this.gridVertexShader(), this.gridFragmentShader());
+    this.gridProgram = createProgram(gl, gridVertexShader, gridFragmentShader);
     this.gridVao = gl.createVertexArray();
     this.gridBuffer = gl.createBuffer();
     this.gridUniforms = {
@@ -81,7 +87,7 @@ export class WebGL2Renderer {
     gl.vertexAttribPointer(gridPositionLoc, 2, gl.FLOAT, false, 0, 0);
 
     // Initialize circles program
-    this.circlesProgram = createProgram(gl, this.circlesVertexShader(), this.circlesFragmentShader());
+    this.circlesProgram = createProgram(gl, circlesVertexShader, circlesFragmentShader);
     this.circlesVao = gl.createVertexArray();
     this.circlesQuadBuffer = gl.createBuffer();
     this.circlesInstanceBuffer = gl.createBuffer();
@@ -333,83 +339,5 @@ export class WebGL2Renderer {
     gl.enableVertexAttribArray(haloScaleLoc);
     gl.vertexAttribPointer(haloScaleLoc, 1, gl.FLOAT, false, stride, 44);
     gl.vertexAttribDivisor(haloScaleLoc, 1);
-  }
-
-  private gridVertexShader() {
-    return `#version 300 es
-in vec2 a_position;
-uniform vec2 u_resolution;
-void main() {
-  vec2 zeroToOne = a_position / u_resolution;
-  vec2 clip = zeroToOne * 2.0 - 1.0;
-  clip.y *= -1.0;
-  gl_Position = vec4(clip, 0.0, 1.0);
-}`;
-  }
-
-  private gridFragmentShader() {
-    return `#version 300 es
-precision highp float;
-uniform vec4 u_color;
-out vec4 outColor;
-void main() { outColor = u_color; }`;
-  }
-
-  private circlesVertexShader() {
-    return `#version 300 es
-in vec2 a_corner;
-in vec2 a_center;
-in float a_radius;
-in vec4 a_color;
-in vec4 a_haloColor;
-in float a_haloScale;
-uniform vec2 u_resolution;
-out vec2 v_corner;
-out float v_radius;
-out vec4 v_color;
-out vec4 v_haloColor;
-out float v_haloScale;
-void main() {
-  vec2 world = a_center + a_corner * a_radius;
-  vec2 zeroToOne = world / u_resolution;
-  vec2 clip = zeroToOne * 2.0 - 1.0;
-  clip.y *= -1.0;
-  gl_Position = vec4(clip, 0.0, 1.0);
-  v_corner = a_corner;
-  v_radius = a_radius;
-  v_color = a_color;
-  v_haloColor = a_haloColor;
-  v_haloScale = a_haloScale;
-}`;
-  }
-
-  private circlesFragmentShader() {
-    return `#version 300 es
-precision highp float;
-in vec2 v_corner;
-in float v_radius;
-in vec4 v_color;
-in vec4 v_haloColor;
-in float v_haloScale;
-out vec4 outColor;
-void main() {
-  float aa = 1.5;
-  float distPx = length(v_corner * v_radius);
-  float fill = smoothstep(v_radius, v_radius - aa, distPx) * v_color.a;
-  float halo = 0.0;
-  if (v_haloScale > 1.0 && v_haloColor.a > 0.0) {
-    float haloStart = v_radius;
-    float haloEnd = v_radius * v_haloScale;
-    float inner = smoothstep(haloStart + aa, haloStart, distPx);
-    float outer = smoothstep(haloEnd, haloEnd - aa, distPx);
-    halo = inner * outer * v_haloColor.a;
-  }
-  float alpha = clamp(fill + halo, 0.0, 1.0);
-  vec3 color = vec3(0.0);
-  if (alpha > 0.0) {
-    color = (v_color.rgb * fill + v_haloColor.rgb * halo);
-  }
-  outColor = vec4(color, alpha);
-}`;
   }
 }

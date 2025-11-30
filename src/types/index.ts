@@ -4,6 +4,7 @@
 
 export * from './entities';
 export * from './state';
+export * from './documentation';
 
 export interface Generator {
   id: string;
