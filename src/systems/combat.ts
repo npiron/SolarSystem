@@ -20,16 +20,22 @@ function nearestEnemy(state: GameState): Enemy | null {
 function fire(state: GameState): void {
   const target = nearestEnemy(state);
   const count = Math.max(1, state.player.projectiles);
-  const baseTrack = target ? Math.atan2(target.y - state.player.y, target.x - state.player.x) : state.time * 0.9;
-  const baseAngle = baseTrack + state.player.spin;
-  const ringStep = TAU / count;
+  // Base direction: toward nearest enemy, or forward if no enemies
+  const baseAngle = target
+    ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
+    : state.time * 0.9;
 
   const bulletSpeed = Math.min(state.player.bulletSpeed, BULLET_LIMITS.maxSpeed);
   const lifetime = Math.min(1.2 * state.player.range, BULLET_LIMITS.maxLifetime);
 
+  // Shotgun spread: all projectiles fire in a cone toward the target
+  const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
+
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= FX_BUDGET.bullets) break;
-    const angle = count > 1 ? baseAngle + i * ringStep : baseAngle;
+    // Spread projectiles evenly within the cone, centered on baseAngle
+    const offset = count > 1 ? (i / (count - 1) - 0.5) * spreadAngle : 0;
+    const angle = baseAngle + offset;
     const bullet: Bullet = {
       x: state.player.x,
       y: state.player.y,
