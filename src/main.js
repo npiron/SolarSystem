@@ -21,6 +21,8 @@ import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
+import { initDocumentationDialog } from "./renderer/documentation.ts";
+import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
 
 /**
  * Get the PIXI color for an enemy based on its type.
@@ -303,6 +305,11 @@ const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
 const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
 const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
 const versionBadge = document.getElementById("versionBadge");
+const docDialog = document.getElementById("docDialog");
+const docTabs = document.getElementById("docTabs");
+const docContent = document.getElementById("docContent");
+const docBtn = document.getElementById("docBtn");
+const docCloseBtn = docDialog?.querySelector(".doc-close-btn");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -350,9 +357,17 @@ const BASE_PLAYER_STATS = {
   speed: 95
 };
 
-if (versionBadge) {
-  versionBadge.textContent = VERSION;
-}
+initDocumentationDialog({
+  dialog: docDialog,
+  trigger: docBtn,
+  closeButton: docCloseBtn,
+  tabs: docTabs,
+  content: docContent,
+  versionBadge,
+  version: VERSION,
+  codeDocs: codeDocumentation,
+  roadmap: roadmapSections
+});
 
 const state = {
   running: true,
