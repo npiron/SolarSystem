@@ -77,10 +77,10 @@ out vec4 outColor;
 float sdRegularPolygon(vec2 p, float radius, float sides, float rotation) {
   float n = max(3.0, floor(sides + 0.5));
   float angle = 6.28318530718 / n;
-  float half = angle * 0.5;
+  float halfAngle = angle * 0.5;
   float len = length(p);
   float a = atan(p.y, p.x) + rotation;
-  float sector = mod(a + angle, angle) - half;
+  float sector = mod(a + angle, angle) - halfAngle;
   float radial = cos(sector) * len;
   return radial - radius;
 }
