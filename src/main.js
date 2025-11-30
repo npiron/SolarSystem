@@ -813,13 +813,10 @@ function findBestFragment() {
  * Calculate intelligent player movement direction based on health, threats, and objectives.
  * Implements survival mode when health is low, balances fragment collection with danger.
  * Returns the desired movement direction with magnitude (not scaled by dt).
- * @returns {{ dirX: number, dirY: number }} Object containing normalized direction:
- *   - dirX: Desired horizontal direction (-1 to 1, or 0 for no input)
- *   - dirY: Desired vertical direction (-1 to 1, or 0 for no input)
+ * @returns {{ dirX: number, dirY: number }} Object containing directional movement weights:
+ *   - dirX: Desired horizontal direction (unitless, centered around -1 to 1)
+ *   - dirY: Desired vertical direction (unitless, centered around -1 to 1)
  * @param {number} dt - Delta time in seconds since last frame
- * @returns {{ moveX: number, moveY: number }} Object containing directional movement weights:
- *   - moveX: Horizontal movement weight for this frame (unitless direction)
- *   - moveY: Vertical movement weight for this frame (unitless direction)
  */
 function calculatePlayerMovement() {
   const healthRatio = state.player.hp / state.player.maxHp;
@@ -835,13 +832,13 @@ function calculatePlayerMovement() {
 
   if (isSurvivalMode) {
     // In survival mode, heavily weight escape direction
-    moveX = danger.dx * 1.3;
-    moveY = danger.dy * 1.3;
+    dirX = danger.dx * 1.3;
+    dirY = danger.dy * 1.3;
 
     // Add some randomness to avoid predictable patterns
     const jitter = 0.2;
-    moveX += (Math.random() - 0.5) * jitter;
-    moveY += (Math.random() - 0.5) * jitter;
+    dirX += (Math.random() - 0.5) * jitter;
+    dirY += (Math.random() - 0.5) * jitter;
   } else {
     // Normal mode: balance fragment collection with safety
     const targetFragment = findBestFragment();
@@ -862,14 +859,14 @@ function calculatePlayerMovement() {
 
       // Normalize blended direction
       const blendMag = Math.hypot(fragmentDx, fragmentDy) || 1;
-      moveX = (fragmentDx / blendMag) * 1.1;
-      moveY = (fragmentDy / blendMag) * 1.1;
+      dirX = (fragmentDx / blendMag) * 1.1;
+      dirY = (fragmentDy / blendMag) * 1.1;
     } else {
       // No fragments: patrol pattern with danger awareness
       if (danger.threat > 0.3) {
         // Move away from danger
-        moveX = danger.dx * 0.9;
-        moveY = danger.dy * 0.9;
+        dirX = danger.dx * 0.9;
+        dirY = danger.dy * 0.9;
       } else {
         // Patrol in smooth orbit pattern toward center
         const centerX = width / 2;
@@ -885,8 +882,8 @@ function calculatePlayerMovement() {
 
         // Stronger pull toward center when far from it
         const centerPull = Math.min(0.5, distToCenter / 300);
-        moveX = (orbitMoveX * (1 - centerPull) + (toCenterX / distToCenter) * centerPull);
-        moveY = (orbitMoveY * (1 - centerPull) + (toCenterY / distToCenter) * centerPull);
+        dirX = (orbitMoveX * (1 - centerPull) + (toCenterX / distToCenter) * centerPull);
+        dirY = (orbitMoveY * (1 - centerPull) + (toCenterY / distToCenter) * centerPull);
       }
     }
   }
