@@ -27,14 +27,14 @@ export const colors = {
   hudBorder: PIXI.utils.string2hex("#e2e8f0"),
 };
 
-export function toVec4(hex: number | string, alpha = 1) {
+export function toVec4(hex: number | string, alpha = 1): [number, number, number, number] {
   const value = typeof hex === "number" ? hex : PIXI.utils.string2hex(hex);
   return [
     ((value >> 16) & 0xff) / 255,
     ((value >> 8) & 0xff) / 255,
     (value & 0xff) / 255,
     alpha
-  ];
+  ] as const;
 }
 
 export const paletteVec4 = palette.map((color) => toVec4(color));

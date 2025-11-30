@@ -1,3 +1,4 @@
+import { webglColors } from "./colors.ts";
 import { createProgram } from "./shaders.ts";
 import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
