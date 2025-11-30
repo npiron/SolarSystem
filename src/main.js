@@ -120,6 +120,42 @@ app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.ove
 
 const { applyAddonFilters } = createEffects(colors);
 
+const PLAYER_SHAPE = { sides: 6, rotation: Math.PI / 6 };
+const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
+const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
+
+function regularPolygonPoints(sides, radius, rotation = 0, x = 0, y = 0) {
+  const points = [];
+  const step = (Math.PI * 2) / sides;
+  for (let i = 0; i < sides; i++) {
+    const angle = rotation + i * step;
+    points.push(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+  }
+  return points;
+}
+
+function drawShape(graphics, x, y, radius, sides, rotation = 0) {
+  if (sides < 3) {
+    graphics.drawCircle(x, y, radius);
+    return;
+  }
+  const points = regularPolygonPoints(sides, radius, rotation, x, y);
+  graphics.drawPolygon(points);
+}
+
+function getEnemyShape(type) {
+  switch (type) {
+    case "weak":
+      return { sides: 3, rotation: -Math.PI / 2 };
+    case "strong":
+      return { sides: 5, rotation: Math.PI / 2.5 };
+    case "elite":
+      return { sides: 6, rotation: Math.PI / 6 };
+    default:
+      return { sides: 4, rotation: Math.PI / 4 };
+  }
+}
+
 function buildBackground(width, height) {
   backgroundReady = false;
   renderObjects.backgroundContainer.removeChildren();
@@ -155,15 +191,15 @@ function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
   renderObjects.aura.beginFill(colors.player, 0.18);
-  renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+  drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
   renderObjects.aura.endFill();
   renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.28, width: 3 });
-  renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
+  drawShape(renderObjects.aura, 0, 0, state.player.collectRadius * 0.45, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
   renderObjects.aura.lineStyle(0);
 
   // Draw the player as a vector circle
   renderObjects.player.beginFill(colors.player, 1);
-  renderObjects.player.drawCircle(0, 0, state.player.radius);
+  drawShape(renderObjects.player, 0, 0, state.player.radius, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
   renderObjects.player.endFill();
 
   const playerContainer = new PIXI.Container();
@@ -1037,10 +1073,10 @@ function render() {
   if (!usingWebgl2) {
     renderObjects.aura.clear();
     renderObjects.aura.beginFill(colors.player, 0.12);
-    renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+    drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
     renderObjects.aura.endFill();
     renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
-    renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
+    drawShape(renderObjects.aura, 0, 0, state.player.collectRadius * 0.45, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
     renderObjects.aura.lineStyle(0);
     renderObjects.aura.position.set(state.player.x, state.player.y);
   } else {
@@ -1053,13 +1089,13 @@ function render() {
   if (!usingWebgl2) {
     renderObjects.bullets.clear();
     renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
-    state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
+    state.bullets.forEach((b) => drawShape(renderObjects.bullets, b.x, b.y, 4, BULLET_SHAPE.sides, BULLET_SHAPE.rotation));
     renderObjects.bullets.endFill();
 
     renderObjects.bulletsGlow.clear();
     if (!state.visualsLow) {
       renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
-      state.bullets.forEach((b) => renderObjects.bulletsGlow.drawCircle(b.x, b.y, 8));
+      state.bullets.forEach((b) => drawShape(renderObjects.bulletsGlow, b.x, b.y, 8, BULLET_SHAPE.sides, BULLET_SHAPE.rotation));
       renderObjects.bulletsGlow.endFill();
     }
 
@@ -1069,7 +1105,7 @@ function render() {
       const fragColor = getFragmentColor(f.value);
       const fragRadius = getFragmentRadius(f.value);
       renderObjects.fragments.beginFill(fragColor);
-      renderObjects.fragments.drawCircle(f.x, f.y, fragRadius);
+      drawShape(renderObjects.fragments, f.x, f.y, fragRadius, FRAGMENT_SHAPE.sides, FRAGMENT_SHAPE.rotation);
       renderObjects.fragments.endFill();
     });
 
@@ -1079,7 +1115,7 @@ function render() {
         const fragColor = getFragmentColor(f.value);
         const fragRadius = getFragmentRadius(f.value);
         renderObjects.fragmentRings.lineStyle({ color: fragColor, alpha: 0.5, width: 2 });
-        renderObjects.fragmentRings.drawCircle(f.x, f.y, fragRadius + 5);
+        drawShape(renderObjects.fragmentRings, f.x, f.y, fragRadius + 5, FRAGMENT_SHAPE.sides, FRAGMENT_SHAPE.rotation);
       });
       renderObjects.fragmentRings.lineStyle(0);
     }
@@ -1088,8 +1124,9 @@ function render() {
     renderObjects.enemies.clear();
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColor(e.type);
+      const enemyShape = getEnemyShape(e.type);
       renderObjects.enemies.beginFill(enemyColor);
-      renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+      drawShape(renderObjects.enemies, e.x, e.y, e.radius, enemyShape.sides, enemyShape.rotation);
       renderObjects.enemies.endFill();
     });
   } else if (webgl2Renderer) {
@@ -1105,6 +1142,8 @@ function render() {
       y: state.player.y,
       radius: state.player.radius + 16,
       color: webglColors.playerAura,
+      sides: PLAYER_SHAPE.sides,
+      rotation: PLAYER_SHAPE.rotation,
       halo: auraHalo
     });
     webgl2Renderer.pushCircle({
@@ -1112,6 +1151,8 @@ function render() {
       y: state.player.y,
       radius: state.player.collectRadius * 0.45,
       color: webglColors.transparent,
+      sides: PLAYER_SHAPE.sides,
+      rotation: PLAYER_SHAPE.rotation,
       halo: collectRing
     });
     webgl2Renderer.pushCircle({
@@ -1119,6 +1160,8 @@ function render() {
       y: state.player.y,
       radius: state.player.radius,
       color: webglColors.player,
+      sides: PLAYER_SHAPE.sides,
+      rotation: PLAYER_SHAPE.rotation,
       halo: playerHalo
     });
 
@@ -1128,6 +1171,8 @@ function render() {
         y: b.y,
         radius: 4,
         color: bulletColor,
+        sides: BULLET_SHAPE.sides,
+        rotation: BULLET_SHAPE.rotation,
         halo: bulletHalo
       })
     );
@@ -1141,6 +1186,8 @@ function render() {
         y: f.y,
         radius,
         color,
+        sides: FRAGMENT_SHAPE.sides,
+        rotation: FRAGMENT_SHAPE.rotation,
         halo: fragmentHalo
       });
     });
@@ -1148,11 +1195,14 @@ function render() {
     // Render enemies with type-based colors
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColorWebGL(e.type);
+      const enemyShape = getEnemyShape(e.type);
       webgl2Renderer.pushCircle({
         x: e.x,
         y: e.y,
         radius: e.radius,
-        color: enemyColor
+        color: enemyColor,
+        sides: enemyShape.sides,
+        rotation: enemyShape.rotation
       });
     });
 
