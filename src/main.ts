@@ -1,0 +1,480 @@
+/**
+ * Main application entry point
+ * 
+ * This module bootstraps the application, initializes all modules,
+ * and manages the game loop.
+ */
+import { STORAGE_KEY, VERSION, icons } from "./config/constants.ts";
+import { createGenerators } from "./config/generators.ts";
+import { TALENT_RESET_COST } from "./config/talents.ts";
+import { createUpgrades } from "./config/upgrades.ts";
+import { loadSave, saveGame } from "./config/persistence.ts";
+import { initAssist } from "./systems/assist.ts";
+import { debugPing, formatNumber, updateHud } from "./systems/hud.ts";
+import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
+import {
+  computeTalentBonuses,
+  canUnlockTalent,
+  hydrateTalents,
+  resetTalents,
+  unlockTalent
+} from "./systems/talents.ts";
+import { createInitialState, softReset } from "./systems/gameState.ts";
+import { applyProgressionEffects, computeGeneratorRate, refreshGeneratorRates } from "./systems/progression.ts";
+import { computeIdleRate as computeIdleRateFromEconomy } from "./systems/economy.ts";
+import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
+import { initCollapsibleSections } from "./systems/collapsible.ts";
+import {
+  renderGenerators as renderGeneratorsUI,
+  renderUpgrades as renderUpgradesUI,
+  renderTalents as renderTalentsUI
+} from "./systems/ui.ts";
+import * as renderer from "./renderer/index.ts";
+import { initDocumentationDialog } from "./renderer/documentation.ts";
+import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
+import { update as gameUpdate } from "./game.ts";
+import { render as gameRender } from "./renderer/render.ts";
+import { clampPlayerToBounds } from "./player.ts";
+import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
+
+// Canvas and renderer setup
+const webgl2Canvas = document.getElementById("webgl2") as HTMLCanvasElement;
+const webgl2Renderer = webgl2Canvas ? renderer.init(webgl2Canvas) : null;
+
+function buildBackground(width: number, height: number): void {
+  if (webgl2Renderer) {
+    webgl2Renderer.setGridEnabled(!state.visualsLow);
+    if (!state.visualsLow) {
+      webgl2Renderer.resize(width, height);
+    } else {
+      webgl2Renderer.clear();
+    }
+  }
+}
+
+// UI Element References
+const pauseBtn = document.getElementById("pause");
+const resetProgressBtn = document.getElementById("resetProgress");
+const toggleSoundBtn = document.getElementById("toggleSound");
+const softPrestigeBtn = document.getElementById("softPrestige");
+const restartRunBtn = document.getElementById("restartRun");
+const togglePerfBtn = document.getElementById("togglePerf");
+const toggleFpsBtn = document.getElementById("toggleFps");
+const toggleGlowFxBtn = document.getElementById("toggleGlowFx");
+const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
+const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
+const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
+const versionBadge = document.getElementById("versionBadge");
+const docDialog = document.getElementById("docDialog");
+const docTabs = document.getElementById("docTabs");
+const docContent = document.getElementById("docContent");
+const docBtn = document.getElementById("docBtn");
+const docCloseBtn = docDialog?.querySelector(".doc-close-btn") as HTMLButtonElement | null;
+const debugBtns = {
+  giveEssence: document.getElementById("debugGiveEssence"),
+  giveFragments: document.getElementById("debugGiveFragments"),
+  skipWave: document.getElementById("debugSkipWave"),
+  nuke: document.getElementById("debugNuke")
+};
+
+const essenceEl = document.getElementById("essence");
+const fragmentsEl = document.getElementById("fragments");
+const idleRateEl = document.getElementById("idleRate");
+const waveEl = document.getElementById("wave");
+const hpEl = document.getElementById("hp");
+const dpsEl = document.getElementById("dps");
+const damageRow = document.getElementById("damageRow");
+const spawnRateEl = document.getElementById("spawnRate");
+const statusEl = document.getElementById("statusMessage");
+const generatorsContainer = document.getElementById("generators") as HTMLElement;
+const upgradesContainer = document.getElementById("upgrades") as HTMLElement;
+const talentsContainer = document.getElementById("talents") as HTMLElement | null;
+const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
+const talentStatusEl = document.getElementById("talentStatus");
+const fpsValueEl = document.getElementById("fpsValue");
+const fpsCanvas = document.getElementById("fpsGraph") as HTMLCanvasElement | null;
+const quickHelpList = document.getElementById("quickHelpList");
+const milestoneList = document.getElementById("milestoneList");
+const assistBubbles = document.getElementById("assistBubbles");
+
+// Game data initialization
+const generators = createGenerators();
+const upgrades = createUpgrades();
+let talents = hydrateTalents();
+let talentBonuses = computeTalentBonuses(talents);
+
+// Initialize documentation dialog
+initDocumentationDialog({
+  dialog: docDialog as HTMLDialogElement | null,
+  trigger: docBtn,
+  closeButton: docCloseBtn,
+  tabs: docTabs,
+  content: docContent,
+  versionBadge,
+  version: VERSION,
+  codeDocs: codeDocumentation,
+  roadmap: roadmapSections
+});
+
+// Create initial game state
+const state: GameState = createInitialState(webgl2Canvas.width, webgl2Canvas.height);
+state.talents.bonuses = talentBonuses;
+
+let assistUi: AssistUi = {
+  recordShot: () => {},
+  recordPurchase: () => {},
+  recordPrestige: () => {},
+  trackWave: () => {},
+  refreshMilestones: () => {}
+};
+
+// UI reference maps
+const uiRefs = {
+  generatorButtons: new Map<string, HTMLButtonElement>(),
+  upgradeButtons: new Map<string, HTMLButtonElement>(),
+  talentButtons: new Map<string, HTMLButtonElement>()
+};
+
+function resizeCanvas(center = false): void {
+  const rect = webgl2Canvas.parentElement?.getBoundingClientRect();
+  const width = rect?.width || webgl2Canvas.width || 960;
+  const height = rect?.height || webgl2Canvas.height || 600;
+  buildBackground(width, height);
+  webgl2Renderer?.resize(width, height);
+  if (center) {
+    state.player.x = width / 2;
+    state.player.y = height / 2;
+  }
+  clampPlayerToBounds(state, width, height);
+  if (state.performance.graphVisible && fpsCanvas) {
+    drawFpsGraph(fpsCanvas, state.performance);
+  }
+}
+
+// Wrapper for computeIdleRate that uses current state
+function computeIdleRate(): number {
+  return computeIdleRateFromEconomy(generators, state.resources.idleMultiplier, talentBonuses);
+}
+
+// Wrapper for computeGeneratorRate that uses current state
+function computeGeneratorRateLocal(generator: Generator): number {
+  return computeGeneratorRate(generator, state.resources.idleMultiplier, talentBonuses.economy);
+}
+
+function applyProgressionEffectsLocal(): void {
+  talentBonuses = applyProgressionEffects(state, upgrades, talents);
+}
+
+function refreshGeneratorRatesLocal(): void {
+  refreshGeneratorRates(generators, state.resources.idleMultiplier, talentBonuses.economy);
+}
+
+function saveGameLocal(): void {
+  saveGame(state, generators, upgrades, talents);
+}
+
+const hudContext: HudContext = {
+  elements: {
+    essenceEl,
+    fragmentsEl,
+    idleRateEl,
+    waveEl,
+    hpEl,
+    dpsEl,
+    damageRow,
+    spawnRateEl,
+    pauseBtn,
+    softPrestigeBtn,
+    statusEl
+  },
+  uiRefs,
+  generators,
+  upgrades,
+  talents,
+  computeIdleRate,
+  canUnlockTalent
+};
+
+function buyGenerator(gen: Generator): void {
+  if (state.resources.essence < gen.cost) return;
+  state.resources.essence -= gen.cost;
+  gen.level += 1;
+  gen.cost = Math.ceil(gen.cost * 1.30 + gen.level * 1.5);
+  gen.rate = computeGeneratorRateLocal(gen);
+  refreshGeneratorRatesLocal();
+  playPurchase();
+  assistUi.recordPurchase();
+}
+
+function renderGenerators(): void {
+  renderGeneratorsUI(
+    generatorsContainer,
+    generators,
+    uiRefs,
+    state.resources,
+    computeGeneratorRateLocal,
+    buyGenerator,
+    saveGameLocal
+  );
+}
+
+function buyUpgrade(upgrade: Upgrade): void {
+  if (upgrade.level >= upgrade.max) return;
+  if (state.resources.fragments < upgrade.cost) return;
+  state.resources.fragments -= upgrade.cost;
+  upgrade.level += 1;
+  upgrade.cost = Math.ceil(upgrade.cost * 1.40 + upgrade.level * 2.5);
+  applyProgressionEffectsLocal();
+  playPurchase();
+  assistUi.recordPurchase();
+}
+
+function renderUpgrades(): void {
+  renderUpgradesUI(
+    upgradesContainer,
+    upgrades,
+    uiRefs,
+    state.resources,
+    buyUpgrade,
+    saveGameLocal
+  );
+}
+
+function buyTalent(talent: Talent): boolean {
+  if (!unlockTalent(talent, talents, state)) return false;
+  applyProgressionEffectsLocal();
+  refreshGeneratorRatesLocal();
+  playPurchase();
+  return true;
+}
+
+function renderTalents(): void {
+  renderTalentsUI(
+    talentsContainer,
+    talents,
+    uiRefs,
+    state.resources,
+    buyTalent,
+    saveGameLocal,
+    renderUpgrades,
+    talentStatusEl,
+    resetTalentsBtn
+  );
+}
+
+function softResetLocal(): void {
+  const { width, height } = webgl2Canvas.getBoundingClientRect();
+  softReset(state, width, height);
+}
+
+function prestige(): void {
+  const bonus = 1 + Math.pow(state.wave, 0.45) * 0.20;
+  state.resources.idleMultiplier *= bonus;
+  refreshGeneratorRatesLocal();
+  softResetLocal();
+  state.prestigeCooldown = 10;
+  playPrestige();
+  assistUi.recordPrestige();
+  saveGameLocal();
+  renderGenerators();
+}
+
+function initUI(): void {
+  const syncSoundToggle = (): void => {
+    if (!toggleSoundBtn) return;
+    toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
+  };
+
+  function toggleAddon(addon: keyof typeof state.addons): void {
+    if (state.addons[addon] === undefined) return;
+    state.addons[addon] = !state.addons[addon];
+    syncAddonToggles();
+    playUiToggle();
+    saveGameLocal();
+  }
+
+  const syncAddonToggles = (): void => {
+    if (toggleGlowFxBtn) toggleGlowFxBtn.textContent = state.addons.glow ? "✨ Aura ON" : "✨ Aura OFF";
+    if (toggleBloomFxBtn) toggleBloomFxBtn.textContent = state.addons.bloom ? "🌟 Bloom ON" : "🌟 Bloom OFF";
+    if (toggleGrainFxBtn) toggleGrainFxBtn.textContent = state.addons.grain ? "🎞️ Grain ON" : "🎞️ Grain OFF";
+    if (toggleHudPulseBtn) toggleHudPulseBtn.textContent = state.addons.hudPulse ? "💫 Pulse ON" : "💫 Pulse OFF";
+  };
+
+  const armAudioUnlock = (): void => {
+    const unlock = () => resumeAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+  };
+
+  armAudioUnlock();
+  syncSoundToggle();
+  syncAddonToggles();
+
+  pauseBtn?.addEventListener("click", () => {
+    state.running = !state.running;
+    if (pauseBtn) pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
+    saveGameLocal();
+  });
+
+  toggleSoundBtn?.addEventListener("click", () => {
+    state.audio.enabled = !state.audio.enabled;
+    resumeAudio();
+    setAudioEnabled(state.audio.enabled);
+    syncSoundToggle();
+    playUiToggle();
+    saveGameLocal();
+  });
+
+  toggleGlowFxBtn?.addEventListener("click", () => toggleAddon("glow"));
+  toggleBloomFxBtn?.addEventListener("click", () => toggleAddon("bloom"));
+  toggleGrainFxBtn?.addEventListener("click", () => toggleAddon("grain"));
+  toggleHudPulseBtn?.addEventListener("click", () => toggleAddon("hudPulse"));
+
+  resetProgressBtn?.addEventListener("click", () => {
+    if (confirm("Effacer la sauvegarde et recommencer ?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      window.location.reload();
+    }
+  });
+
+  softPrestigeBtn?.addEventListener("click", () => {
+    if (state.prestigeCooldown > 0) return;
+    prestige();
+  });
+
+  restartRunBtn?.addEventListener("click", () => {
+    softResetLocal();
+    saveGameLocal();
+  });
+
+  resetTalentsBtn?.addEventListener("click", () => {
+    if (!resetTalents(talents, state)) return;
+    applyProgressionEffectsLocal();
+    refreshGeneratorRatesLocal();
+    renderTalents();
+    renderGenerators();
+    renderUpgrades();
+    saveGameLocal();
+  });
+
+  togglePerfBtn?.addEventListener("click", () => {
+    state.visualsLow = !state.visualsLow;
+    if (togglePerfBtn) togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
+    buildBackground(webgl2Canvas.width, webgl2Canvas.height);
+    webgl2Renderer?.setEnabled(!state.visualsLow);
+    playUiToggle();
+    debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
+      updateHud(state, hudContext)
+    );
+  });
+
+  toggleFpsBtn?.addEventListener("click", () => {
+    state.performance.graphVisible = !state.performance.graphVisible;
+    fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
+    if (toggleFpsBtn) toggleFpsBtn.textContent = state.performance.graphVisible ? "📉 Masquer le graph" : "📈 Afficher le graph";
+    if (fpsCanvas) drawFpsGraph(fpsCanvas, state.performance);
+  });
+
+  debugBtns.giveEssence?.addEventListener("click", () => {
+    state.resources.essence += 1_000_000;
+    renderGenerators();
+    saveGameLocal();
+    debugPing(state, "+1M ⚡", undefined, () => updateHud(state, hudContext));
+  });
+  debugBtns.giveFragments?.addEventListener("click", () => {
+    state.resources.fragments += 1_000_000;
+    renderUpgrades();
+    renderTalents();
+    saveGameLocal();
+    debugPing(state, "+1M ✦", undefined, () => updateHud(state, hudContext));
+  });
+  debugBtns.skipWave?.addEventListener("click", () => {
+    state.wave += 10;
+    state.spawnTimer = 0;
+    saveGameLocal();
+    debugPing(state, "+10 vagues", undefined, () => updateHud(state, hudContext));
+  });
+  debugBtns.nuke?.addEventListener("click", () => {
+    state.enemies = [];
+    state.fragmentsOrbs = [];
+    debugPing(state, "☄️ Nuke", "#f472b6", () => updateHud(state, hudContext));
+  });
+
+  renderGenerators();
+  renderUpgrades();
+  renderTalents();
+
+  // Initialize collapsible sections with state persistence
+  initCollapsibleSections();
+}
+
+async function bootstrap(): Promise<void> {
+  resizeCanvas(true);
+  buildBackground(webgl2Canvas.width, webgl2Canvas.height);
+  
+  // Load saved game state
+  talents = loadSave(state, {
+    generators,
+    upgrades,
+    talents,
+    computeGeneratorRate: computeGeneratorRateLocal,
+    applyProgressionEffects: applyProgressionEffectsLocal,
+    refreshGeneratorRates: refreshGeneratorRatesLocal,
+    updateHud: () => updateHud(state, hudContext)
+  }, computeIdleRate);
+  hudContext.talents = talents;
+  talentBonuses = computeTalentBonuses(talents);
+  state.talents.bonuses = talentBonuses;
+  
+  initSound(state.audio.enabled);
+  setAudioEnabled(state.audio.enabled);
+  assistUi = initAssist(state, {
+    quickHelpList,
+    milestoneList,
+    bubbleContainer: assistBubbles,
+    anchors: {
+      arena: webgl2Canvas,
+      generators: generatorsContainer,
+      upgrades: upgradesContainer,
+      prestige: softPrestigeBtn
+    },
+    upgrades,
+    generators
+  });
+  initUI();
+  window.addEventListener("resize", () => resizeCanvas());
+  setInterval(saveGameLocal, 5000);
+
+  let lastTime = performance.now();
+
+  function gameLoop(currentTime: number): void {
+    const frameMs = currentTime - lastTime;
+    lastTime = currentTime;
+
+    recordFpsSample(state.performance, frameMs);
+    const dt = Math.min(0.05, frameMs / 1000);
+
+    const { width, height } = webgl2Canvas.getBoundingClientRect();
+
+    gameUpdate(state, dt, {
+      canvasWidth: width,
+      canvasHeight: height,
+      generators,
+      talentBonuses,
+      assistUi
+    });
+    updateHud(state, hudContext);
+    updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
+    gameRender(state, {
+      canvasWidth: width,
+      canvasHeight: height,
+      webgl2Renderer
+    });
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+bootstrap();
