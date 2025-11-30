@@ -19,7 +19,7 @@ import {
 } from "./systems/talents.ts";
 import { WebGL2Grid } from "./renderer/webgl2Grid.ts";
 import { WebGL2Circles } from "./renderer/webgl2Circles.ts";
-import { acquireFloatingText } from "./renderer/floatingText.ts";
+import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
 
@@ -1000,7 +1000,7 @@ function render() {
   });
 
   const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
-  recycledFloatingText.forEach((text) => floatingTextPool.push(text));
+  recycledFloatingText.forEach((text) => releaseFloatingText(text));
 
   state.floatingText.forEach((f) => {
     const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
