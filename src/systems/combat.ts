@@ -1,6 +1,7 @@
 import type { Bullet, Canvas, Enemy, GameState } from "../types/index.ts";
 import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
+import { getRandomBulletShape, getRandomFragmentShape } from "../config/shapes.ts";
 
 function nearestEnemy(state: GameState): Enemy | null {
   let closest: Enemy | null = null;
@@ -36,7 +37,8 @@ function fire(state: GameState): void {
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
-      pierce: state.player.pierce
+      pierce: state.player.pierce,
+      shape: getRandomBulletShape()
     };
     state.bullets.push(bullet);
   }
@@ -166,7 +168,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
           value: fragReward,
           vx: (Math.random() - 0.5) * 30,
           vy: (Math.random() - 0.5) * 30,
-          life: 12
+          life: 12,
+          shape: getRandomFragmentShape()
         });
       } else {
         registerFragmentGain(state, fragReward, e.x, e.y, true);

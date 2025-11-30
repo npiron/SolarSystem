@@ -4,6 +4,7 @@ import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons } from "./config/const
 import { createGenerators } from "./config/generators.ts";
 import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
+import { PLAYER_SHAPE } from "./config/shapes.ts";
 import { updateCombat } from "./systems/combat.ts";
 import { initAssist } from "./systems/assist.ts";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.ts";
@@ -111,6 +112,64 @@ function getFragmentRadius(value) {
   if (value < LOW_THRESHOLD) return 5;
   if (value >= HIGH_THRESHOLD) return 8;
   return 6;
+}
+
+/**
+ * Draw a shape using PIXI.Graphics based on the shape type.
+ * @param {PIXI.Graphics} graphics - The graphics object to draw on
+ * @param {number} x - Center X position
+ * @param {number} y - Center Y position
+ * @param {number} radius - The radius of the shape
+ * @param {string} shape - Shape type: 'circle', 'square', 'triangle', 'diamond', 'hexagon', 'star'
+ */
+function drawShape(graphics, x, y, radius, shape) {
+  switch (shape) {
+    case 'square':
+      graphics.drawRect(x - radius * 0.75, y - radius * 0.75, radius * 1.5, radius * 1.5);
+      break;
+    case 'triangle': {
+      const h = radius * 0.866; // height = r * sqrt(3)/2
+      graphics.drawPolygon([
+        x, y - radius,
+        x - h, y + radius * 0.5,
+        x + h, y + radius * 0.5
+      ]);
+      break;
+    }
+    case 'diamond':
+      graphics.drawPolygon([
+        x, y - radius,
+        x + radius * 0.7, y,
+        x, y + radius,
+        x - radius * 0.7, y
+      ]);
+      break;
+    case 'hexagon': {
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3 - Math.PI / 6;
+        points.push(x + Math.cos(angle) * radius * 0.85);
+        points.push(y + Math.sin(angle) * radius * 0.85);
+      }
+      graphics.drawPolygon(points);
+      break;
+    }
+    case 'star': {
+      const points = [];
+      for (let i = 0; i < 10; i++) {
+        const angle = (i * Math.PI) / 5 - Math.PI / 2;
+        const r = i % 2 === 0 ? radius : radius * 0.4;
+        points.push(x + Math.cos(angle) * r);
+        points.push(y + Math.sin(angle) * r);
+      }
+      graphics.drawPolygon(points);
+      break;
+    }
+    case 'circle':
+    default:
+      graphics.drawCircle(x, y, radius);
+      break;
+  }
 }
 
 const canvas = document.getElementById("arena");
@@ -227,15 +286,15 @@ function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
   renderObjects.aura.beginFill(colors.player, 0.18);
-  renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+  drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, state.player.shape);
   renderObjects.aura.endFill();
   renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.28, width: 3 });
   renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
   renderObjects.aura.lineStyle(0);
 
-  // Draw the player as a vector circle
+  // Draw the player using its shape
   renderObjects.player.beginFill(colors.player, 1);
-  renderObjects.player.drawCircle(0, 0, state.player.radius);
+  drawShape(renderObjects.player, 0, 0, state.player.radius, state.player.shape);
   renderObjects.player.endFill();
 
   const playerContainer = new PIXI.Container();
@@ -371,12 +430,13 @@ const state = {
   player: {
     x: app.renderer.width / 2,
     y: app.renderer.height / 2,
-    radius: 12,
+    radius: 14,
     ...BASE_PLAYER_STATS,
     hp: 120,
     maxHp: 120,
     fireTimer: 0,
-    spin: 0
+    spin: 0,
+    shape: PLAYER_SHAPE
   },
   resources: {
     essence: 0,
@@ -1122,7 +1182,7 @@ function render() {
   if (!usingWebgl2) {
     renderObjects.aura.clear();
     renderObjects.aura.beginFill(colors.player, 0.12);
-    renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+    drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, state.player.shape);
     renderObjects.aura.endFill();
     renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
     renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
@@ -1138,23 +1198,27 @@ function render() {
   if (!usingWebgl2) {
     renderObjects.bullets.clear();
     renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
-    state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
+    state.bullets.forEach((b) => {
+      drawShape(renderObjects.bullets, b.x, b.y, 4, b.shape);
+    });
     renderObjects.bullets.endFill();
 
     renderObjects.bulletsGlow.clear();
     if (!state.visualsLow) {
       renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
-      state.bullets.forEach((b) => renderObjects.bulletsGlow.drawCircle(b.x, b.y, 8));
+      state.bullets.forEach((b) => {
+        drawShape(renderObjects.bulletsGlow, b.x, b.y, 8, b.shape);
+      });
       renderObjects.bulletsGlow.endFill();
     }
 
-    // Render fragments using vector graphics with value-based colors and sizes
+    // Render fragments using vector graphics with value-based colors and shapes
     renderObjects.fragments.clear();
     state.fragmentsOrbs.forEach((f) => {
       const fragColor = getFragmentColor(f.value);
       const fragRadius = getFragmentRadius(f.value);
       renderObjects.fragments.beginFill(fragColor);
-      renderObjects.fragments.drawCircle(f.x, f.y, fragRadius);
+      drawShape(renderObjects.fragments, f.x, f.y, fragRadius, f.shape);
       renderObjects.fragments.endFill();
     });
 
@@ -1169,12 +1233,12 @@ function render() {
       renderObjects.fragmentRings.lineStyle(0);
     }
 
-    // Render enemies using vector graphics with type-based colors
+    // Render enemies using vector graphics with type-based colors and shapes
     renderObjects.enemies.clear();
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColor(e.type);
       renderObjects.enemies.beginFill(enemyColor);
-      renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+      drawShape(renderObjects.enemies, e.x, e.y, e.radius, e.shape);
       renderObjects.enemies.endFill();
     });
   } else if (webgl2Renderer) {
@@ -1190,6 +1254,7 @@ function render() {
       y: state.player.y,
       radius: state.player.radius + 16,
       color: webglColors.playerAura,
+      shape: state.player.shape,
       halo: auraHalo
     });
     webgl2Renderer.pushCircle({
@@ -1197,6 +1262,7 @@ function render() {
       y: state.player.y,
       radius: state.player.collectRadius * 0.45,
       color: webglColors.transparent,
+      shape: 'circle',
       halo: collectRing
     });
     webgl2Renderer.pushCircle({
@@ -1204,6 +1270,7 @@ function render() {
       y: state.player.y,
       radius: state.player.radius,
       color: webglColors.player,
+      shape: state.player.shape,
       halo: playerHalo
     });
 
@@ -1213,6 +1280,7 @@ function render() {
         y: b.y,
         radius: 4,
         color: bulletColor,
+        shape: b.shape,
         halo: bulletHalo
       })
     );
@@ -1226,18 +1294,20 @@ function render() {
         y: f.y,
         radius,
         color,
+        shape: f.shape,
         halo: fragmentHalo
       });
     });
 
-    // Render enemies with type-based colors
+    // Render enemies with type-based colors and shapes
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColorWebGL(e.type);
       webgl2Renderer.pushCircle({
         x: e.x,
         y: e.y,
         radius: e.radius,
-        color: enemyColor
+        color: enemyColor,
+        shape: e.shape
       });
     });
 

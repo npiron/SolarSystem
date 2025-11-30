@@ -1,4 +1,5 @@
 import type { Canvas, Enemy, GameState } from "../types/index.ts";
+import { getEnemyShape } from "../config/shapes.ts";
 
 const MAX_PACK_SIZE = 5;
 const SPAWN_MARGIN = 20;
@@ -178,7 +179,8 @@ export function spawnEnemy(
     fireTimer: fireDelay * Math.random(),
     fireDelay,
     elite,
-    type
+    type,
+    shape: getEnemyShape(type)
   };
   state.enemies.push(enemy);
 }

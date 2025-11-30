@@ -2,6 +2,17 @@
  * Entity type definitions for gameplay objects.
  */
 
+/**
+ * Shape types for rendering entities.
+ * - circle: standard round shape
+ * - square: square/rectangle shape
+ * - triangle: triangular shape (pointing up)
+ * - diamond: rotated square (rhombus)
+ * - hexagon: six-sided polygon
+ * - star: five-pointed star
+ */
+export type Shape = 'circle' | 'square' | 'triangle' | 'diamond' | 'hexagon' | 'star';
+
 export interface PlayerStats {
   damage: number;
   fireDelay: number;
@@ -25,6 +36,7 @@ export interface Player extends PlayerStats {
   maxHp: number;
   fireTimer: number;
   spin: number;
+  shape: Shape;
 }
 
 export interface Bullet {
@@ -34,6 +46,7 @@ export interface Bullet {
   dy: number;
   life: number;
   pierce: number;
+  shape: Shape;
 }
 
 export type EnemyType = 'weak' | 'normal' | 'strong' | 'elite';
@@ -50,6 +63,7 @@ export interface Enemy {
   fireDelay: number;
   elite: boolean;
   type: EnemyType;
+  shape: Shape;
   hitThisFrame?: boolean;
 }
 
@@ -60,6 +74,7 @@ export interface FragmentOrb {
   vx: number;
   vy: number;
   life: number;
+  shape: Shape;
 }
 
 export interface FloatingText {
