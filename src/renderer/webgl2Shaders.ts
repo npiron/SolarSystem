@@ -85,3 +85,33 @@ void main() {
   }
   outColor = vec4(color, alpha);
 }`;
+
+/**
+ * Vertex shader for instanced axis-aligned rectangles.
+ */
+export const rectVertexShader = `#version 300 es
+in vec2 a_corner;
+in vec2 a_position;
+in vec2 a_size;
+in vec4 a_color;
+uniform vec2 u_resolution;
+out vec4 v_color;
+void main() {
+  vec2 world = a_position + (a_corner * a_size);
+  vec2 zeroToOne = world / u_resolution;
+  vec2 clip = zeroToOne * 2.0 - 1.0;
+  clip.y *= -1.0;
+  gl_Position = vec4(clip, 0.0, 1.0);
+  v_color = a_color;
+}`;
+
+/**
+ * Fragment shader for rectangles.
+ */
+export const rectFragmentShader = `#version 300 es
+precision highp float;
+in vec4 v_color;
+out vec4 outColor;
+void main() {
+  outColor = v_color;
+}`;

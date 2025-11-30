@@ -5,7 +5,9 @@ import {
   gridVertexShader,
   gridFragmentShader,
   circlesVertexShader,
-  circlesFragmentShader
+  circlesFragmentShader,
+  rectVertexShader,
+  rectFragmentShader
 } from "./webgl2Shaders.ts";
 
 const GRID_SPACING = 64;
@@ -25,6 +27,7 @@ type CircleInstance = {
 export type { TextInstance };
 
 const FLOATS_PER_CIRCLE = 12;
+const FLOATS_PER_RECT = 8;
 
 /**
  * Unified WebGL2 renderer that combines grid and circles rendering
@@ -65,6 +68,16 @@ export class WebGL2Renderer {
   // Text rendering
   private textRenderer: WebGL2TextRenderer;
 
+  // Rectangles rendering resources (used for HP bars)
+  private rectProgram: WebGLProgram;
+  private rectVao: WebGLVertexArrayObject | null;
+  private rectQuadBuffer: WebGLBuffer | null;
+  private rectInstanceBuffer: WebGLBuffer | null;
+  private rectUniforms: { resolution: WebGLUniformLocation | null };
+  private rectData: Float32Array;
+  private rectCapacity = 0;
+  private rectCount = 0;
+
   private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
     this.dpr = dpr;
@@ -96,10 +109,25 @@ export class WebGL2Renderer {
     };
     this.circlesData = new Float32Array(0);
 
+    // Initialize rectangles program
+    this.rectProgram = createProgram(gl, rectVertexShader, rectFragmentShader);
+    this.rectVao = gl.createVertexArray();
+    this.rectQuadBuffer = gl.createBuffer();
+    this.rectInstanceBuffer = gl.createBuffer();
+    this.rectUniforms = {
+      resolution: gl.getUniformLocation(this.rectProgram, "u_resolution")
+    };
+    this.rectData = new Float32Array(0);
+
     gl.useProgram(this.circlesProgram);
     gl.bindVertexArray(this.circlesVao);
     this.configureCirclesQuad();
     this.configureCirclesInstanceAttributes();
+
+    gl.useProgram(this.rectProgram);
+    gl.bindVertexArray(this.rectVao);
+    this.configureRectQuad();
+    this.configureRectInstanceAttributes();
 
     // Set up blending and other GL state
     gl.enable(gl.BLEND);
@@ -137,6 +165,7 @@ export class WebGL2Renderer {
 
   beginFrame() {
     this.circlesCount = 0;
+    this.rectCount = 0;
     this.textRenderer.beginFrame();
   }
 
@@ -170,6 +199,23 @@ export class WebGL2Renderer {
     this.textRenderer.pushText(text);
   }
 
+  pushRect(rect: { x: number; y: number; width: number; height: number; color: readonly [number, number, number, number] }) {
+    if (!this.enabled) return;
+    this.ensureRectCapacity(this.rectCount + 1);
+    const offset = this.rectCount * FLOATS_PER_RECT;
+
+    this.rectData[offset] = rect.x * this.dpr;
+    this.rectData[offset + 1] = rect.y * this.dpr;
+    this.rectData[offset + 2] = rect.width * this.dpr;
+    this.rectData[offset + 3] = rect.height * this.dpr;
+    this.rectData[offset + 4] = rect.color[0];
+    this.rectData[offset + 5] = rect.color[1];
+    this.rectData[offset + 6] = rect.color[2];
+    this.rectData[offset + 7] = rect.color[3];
+
+    this.rectCount += 1;
+  }
+
   render() {
     if (!this.enabled) return;
     const gl = this.gl;
@@ -189,6 +235,9 @@ export class WebGL2Renderer {
 
     // Render circles on top
     this.renderCircles();
+
+    // Render rectangles (e.g., HP bars)
+    this.renderRects();
 
     // Render text last (on top of everything)
     this.textRenderer.render(this.resolution);
@@ -220,6 +269,12 @@ export class WebGL2Renderer {
     if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);
     if (this.circlesInstanceBuffer) gl.deleteBuffer(this.circlesInstanceBuffer);
     if (this.circlesProgram) gl.deleteProgram(this.circlesProgram);
+
+    // Clean up rect resources
+    if (this.rectVao) gl.deleteVertexArray(this.rectVao);
+    if (this.rectQuadBuffer) gl.deleteBuffer(this.rectQuadBuffer);
+    if (this.rectInstanceBuffer) gl.deleteBuffer(this.rectInstanceBuffer);
+    if (this.rectProgram) gl.deleteProgram(this.rectProgram);
   }
 
   private renderGrid() {
@@ -259,6 +314,22 @@ export class WebGL2Renderer {
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.circlesCount);
   }
 
+  private renderRects() {
+    if (!this.rectCount) return;
+
+    const gl = this.gl;
+    gl.useProgram(this.rectProgram);
+    gl.bindVertexArray(this.rectVao);
+
+    if (this.rectUniforms.resolution) {
+      gl.uniform2f(this.rectUniforms.resolution, this.resolution.width, this.resolution.height);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectInstanceBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.rectData.subarray(0, this.rectCount * FLOATS_PER_RECT));
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.rectCount);
+  }
+
   private buildGrid() {
     const gl = this.gl;
     if (!this.gridBuffer) return;
@@ -288,6 +359,15 @@ export class WebGL2Renderer {
     this.circlesData = new Float32Array(this.circlesCapacity * FLOATS_PER_CIRCLE);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circlesInstanceBuffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, this.circlesData.byteLength, this.gl.DYNAMIC_DRAW);
+  }
+
+  private ensureRectCapacity(targetInstances: number) {
+    if (targetInstances <= this.rectCapacity) return;
+    const nextCapacity = Math.max(targetInstances, Math.max(64, this.rectCapacity * 2));
+    this.rectCapacity = nextCapacity;
+    this.rectData = new Float32Array(this.rectCapacity * FLOATS_PER_RECT);
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.rectInstanceBuffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, this.rectData.byteLength, this.gl.DYNAMIC_DRAW);
   }
 
   private configureCirclesQuad() {
@@ -339,5 +419,46 @@ export class WebGL2Renderer {
     gl.enableVertexAttribArray(haloScaleLoc);
     gl.vertexAttribPointer(haloScaleLoc, 1, gl.FLOAT, false, stride, 44);
     gl.vertexAttribDivisor(haloScaleLoc, 1);
+  }
+
+  private configureRectQuad() {
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectQuadBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        0, 0,
+        1, 0,
+        0, 1,
+        1, 1
+      ]),
+      gl.STATIC_DRAW
+    );
+
+    const cornerLoc = gl.getAttribLocation(this.rectProgram, "a_corner");
+    gl.enableVertexAttribArray(cornerLoc);
+    gl.vertexAttribPointer(cornerLoc, 2, gl.FLOAT, false, 0, 0);
+  }
+
+  private configureRectInstanceAttributes() {
+    const gl = this.gl;
+    const stride = FLOATS_PER_RECT * 4;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectInstanceBuffer);
+
+    const positionLoc = gl.getAttribLocation(this.rectProgram, "a_position");
+    gl.enableVertexAttribArray(positionLoc);
+    gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribDivisor(positionLoc, 1);
+
+    const sizeLoc = gl.getAttribLocation(this.rectProgram, "a_size");
+    gl.enableVertexAttribArray(sizeLoc);
+    gl.vertexAttribPointer(sizeLoc, 2, gl.FLOAT, false, stride, 8);
+    gl.vertexAttribDivisor(sizeLoc, 1);
+
+    const colorLoc = gl.getAttribLocation(this.rectProgram, "a_color");
+    gl.enableVertexAttribArray(colorLoc);
+    gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, stride, 16);
+    gl.vertexAttribDivisor(colorLoc, 1);
   }
 }

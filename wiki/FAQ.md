@@ -121,6 +121,12 @@ Cliquez sur **"Réinitialiser la progression"** dans la barre supérieure et con
 
 ---
 
+### Peut-on utiliser WebGL2 sans Pixi pour encore plus de perfo ?
+
+Oui. Le projet peut s'appuyer sur un pipeline **WebGL2 natif** pour supprimer la surcouche Pixi et contrôler totalement les buffers, shaders et draw calls. La feuille de route [[Migration-WebGL2]] décrit déjà les étapes : création d'un module `renderer/` dédié (context, shaders, buffers, boucle de rendu), remplacement progressif des primitives Pixi par des draws instanciés et ajout de post-traitements ciblés. Ce mode offre la marge maximale pour profiler les allocations, limiter les changements d'état GPU et affiner le batching si vous visez des performances « au plus bas niveau ».
+
+---
+
 ### Le jeu continue quand je ferme l'onglet ?
 
 Oui, **jusqu'à 3 heures** de gains passifs sont appliqués quand vous revenez.

@@ -1156,6 +1156,31 @@ function render() {
       });
     });
 
+    state.enemies.forEach((e) => {
+      if (state.visualsLow && !e.hitThisFrame) return;
+      const barWidth = e.radius * 2;
+      const barHeight = 6;
+      const hpRatio = Math.max(0, Math.min(1, e.hp / e.maxHp));
+      const x = e.x - e.radius;
+      const y = e.y - e.radius - 12;
+
+      webgl2Renderer.pushRect({
+        x,
+        y,
+        width: barWidth,
+        height: barHeight,
+        color: webglColors.hpBg
+      });
+
+      webgl2Renderer.pushRect({
+        x,
+        y,
+        width: barWidth * hpRatio,
+        height: barHeight,
+        color: webglColors.hpFg
+      });
+    });
+
     // Render floating text using native WebGL2 text renderer
     state.floatingText.forEach((f) => {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
@@ -1173,18 +1198,20 @@ function render() {
     webgl2Renderer.render();
   }
 
-  renderObjects.enemyHp.clear();
-  state.enemies.forEach((e) => {
-    if (!state.visualsLow || e.hitThisFrame) {
-      renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
-      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
-      renderObjects.enemyHp.endFill();
+  if (!usingWebgl2) {
+    renderObjects.enemyHp.clear();
+    state.enemies.forEach((e) => {
+      if (!state.visualsLow || e.hitThisFrame) {
+        renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
+        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
+        renderObjects.enemyHp.endFill();
 
-      renderObjects.enemyHp.beginFill(colors.hpFg);
-      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
-      renderObjects.enemyHp.endFill();
-    }
-  });
+        renderObjects.enemyHp.beginFill(colors.hpFg);
+        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
+        renderObjects.enemyHp.endFill();
+      }
+    });
+  }
 
   // Only use PixiJS floating text when WebGL2 is not available
   if (!usingWebgl2) {

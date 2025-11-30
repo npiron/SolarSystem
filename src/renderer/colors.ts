@@ -62,5 +62,7 @@ export const webglColors = {
   fragmentRingLow: toVec4(colors.fragmentLow, 0.35),
   fragmentRingMedium: toVec4(colors.fragmentRing, 0.35),
   fragmentRingHigh: toVec4(colors.fragmentHigh, 0.35),
+  hpBg: toVec4(colors.hpBg, 0.4),
+  hpFg: toVec4(colors.hpFg, 1),
   transparent: [0, 0, 0, 0]
 };
