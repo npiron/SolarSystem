@@ -22,6 +22,26 @@ import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingTex
 import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
 
+/**
+ * Convert a CSS hex color string to a WebGL vec4 color array.
+ * @param {string} hexStr - Hex color string (e.g., "#fef08a" or "#fff")
+ * @param {number} alpha - Alpha value (0-1)
+ * @returns {readonly [number, number, number, number]} RGBA color array with values 0-1
+ */
+function hexStringToVec4(hexStr, alpha = 1) {
+  const hex = hexStr.replace("#", "");
+  const fullHex = hex.length === 3
+    ? hex.split("").map((c) => c + c).join("")
+    : hex;
+  const value = parseInt(fullHex, 16);
+  return [
+    ((value >> 16) & 0xff) / 255,
+    ((value >> 8) & 0xff) / 255,
+    (value & 0xff) / 255,
+    alpha
+  ];
+}
+
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
 const webgl2Renderer = webgl2Canvas ? WebGL2Renderer.create(webgl2Canvas) : null;
@@ -1141,6 +1161,20 @@ function render() {
       })
     );
 
+    // Render floating text using native WebGL2 text renderer
+    state.floatingText.forEach((f) => {
+      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
+      if (!label) return;
+      const textColor = hexStringToVec4(f.color || "#fef08a", Math.max(0, f.life));
+      webgl2Renderer.pushText({
+        text: label,
+        x: f.x,
+        y: f.y - (1.5 - f.life) * 24,
+        color: textColor,
+        alpha: Math.max(0, f.life)
+      });
+    });
+
     webgl2Renderer.render();
   }
 
@@ -1157,18 +1191,25 @@ function render() {
     }
   });
 
-  const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
-  recycledFloatingText.forEach((text) => releaseFloatingText(text));
+  // Only use PixiJS floating text when WebGL2 is not available
+  if (!usingWebgl2) {
+    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
+    recycledFloatingText.forEach((text) => releaseFloatingText(text));
 
-  state.floatingText.forEach((f) => {
-    const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
-    const text = acquireFloatingText(f.color);
-    text.text = label;
-    text.alpha = Math.max(0, f.life);
-    text.x = f.x;
-    text.y = f.y - (1.5 - f.life) * 24;
-    renderObjects.floatingLayer.addChild(text);
-  });
+    state.floatingText.forEach((f) => {
+      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
+      const text = acquireFloatingText(f.color);
+      text.text = label;
+      text.alpha = Math.max(0, f.life);
+      text.x = f.x;
+      text.y = f.y - (1.5 - f.life) * 24;
+      renderObjects.floatingLayer.addChild(text);
+    });
+  } else {
+    // Clear PixiJS floating text layer when using WebGL2
+    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
+    recycledFloatingText.forEach((text) => releaseFloatingText(text));
+  }
 
   renderObjects.hudLabels.wave.text = `${icons.wave} Vague ${state.wave.toFixed(1)}`;
   renderObjects.hudLabels.kills.text = `⚔️ Kills ${state.runStats.kills}`;
