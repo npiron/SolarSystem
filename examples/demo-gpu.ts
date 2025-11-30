@@ -11,8 +11,8 @@
  * Or build with: npm run build (then serve dist folder)
  */
 
-import { CPUParticles, createOrthoMatrix } from './renderer/cpuParticles.ts';
-import { GPUParticles } from './renderer/gpu/index.ts';
+import { CPUParticles, createOrthoMatrix } from '../src/renderer/cpuParticles.ts';
+import { GPUParticles } from '../src/renderer/gpu/index.ts';
 
 // Type alias for particle system (either GPU or CPU)
 type ParticleSystem = GPUParticles | CPUParticles;

@@ -1,0 +1,100 @@
+/**
+ * Game state factory and initialization
+ */
+import type { GameState, TalentBonuses } from "../types/index.ts";
+import { BASE_PLAYER_STATS, INITIAL_HP, INITIAL_MAX_HP, PLAYER_RADIUS } from "../config/player.ts";
+
+export function createInitialTalentBonuses(): TalentBonuses {
+  return {
+    damage: 1,
+    fireDelay: 1,
+    economy: 1,
+    collectRadius: 1,
+    projectiles: 0,
+    regen: 0,
+    damageReduction: 0,
+    critChance: 0,
+    critMultiplier: 1,
+    bulletSpeed: 1
+  };
+}
+
+export function createInitialState(canvasWidth: number, canvasHeight: number): GameState {
+  return {
+    running: true,
+    wave: 1,
+    time: 0,
+    enemies: [],
+    bullets: [],
+    floatingText: [],
+    fragmentsOrbs: [],
+    gainTicker: { fragments: 0, essence: 0, timer: 0 },
+    runStats: {
+      kills: 0,
+      fragments: 0,
+      essence: 0
+    },
+    player: {
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
+      radius: PLAYER_RADIUS,
+      ...BASE_PLAYER_STATS,
+      hp: INITIAL_HP,
+      maxHp: INITIAL_MAX_HP,
+      fireTimer: 0,
+      spin: 0
+    },
+    resources: {
+      essence: 0,
+      fragments: 0,
+      idleMultiplier: 1
+    },
+    talents: {
+      bonuses: createInitialTalentBonuses(),
+    },
+    assist: {
+      firstShot: false,
+      firstPurchase: false,
+      firstPrestige: false,
+      bestWave: 1,
+      completed: []
+    },
+    spawnTimer: 0,
+    overlayFade: 0.12,
+    prestigeCooldown: 0,
+    dead: false,
+    visualsLow: false,
+    audio: {
+      enabled: true,
+    },
+    performance: {
+      fps: 0,
+      history: [],
+      maxSamples: 240,
+      graphVisible: false
+    },
+    addons: {
+      glow: true,
+      bloom: true,
+      grain: false,
+      hudPulse: true
+    }
+  };
+}
+
+export function softReset(state: GameState, canvasWidth: number, canvasHeight: number): void {
+  state.wave = 1;
+  state.player.hp = state.player.maxHp;
+  state.player.fireTimer = 0;
+  state.player.x = canvasWidth / 2;
+  state.player.y = canvasHeight / 2;
+  state.enemies = [];
+  state.bullets = [];
+  state.floatingText = [];
+  state.fragmentsOrbs = [];
+  state.gainTicker = { fragments: 0, essence: 0, timer: 0 };
+  state.runStats = { kills: 0, fragments: 0, essence: 0 };
+  state.spawnTimer = 0;
+  state.dead = false;
+  state.running = true;
+}

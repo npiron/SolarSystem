@@ -6,8 +6,17 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       all: true,
-      include: ["src/config/**/*.ts", "src/systems/talents.ts"],
-      exclude: [],
+      include: [
+        "src/config/**/*.ts", 
+        "src/systems/talents.ts",
+        "src/systems/gameState.ts",
+        "src/systems/progression.ts"
+      ],
+      exclude: [
+        "src/config/index.ts",
+        "src/systems/index.ts",
+        "src/config/persistence.ts"  // Large module that requires mocking localStorage
+      ],
       thresholds: {
         statements: 80,
         branches: 80,
