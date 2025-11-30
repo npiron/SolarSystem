@@ -22,6 +22,8 @@ import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
+import { initDocumentationDialog } from "./renderer/documentation.ts";
+import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
 
 /**
  * Get the PIXI color for an enemy based on its type.
@@ -113,6 +115,16 @@ function getFragmentRadius(value) {
   if (value >= HIGH_THRESHOLD) return 8;
   return 6;
 }
+import {
+  getEnemyColor,
+  getEnemyColorWebGL,
+  getFragmentVisuals,
+  getFragmentColor,
+  getFragmentRadius
+} from "./renderer/entityColors.ts";
+import { calculatePlayerMovement } from "./systems/movement.ts";
+import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
+import { initCollapsibleSections } from "./systems/collapsible.ts";
 
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
@@ -304,6 +316,11 @@ const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
 const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
 const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
 const versionBadge = document.getElementById("versionBadge");
+const docDialog = document.getElementById("docDialog");
+const docTabs = document.getElementById("docTabs");
+const docContent = document.getElementById("docContent");
+const docBtn = document.getElementById("docBtn");
+const docCloseBtn = docDialog?.querySelector(".doc-close-btn");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -351,9 +368,17 @@ const BASE_PLAYER_STATS = {
   speed: 95
 };
 
-if (versionBadge) {
-  versionBadge.textContent = VERSION;
-}
+initDocumentationDialog({
+  dialog: docDialog,
+  trigger: docBtn,
+  closeButton: docCloseBtn,
+  tabs: docTabs,
+  content: docContent,
+  versionBadge,
+  version: VERSION,
+  codeDocs: codeDocumentation,
+  roadmap: roadmapSections
+});
 
 const state = {
   running: true,
@@ -445,7 +470,7 @@ function resizeCanvas(center = false) {
   }
   clampPlayerToBounds();
   if (state.performance.graphVisible) {
-    drawFpsGraph();
+    drawFpsGraph(fpsCanvas, state.performance);
   }
   applyAddonFilters(state, renderObjects);
 }
@@ -615,74 +640,6 @@ function refreshGeneratorRates() {
 
 function computeIdleRate() {
   return generators.reduce((sum, g) => sum + computeGeneratorRate(g) * g.level, 0);
-}
-
-function recordFpsSample() {
-  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
-  const fps = 1000 / frameMs;
-  state.performance.fps = fps;
-  state.performance.history.push(fps);
-  if (state.performance.history.length > state.performance.maxSamples) {
-    state.performance.history.shift();
-  }
-}
-
-function drawFpsGraph() {
-  if (!fpsCanvas || !state.performance.graphVisible) return;
-  if (fpsCanvas.width !== fpsCanvas.clientWidth) fpsCanvas.width = fpsCanvas.clientWidth;
-  if (fpsCanvas.height !== fpsCanvas.clientHeight) fpsCanvas.height = fpsCanvas.clientHeight;
-  const ctx = fpsCanvas.getContext("2d");
-  if (!ctx) return;
-
-  const history = state.performance.history;
-  const { width, height } = fpsCanvas;
-  ctx.clearRect(0, 0, width, height);
-  if (!history.length) return;
-
-  const maxFps = Math.max(30, ...history);
-  const minFps = Math.min(0, ...history);
-  const range = Math.max(1, maxFps - minFps);
-  const stepX = history.length > 1 ? width / (history.length - 1) : width;
-
-  const targetFps = 60;
-  const targetY = height - ((targetFps - minFps) / range) * height;
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = "rgba(255, 220, 170, 0.35)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, targetY);
-  ctx.lineTo(width, targetY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.strokeStyle = "#d6b96c";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  history.forEach((fpsValue, idx) => {
-    const x = idx * stepX;
-    const y = height - ((fpsValue - minFps) / range) * height;
-    if (idx === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(214, 185, 108, 0.12)";
-  ctx.lineTo(width, height);
-  ctx.lineTo(0, height);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function updatePerformanceHud() {
-  if (fpsValueEl) {
-    fpsValueEl.textContent = Math.round(state.performance.fps).toString();
-  }
-  if (state.performance.graphVisible) {
-    drawFpsGraph();
-  }
 }
 
 const hudContext = {
@@ -1054,6 +1011,10 @@ function update(dt) {
   state.player.vy = nextVelocity.vy;
   state.player.x += state.player.vx * dt;
   state.player.y += state.player.vy * dt;
+  const { width, height } = app.renderer;
+  const movement = calculatePlayerMovement(state, dt, width, height);
+  state.player.x += movement.moveX;
+  state.player.y += movement.moveY;
   clampPlayerToBounds();
 
   updateCombat(state, dt, canvas);
@@ -1242,7 +1203,7 @@ function render() {
 
     // Render fragments with value-based colors and sizes
     state.fragmentsOrbs.forEach((f) => {
-      const { color, ringColor, radius } = getFragmentVisuals(f.value, allowFx);
+      const { color, ringColor, radius } = getFragmentVisuals(f.value);
       const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
       webgl2Renderer.pushCircle({
         x: f.x,
@@ -1323,11 +1284,12 @@ function render() {
 }
 
 app.ticker.add((delta) => {
-  recordFpsSample();
+  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
+  recordFpsSample(state.performance, frameMs);
   const dt = Math.min(0.05, delta / 60);
   update(dt);
   updateHud(state, hudContext);
-  updatePerformanceHud();
+  updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
   render();
 });
 
@@ -1425,7 +1387,7 @@ function initUI() {
     state.performance.graphVisible = !state.performance.graphVisible;
     fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
     toggleFpsBtn.textContent = state.performance.graphVisible ? "📉 Masquer le graph" : "📈 Afficher le graph";
-    drawFpsGraph();
+    drawFpsGraph(fpsCanvas, state.performance);
   });
 
   debugBtns.giveEssence?.addEventListener("click", () => {
@@ -1458,59 +1420,7 @@ function initUI() {
   renderTalents();
 
   // Initialize collapsible sections with state persistence
-  const COLLAPSIBLE_KEY = 'neo-survivors-collapsible';
-  let collapsibleStates = {};
-  try {
-    const saved = localStorage.getItem(COLLAPSIBLE_KEY);
-    if (saved) {
-      collapsibleStates = JSON.parse(saved);
-    }
-  } catch (e) {
-    console.warn('Failed to load collapsible states:', e);
-  }
-
-  document.querySelectorAll('.stat-block.collapsible').forEach((block, index) => {
-    const header = block.querySelector('h2');
-    if (!header) return;
-    
-    const key = header.textContent.replace(/[▶▼\s]/g, '').trim() || `section-${index}`;
-    
-    // Restore saved state if available
-    if (collapsibleStates[key] !== undefined) {
-      block.classList.toggle('collapsed', collapsibleStates[key]);
-    }
-    
-    // Add keyboard accessibility attributes
-    header.setAttribute('tabindex', '0');
-    header.setAttribute('role', 'button');
-    header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
-    
-    const toggleCollapsed = () => {
-      block.classList.toggle('collapsed');
-      header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
-      
-      // Save state
-      try {
-        collapsibleStates[key] = block.classList.contains('collapsed');
-        localStorage.setItem(COLLAPSIBLE_KEY, JSON.stringify(collapsibleStates));
-      } catch (err) {
-        console.warn('Failed to save collapsible state:', err);
-      }
-    };
-    
-    header.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleCollapsed();
-    });
-    
-    // Add keyboard support for Enter and Space keys
-    header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        toggleCollapsed();
-      }
-    });
-  });
+  initCollapsibleSections();
 }
 
 async function bootstrap() {
