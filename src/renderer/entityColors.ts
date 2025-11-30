@@ -49,10 +49,9 @@ const HIGH_THRESHOLD = 10;
  * Get visual properties for a fragment orb based on its value.
  * Higher value fragments are larger and have brighter colors.
  * @param value - Fragment value
- * @param _allowFx - Whether effects are enabled (unused, kept for API compatibility)
  * @returns Object with color, ringColor, and radius
  */
-export function getFragmentVisuals(value: number, _allowFx: boolean): FragmentVisuals {
+export function getFragmentVisuals(value: number): FragmentVisuals {
   if (value < LOW_THRESHOLD) {
     return {
       color: webglColors.fragmentLow,

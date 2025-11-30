@@ -885,7 +885,7 @@ function render() {
 
     // Render fragments with value-based colors and sizes
     state.fragmentsOrbs.forEach((f) => {
-      const { color, ringColor, radius } = getFragmentVisuals(f.value, allowFx);
+      const { color, ringColor, radius } = getFragmentVisuals(f.value);
       const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
       webgl2Renderer.pushCircle({
         x: f.x,
