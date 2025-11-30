@@ -402,14 +402,17 @@ button:disabled {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
-  border: 2px solid rgba(255, 220, 170, 0.25);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 2px 0 rgba(148, 163, 184, 0.3);
-  background-color: #0b1220;
-  background-image: radial-gradient(circle at 40% 40%, rgba(125, 211, 252, 0.16), transparent 32%),
-    radial-gradient(circle at 60% 70%, rgba(255, 122, 195, 0.14), transparent 34%),
-    linear-gradient(160deg, #0f172a 0%, #0b1220 60%, #111827 100%),
+  border: 2px solid rgba(125, 211, 252, 0.35);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 2px 0 rgba(148, 163, 184, 0.3), 0 0 80px rgba(125, 211, 252, 0.1);
+  background-color: #080d18;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(125, 211, 252, 0.2), transparent 35%),
+    radial-gradient(circle at 80% 20%, rgba(255, 122, 195, 0.18), transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(167, 139, 250, 0.15), transparent 40%),
+    radial-gradient(circle at 70% 60%, rgba(110, 231, 183, 0.12), transparent 35%),
+    linear-gradient(160deg, #0a1628 0%, #080d18 50%, #0f172a 100%),
     var(--noise);
-  background-blend-mode: screen, overlay, normal, soft-light;
+  background-blend-mode: screen, screen, screen, screen, normal, soft-light;
   height: 100%;
   min-height: 400px;
 }
@@ -653,6 +656,9 @@ button:disabled {
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   color: var(--text);
   overflow: hidden;
+}
+
+.doc-dialog[open] {
   display: flex;
   flex-direction: column;
 }

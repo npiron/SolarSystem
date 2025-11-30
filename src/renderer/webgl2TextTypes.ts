@@ -43,16 +43,17 @@ export type GlyphMetrics = {
 
 /**
  * Default text style configuration
+ * Sharp, readable text with minimal blur for crisp rendering
  */
 export const DEFAULT_STYLE: TextStyle = {
   fontFamily: "Fredoka, Baloo 2, Nunito, sans-serif",
-  fontSize: 13,
-  strokeColor: [11 / 255, 16 / 255, 36 / 255, 1.0],
-  strokeThickness: 3,
+  fontSize: 16,
+  strokeColor: [5 / 255, 10 / 255, 25 / 255, 1.0],
+  strokeThickness: 2,
   dropShadow: true,
-  dropShadowColor: [11 / 255, 16 / 255, 36 / 255, 0.75],
-  dropShadowBlur: 4,
-  dropShadowOffset: [0, 0],
+  dropShadowColor: [0, 0, 0, 0.5],
+  dropShadowBlur: 1,
+  dropShadowOffset: [1, 1],
 };
 
 // Vertex data constants
