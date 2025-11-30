@@ -1,7 +1,7 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { GlowFilter, KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
-import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
+import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
 import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
@@ -462,18 +462,6 @@ const uiRefs = {
   upgradeButtons: new Map(),
   talentButtons: new Map()
 };
-
-async function loadTextures() {
-  const entries = await Promise.all(
-    Object.entries(assetPaths).map(async ([key, url]) => {
-      const texture = await PIXI.Assets.load(url);
-      return [key, texture];
-    })
-  );
-  entries.forEach(([key, texture]) => {
-    textures[key] = texture;
-  });
-}
 
 function formatDuration(seconds) {
   const totalSeconds = Math.max(0, Math.floor(seconds));
@@ -1231,7 +1219,6 @@ function initUI() {
 
 async function bootstrap() {
   resizeCanvas(true);
-  await loadTextures();
   setupScene();
   buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
