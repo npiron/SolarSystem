@@ -43,6 +43,12 @@ describe("gameState", () => {
       expect(state.player.damage).toBe(12);
       expect(state.player.radius).toBe(12);
     });
+
+    it("should initialize player velocity to zero for inertia system", () => {
+      const state = createInitialState(100, 100);
+      expect(state.player.vx).toBe(0);
+      expect(state.player.vy).toBe(0);
+    });
   });
 
   describe("softReset", () => {
@@ -66,6 +72,17 @@ describe("gameState", () => {
       expect(state.running).toBe(true);
       // Resources should NOT be reset
       expect(state.resources.essence).toBe(1000);
+    });
+
+    it("should reset player velocity for inertia system", () => {
+      const state = createInitialState(800, 600);
+      state.player.vx = 50;
+      state.player.vy = -30;
+
+      softReset(state, 800, 600);
+
+      expect(state.player.vx).toBe(0);
+      expect(state.player.vy).toBe(0);
     });
   });
 });

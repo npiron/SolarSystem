@@ -902,14 +902,18 @@ function findBestFragment() {
 }
 
 /**
- * Calculate intelligent player movement based on health, threats, and objectives.
+ * Calculate intelligent player movement direction based on health, threats, and objectives.
  * Implements survival mode when health is low, balances fragment collection with danger.
+ * Returns the desired movement direction with magnitude (not scaled by dt).
+ * @returns {{ dirX: number, dirY: number }} Object containing normalized direction:
+ *   - dirX: Desired horizontal direction (-1 to 1, or 0 for no input)
+ *   - dirY: Desired vertical direction (-1 to 1, or 0 for no input)
  * @param {number} dt - Delta time in seconds since last frame
  * @returns {{ moveX: number, moveY: number }} Object containing directional movement weights:
  *   - moveX: Horizontal movement weight for this frame (unitless direction)
  *   - moveY: Vertical movement weight for this frame (unitless direction)
  */
-function calculatePlayerMovement(dt) {
+function calculatePlayerMovement() {
   const healthRatio = state.player.hp / state.player.maxHp;
   const danger = calculateDangerVector();
   const { width, height } = app.renderer;
@@ -918,8 +922,8 @@ function calculatePlayerMovement(dt) {
   const survivalThreshold = 0.35;
   const isSurvivalMode = healthRatio < survivalThreshold && danger.threat > 0.2;
 
-  let moveX = 0;
-  let moveY = 0;
+  let dirX = 0;
+  let dirY = 0;
 
   if (isSurvivalMode) {
     // In survival mode, heavily weight escape direction
@@ -979,7 +983,7 @@ function calculatePlayerMovement(dt) {
     }
   }
 
-  return { moveX, moveY };
+  return { dirX, dirY };
 }
 
 const PLAYER_ACCELERATION_MULT = 4.2;
@@ -993,28 +997,41 @@ function update(dt) {
 
   updateSpawn(state, dt, canvas);
 
-  // Use intelligent movement system
-  const movement = calculatePlayerMovement(dt);
-  const acceleration = accelerationFromDirection(
-    movement,
-    state.player.speed * PLAYER_ACCELERATION_MULT
-  );
-  const nextVelocity = applyInertiaStep({
-    velocity: { vx: state.player.vx, vy: state.player.vy },
-    acceleration,
-    friction: PLAYER_FRICTION,
-    maxSpeed: state.player.speed * PLAYER_MAX_SPEED_MULT,
-    dt
-  });
+  // Space-like inertia movement system
+  // Acceleration: how quickly the player reaches target velocity
+  // Friction: how quickly the player slows down (higher = more friction)
+  const ACCELERATION = 8.0; // How fast the player accelerates toward target direction
+  const FRICTION = 4.5; // Drag coefficient for smooth deceleration
 
-  state.player.vx = nextVelocity.vx;
-  state.player.vy = nextVelocity.vy;
+  // Get the desired movement direction
+  const movement = calculatePlayerMovement();
+  const targetVx = movement.dirX * state.player.speed;
+  const targetVy = movement.dirY * state.player.speed;
+
+  // Calculate acceleration toward target velocity with smooth interpolation
+  const ax = (targetVx - state.player.vx) * ACCELERATION;
+  const ay = (targetVy - state.player.vy) * ACCELERATION;
+
+  // Apply acceleration to velocity
+  state.player.vx += ax * dt;
+  state.player.vy += ay * dt;
+
+  // Apply friction to velocity (damping effect for space-like feel)
+  const frictionFactor = 1 - FRICTION * dt;
+  state.player.vx *= Math.max(0, frictionFactor);
+  state.player.vy *= Math.max(0, frictionFactor);
+
+  // Clamp velocity to max speed
+  const currentSpeed = Math.hypot(state.player.vx, state.player.vy);
+  const maxSpeed = state.player.speed * 1.2;
+  if (currentSpeed > maxSpeed) {
+    state.player.vx = (state.player.vx / currentSpeed) * maxSpeed;
+    state.player.vy = (state.player.vy / currentSpeed) * maxSpeed;
+  }
+
+  // Update position based on velocity
   state.player.x += state.player.vx * dt;
   state.player.y += state.player.vy * dt;
-  const { width, height } = app.renderer;
-  const movement = calculatePlayerMovement(state, dt, width, height);
-  state.player.x += movement.moveX;
-  state.player.y += movement.moveY;
   clampPlayerToBounds();
 
   updateCombat(state, dt, canvas);
@@ -1049,6 +1066,8 @@ function softReset() {
   state.player.vy = 0;
   state.player.x = app.renderer.width / 2;
   state.player.y = app.renderer.height / 2;
+  state.player.vx = 0;
+  state.player.vy = 0;
   state.enemies = [];
   state.bullets = [];
   state.floatingText = [];

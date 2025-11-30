@@ -92,6 +92,8 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.player.vy = 0;
   state.player.x = canvasWidth / 2;
   state.player.y = canvasHeight / 2;
+  state.player.vx = 0;
+  state.player.vy = 0;
   state.enemies = [];
   state.bullets = [];
   state.floatingText = [];
