@@ -111,6 +111,8 @@ void main() {
  * Vertex shader for instanced health bar quads.
  */
 export const healthVertexShader = `#version 300 es
+precision highp float;
+precision highp int;
 in vec2 a_corner;
 in vec2 a_center;
 in float a_halfWidth;
@@ -134,6 +136,7 @@ void main() {
  */
 export const healthFragmentShader = `#version 300 es
 precision highp float;
+precision highp int;
 uniform vec4 u_bgColor;
 uniform vec4 u_fgColor;
 uniform int u_fillMode;
