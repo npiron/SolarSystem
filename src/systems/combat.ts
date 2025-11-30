@@ -1,10 +1,12 @@
-import type { Bullet, Canvas, Enemy, GameState } from "../types/index.ts";
-import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU } from "../config/constants.ts";
+import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
+import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU, BOSS_PROJECTILE_SPEED, BOSS_PROJECTILE_DAMAGE } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
 
-function nearestEnemy(state: GameState): Enemy | null {
-  let closest: Enemy | null = null;
+function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
+  let closest: Enemy | { x: number; y: number } | null = null;
   let bestDist = Infinity;
+
+  // Check regular enemies
   state.enemies.forEach((e) => {
     const dx = e.x - state.player.x;
     const dy = e.y - state.player.y;
@@ -14,6 +16,17 @@ function nearestEnemy(state: GameState): Enemy | null {
       closest = e;
     }
   });
+
+  // Check boss if active
+  if (state.bossActive && state.currentBoss) {
+    const dx = state.currentBoss.x - state.player.x;
+    const dy = state.currentBoss.y - state.player.y;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      closest = state.currentBoss;
+    }
+  }
+
   return closest;
 }
 
@@ -224,6 +237,115 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       state.player.hp -= dmg;
     }
   });
+
+  // Boss combat logic
+  if (state.bossActive && state.currentBoss) {
+    const boss = state.currentBoss;
+
+    // Move boss toward player
+    const angle = Math.atan2(state.player.y - boss.y, state.player.x - boss.x);
+    boss.x += Math.cos(angle) * boss.speed * dt;
+    boss.y += Math.sin(angle) * boss.speed * dt;
+
+    // Boss fires projectiles
+    boss.fireTimer -= dt;
+    if (boss.fireTimer <= 0) {
+      const projAngle = Math.atan2(state.player.y - boss.y, state.player.x - boss.x);
+      const projectile: EnemyProjectile = {
+        x: boss.x,
+        y: boss.y,
+        dx: Math.cos(projAngle) * BOSS_PROJECTILE_SPEED,
+        dy: Math.sin(projAngle) * BOSS_PROJECTILE_SPEED,
+        life: 3.0,
+        damage: BOSS_PROJECTILE_DAMAGE * (1 + state.wave * 0.05)
+      };
+      state.enemyProjectiles.push(projectile);
+      boss.fireTimer = boss.fireDelay;
+    }
+
+    // Check bullet collisions with boss
+    state.bullets.forEach((b) => {
+      const dx = boss.x - b.x;
+      const dy = boss.y - b.y;
+      if (dx * dx + dy * dy < (boss.radius + 4) ** 2) {
+        const crit = Math.random() < state.player.critChance;
+        const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+        boss.hp -= dmg;
+        if (!state.visualsLow) {
+          if (crit) addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
+        }
+        if (b.pierce > 0) {
+          b.pierce -= 1;
+        } else {
+          b.life = -1;
+        }
+      }
+    });
+    state.bullets = state.bullets.filter((b) => b.life > 0);
+
+    // Check boss contact damage
+    const bx = boss.x - state.player.x;
+    const by = boss.y - state.player.y;
+    const bDistSq = bx * bx + by * by;
+    const bRadius = boss.radius + state.player.radius;
+    if (bDistSq < bRadius * bRadius) {
+      const dmg = 25 * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
+      state.player.hp -= dmg;
+    }
+
+    // Check if boss is defeated
+    if (boss.hp <= 0) {
+      const fragReward = boss.reward * 0.35;
+      state.resources.essence += boss.reward;
+      state.runStats.kills += 1;
+      state.runStats.essence += boss.reward;
+      if (state.fragmentsOrbs.length < FX_BUDGET.fragments) {
+        state.fragmentsOrbs.push({
+          x: boss.x,
+          y: boss.y,
+          value: fragReward,
+          vx: (Math.random() - 0.5) * 30,
+          vy: (Math.random() - 0.5) * 30,
+          life: 12
+        });
+      } else {
+        registerFragmentGain(state, fragReward, boss.x, boss.y, true);
+      }
+      addFloatingText(state, "BOSS DEFEATED!", boss.x, boss.y - 20, "#ffcc00", 2);
+      state.currentBoss = null;
+      state.bossActive = false;
+      state.enemyProjectiles = [];
+    }
+  }
+
+  // Update enemy projectiles
+  state.enemyProjectiles.forEach((p) => {
+    p.x += p.dx * dt;
+    p.y += p.dy * dt;
+    p.life -= dt;
+
+    // Check if projectile is off-screen
+    if (
+      p.x < -BULLET_LIMITS.offscreenPadding ||
+      p.x > canvas.width + BULLET_LIMITS.offscreenPadding ||
+      p.y < -BULLET_LIMITS.offscreenPadding ||
+      p.y > canvas.height + BULLET_LIMITS.offscreenPadding
+    ) {
+      p.life = -1;
+    }
+
+    // Check collision with player
+    const dx = p.x - state.player.x;
+    const dy = p.y - state.player.y;
+    const distSq = dx * dx + dy * dy;
+    const hitRadius = state.player.radius + 4;
+    if (distSq < hitRadius * hitRadius) {
+      const dmg = p.damage * (1 - state.player.damageReduction);
+      state.player.hp -= dmg;
+      p.life = -1;
+    }
+  });
+  state.enemyProjectiles = state.enemyProjectiles.filter((p) => p.life > 0);
 
   if (state.player.hp <= 0 && !state.dead) {
     state.dead = true;

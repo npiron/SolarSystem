@@ -4,9 +4,12 @@ import {
   calculateSpawnPosition,
   spawnRate,
   packSize,
-  spawnEnemy
+  spawnEnemy,
+  shouldSpawnBoss,
+  spawnBoss
 } from "../src/systems/spawn.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
+import { BOSS_WAVE_INTERVAL, BOSS_RADIUS, BOSS_HP_MULTIPLIER } from "../src/config/constants.ts";
 
 describe("spawn", () => {
   describe("chooseSpawnSide", () => {
@@ -232,6 +235,107 @@ describe("spawn", () => {
       // Spawn an elite enemy
       spawnEnemy(state, canvas, 1.0);
       expect(state.enemies[0].radius).toBe(24);
+    });
+  });
+
+  describe("shouldSpawnBoss", () => {
+    it("should return false at wave 1", () => {
+      const state = createInitialState(800, 600);
+      state.wave = 1;
+      expect(shouldSpawnBoss(state)).toBe(false);
+    });
+
+    it("should return true at wave 5 (BOSS_WAVE_INTERVAL)", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      expect(shouldSpawnBoss(state)).toBe(true);
+    });
+
+    it("should return false if boss is already active", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      state.bossActive = true;
+      expect(shouldSpawnBoss(state)).toBe(false);
+    });
+
+    it("should return false if boss was already spawned at this wave", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      state.lastBossWave = BOSS_WAVE_INTERVAL;
+      expect(shouldSpawnBoss(state)).toBe(false);
+    });
+
+    it("should return true at wave 10", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL * 2;
+      expect(shouldSpawnBoss(state)).toBe(true);
+    });
+  });
+
+  describe("spawnBoss", () => {
+    it("should clear all enemies when boss spawns", () => {
+      const state = createInitialState(800, 600);
+      const canvas = { width: 800, height: 600 };
+      
+      // Add some enemies first
+      spawnEnemy(state, canvas, 0);
+      spawnEnemy(state, canvas, 0);
+      expect(state.enemies.length).toBe(2);
+      
+      spawnBoss(state, canvas);
+      expect(state.enemies.length).toBe(0);
+    });
+
+    it("should create a boss with correct properties", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      const canvas = { width: 800, height: 600 };
+      
+      spawnBoss(state, canvas);
+      
+      expect(state.bossActive).toBe(true);
+      expect(state.currentBoss).not.toBeNull();
+      expect(state.currentBoss!.radius).toBe(BOSS_RADIUS);
+    });
+
+    it("should spawn boss with high HP based on wave", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      const canvas = { width: 800, height: 600 };
+      
+      spawnBoss(state, canvas);
+      
+      const waveScale = 1 + state.wave * 0.02;
+      const baseHp = (25 + state.wave * 6) * waveScale;
+      const expectedHp = baseHp * BOSS_HP_MULTIPLIER;
+      expect(state.currentBoss!.hp).toBe(expectedHp);
+      expect(state.currentBoss!.maxHp).toBe(expectedHp);
+    });
+
+    it("should update lastBossWave when boss spawns", () => {
+      const state = createInitialState(800, 600);
+      state.wave = BOSS_WAVE_INTERVAL;
+      const canvas = { width: 800, height: 600 };
+      
+      spawnBoss(state, canvas);
+      
+      expect(state.lastBossWave).toBe(BOSS_WAVE_INTERVAL);
+    });
+
+    it("should spawn boss within canvas bounds", () => {
+      const state = createInitialState(800, 600);
+      const canvas = { width: 800, height: 600 };
+      
+      for (let i = 0; i < 20; i++) {
+        state.bossActive = false;
+        state.currentBoss = null;
+        spawnBoss(state, canvas);
+        
+        expect(state.currentBoss!.x).toBeGreaterThanOrEqual(0);
+        expect(state.currentBoss!.x).toBeLessThanOrEqual(canvas.width);
+        expect(state.currentBoss!.y).toBeGreaterThanOrEqual(0);
+        expect(state.currentBoss!.y).toBeLessThanOrEqual(canvas.height);
+      }
     });
   });
 });

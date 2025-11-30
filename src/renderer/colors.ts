@@ -26,6 +26,10 @@ export const colors = {
   enemyNormal: string2hex("#90caf9"),   // Blue - standard threat
   enemyStrong: string2hex("#ce93d8"),   // Purple - dangerous
   enemyElite: string2hex("#ffab91"),    // Orange - boss-like
+  // Boss colors
+  boss: string2hex("#ff5252"),          // Red - boss
+  bossHalo: string2hex("#ff5252"),      // Red glow
+  enemyProjectile: string2hex("#ff8a65"), // Orange-red - enemy projectile
   // Fragment value colors - brightness indicates value
   fragmentLow: string2hex("#b39ddb"),   // Light purple - low value
   fragmentMedium: string2hex("#ff7ac3"), // Pink - medium value
@@ -62,6 +66,11 @@ export const webglColors = {
   enemyNormal: toVec4(colors.enemyNormal, 1),
   enemyStrong: toVec4(colors.enemyStrong, 1),
   enemyElite: toVec4(colors.enemyElite, 1),
+  // Boss colors for WebGL
+  boss: toVec4(colors.boss, 1),
+  bossHalo: toVec4(colors.bossHalo, 0.4),
+  enemyProjectile: toVec4(colors.enemyProjectile, 1),
+  enemyProjectileGlow: toVec4(colors.enemyProjectile, 0.5),
   // Fragment value colors for WebGL
   fragmentLow: toVec4(colors.fragmentLow, 1),
   fragmentMedium: toVec4(colors.fragmentMedium, 1),
