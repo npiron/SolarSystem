@@ -20,6 +20,6 @@ describe("player config", () => {
   it("should export HP constants", () => {
     expect(INITIAL_HP).toBe(120);
     expect(INITIAL_MAX_HP).toBe(120);
-    expect(PLAYER_RADIUS).toBe(12);
+    expect(PLAYER_RADIUS).toBe(14);
   });
 });

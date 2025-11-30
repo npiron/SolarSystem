@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createInitialState, createInitialTalentBonuses, softReset } from "../src/systems/gameState.ts";
+import { PLAYER_RADIUS } from "../src/config/player.ts";
 
 describe("gameState", () => {
   describe("createInitialTalentBonuses", () => {
@@ -41,7 +42,7 @@ describe("gameState", () => {
       expect(state.player.hp).toBe(120);
       expect(state.player.maxHp).toBe(120);
       expect(state.player.damage).toBe(12);
-      expect(state.player.radius).toBe(12);
+      expect(state.player.radius).toBe(PLAYER_RADIUS);
     });
   });
 

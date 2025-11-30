@@ -3,6 +3,7 @@
  */
 import type { GameState, TalentBonuses } from "../types/index.ts";
 import { BASE_PLAYER_STATS, INITIAL_HP, INITIAL_MAX_HP, PLAYER_RADIUS } from "../config/player.ts";
+import { PLAYER_SHAPE } from "../config/shapes.ts";
 
 export function createInitialTalentBonuses(): TalentBonuses {
   return {
@@ -42,7 +43,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       hp: INITIAL_HP,
       maxHp: INITIAL_MAX_HP,
       fireTimer: 0,
-      spin: 0
+      spin: 0,
+      shape: PLAYER_SHAPE
     },
     resources: {
       essence: 0,

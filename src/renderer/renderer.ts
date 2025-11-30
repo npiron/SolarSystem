@@ -2,6 +2,8 @@ import { CircleBatch, type CircleInstance } from "./circles.ts";
 import { LineBatch, type LineInstance } from "./lines.ts";
 import { QuadBatch, type QuadInstance } from "./quads.ts";
 import { initWebGL2, resizeCanvas, WebGL2Context } from "./webgl2Context.ts";
+import type { Shape } from "../types/entities.ts";
+import { traceShapePath } from "./shapePaths.ts";
 
 export type { CircleInstance, LineInstance, QuadInstance };
 
@@ -145,15 +147,14 @@ export class CanvasFallbackRenderer {
     }
 
     for (const circle of this.circles) {
+      const shape: Shape = circle.shape ?? "circle";
       if (circle.halo && circle.halo.color[3] > 0) {
         this.ctx.fillStyle = rgba([circle.halo.color[0], circle.halo.color[1], circle.halo.color[2], circle.halo.color[3] * 0.6] as const);
-        this.ctx.beginPath();
-        this.ctx.arc(circle.center[0], circle.center[1], circle.radius * circle.halo.scale, 0, Math.PI * 2);
+        traceShapePath(this.ctx, circle.center[0], circle.center[1], circle.radius * circle.halo.scale, shape);
         this.ctx.fill();
       }
       this.ctx.fillStyle = rgba(circle.color);
-      this.ctx.beginPath();
-      this.ctx.arc(circle.center[0], circle.center[1], circle.radius, 0, Math.PI * 2);
+      traceShapePath(this.ctx, circle.center[0], circle.center[1], circle.radius, shape);
       this.ctx.fill();
     }
   }
