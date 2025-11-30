@@ -34,3 +34,7 @@ export function acquireFloatingText(color?: string) {
   text.style = getFloatingTextStyle(color);
   return text;
 }
+
+export function releaseFloatingText(text: PIXI.Text) {
+  floatingTextPool.push(text);
+}
