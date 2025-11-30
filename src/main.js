@@ -21,6 +21,99 @@ import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
+import { initDocumentationDialog } from "./renderer/documentation.ts";
+import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
+
+/**
+ * Get the PIXI color for an enemy based on its type.
+ * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
+ * @returns {number} PIXI hex color value
+ */
+function getEnemyColor(type) {
+  switch (type) {
+    case 'weak': return colors.enemyWeak;
+    case 'normal': return colors.enemyNormal;
+    case 'strong': return colors.enemyStrong;
+    case 'elite': return colors.enemyElite;
+    default: return colors.enemyNormal;
+  }
+}
+
+/**
+ * Get the WebGL color array for an enemy based on its type.
+ * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
+ * @returns {number[]} WebGL color as [r, g, b, a] normalized values
+ */
+function getEnemyColorWebGL(type) {
+  switch (type) {
+    case 'weak': return webglColors.enemyWeak;
+    case 'normal': return webglColors.enemyNormal;
+    case 'strong': return webglColors.enemyStrong;
+    case 'elite': return webglColors.enemyElite;
+    default: return webglColors.enemyNormal;
+  }
+}
+
+/**
+ * Get visual properties for a fragment orb based on its value.
+ * Higher value fragments are larger and have brighter colors.
+ * @param {number} value - Fragment value
+ * @param {boolean} allowFx - Whether effects are enabled
+ * @returns {{ color: number[], ringColor: number[], radius: number }}
+ */
+function getFragmentVisuals(value, allowFx) {
+  // Thresholds for fragment value categories
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) {
+    return {
+      color: webglColors.fragmentLow,
+      ringColor: webglColors.fragmentRingLow,
+      radius: 5
+    };
+  } else if (value >= HIGH_THRESHOLD) {
+    return {
+      color: webglColors.fragmentHigh,
+      ringColor: webglColors.fragmentRingHigh,
+      radius: 8
+    };
+  } else {
+    return {
+      color: webglColors.fragmentMedium,
+      ringColor: webglColors.fragmentRingMedium,
+      radius: 6
+    };
+  }
+}
+
+/**
+ * Get PIXI color for fragment orb based on value (for Canvas fallback).
+ * @param {number} value - Fragment value
+ * @returns {number} PIXI hex color value
+ */
+function getFragmentColor(value) {
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) return colors.fragmentLow;
+  if (value >= HIGH_THRESHOLD) return colors.fragmentHigh;
+  return colors.fragmentMedium;
+}
+
+/**
+ * Get radius for fragment orb based on value.
+ * @param {number} value - Fragment value
+ * @returns {number} Radius in pixels
+ */
+function getFragmentRadius(value) {
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) return 5;
+  if (value >= HIGH_THRESHOLD) return 8;
+  return 6;
+}
 import {
   getEnemyColor,
   getEnemyColorWebGL,
@@ -222,6 +315,11 @@ const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
 const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
 const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
 const versionBadge = document.getElementById("versionBadge");
+const docDialog = document.getElementById("docDialog");
+const docTabs = document.getElementById("docTabs");
+const docContent = document.getElementById("docContent");
+const docBtn = document.getElementById("docBtn");
+const docCloseBtn = docDialog?.querySelector(".doc-close-btn");
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -269,9 +367,17 @@ const BASE_PLAYER_STATS = {
   speed: 95
 };
 
-if (versionBadge) {
-  versionBadge.textContent = VERSION;
-}
+initDocumentationDialog({
+  dialog: docDialog,
+  trigger: docBtn,
+  closeButton: docCloseBtn,
+  tabs: docTabs,
+  content: docContent,
+  versionBadge,
+  version: VERSION,
+  codeDocs: codeDocumentation,
+  roadmap: roadmapSections
+});
 
 const state = {
   running: true,

@@ -164,8 +164,25 @@
     <p>Made for fun · Pas de serveur · Tout reste dans tes cookies</p>
   </footer>
 
-  <div id="versionBadge" class="version-badge"></div>
+  <div class="version-container">
+    <button id="docBtn" class="doc-btn" aria-label="Ouvrir la documentation">📚</button>
+    <div id="versionBadge" class="version-badge"></div>
+  </div>
   <div id="assistBubbles" class="assist-bubbles"></div>
+
+  <dialog id="docDialog" class="doc-dialog" aria-labelledby="docDialogTitle">
+    <div class="doc-dialog-header">
+      <h2 id="docDialogTitle">📚 Documentation</h2>
+      <button class="doc-close-btn" aria-label="Fermer">✕</button>
+    </div>
+    <div class="doc-tabs" id="docTabs">
+      <button class="doc-tab" data-tab="code"><span class="tab-icon">📝</span><span class="tab-label">Code</span></button>
+      <button class="doc-tab" data-tab="wiki"><span class="tab-icon">📖</span><span class="tab-label">Wiki</span></button>
+      <button class="doc-tab" data-tab="changelog"><span class="tab-icon">📋</span><span class="tab-label">Versions</span></button>
+      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon">🗺️</span><span class="tab-label">Roadmap</span></button>
+    </div>
+    <div class="doc-content" id="docContent" role="region" aria-live="polite"></div>
+  </dialog>
 
   <script type="module" src="./src/main.js"></script>
 </body>
