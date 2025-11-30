@@ -1,7 +1,6 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { GlowFilter, KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
-import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
+import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
 import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
@@ -20,6 +19,9 @@ import {
 } from "./systems/talents.ts";
 import { WebGL2Grid } from "./renderer/webgl2Grid.ts";
 import { WebGL2Circles } from "./renderer/webgl2Circles.ts";
+import { acquireFloatingText } from "./renderer/floatingText.ts";
+import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
+import { createEffects } from "./renderer/effects.ts";
 
 const canvas = document.getElementById("arena");
 const webglCanvas = document.getElementById("webglBackground");
@@ -33,23 +35,6 @@ const app = new PIXI.Application({
   backgroundAlpha: 0,
 });
 app.stop();
-
-
-
-const floatingTextPool = [];
-const floatingTextStyleCache = new Map();
-const floatingTextStyleOptions = {
-  fontFamily: "Fredoka, Baloo 2, Nunito, sans-serif",
-  fontSize: 13,
-  fill: "#fff7ed",
-  stroke: "#0b1024",
-  strokeThickness: 3,
-  dropShadow: true,
-  dropShadowColor: "#0b1024",
-  dropShadowBlur: 4,
-  dropShadowAlpha: 0.75,
-  dropShadowDistance: 0,
-};
 
 const arenaLayers = {
   background: new PIXI.Container(),
@@ -117,24 +102,7 @@ let backgroundReady = false;
 
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
 
-function getFloatingTextStyle(color = floatingTextStyleOptions.fill) {
-  const key = color || floatingTextStyleOptions.fill;
-  if (!floatingTextStyleCache.has(key)) {
-    const style = new PIXI.TextStyle({ ...floatingTextStyleOptions, fill: key });
-    if (typeof style.toJSON !== "function") {
-      style.toJSON = () => ({ ...floatingTextStyleOptions, fill: key });
-    }
-    floatingTextStyleCache.set(key, style);
-  }
-  return floatingTextStyleCache.get(key);
-}
-
-function acquireFloatingText(color) {
-  const text = floatingTextPool.pop() || new PIXI.Text({ text: "", style: getFloatingTextStyle(color) });
-  text.anchor.set(0.5, 1);
-  text.style = getFloatingTextStyle(color);
-  return text;
-}
+const { applyAddonFilters } = createEffects(colors);
 
 function buildBackground(width, height) {
   backgroundReady = false;
@@ -166,53 +134,6 @@ function buildBackground(width, height) {
     renderObjects.backgroundContainer.addChild(renderObjects.grid);
     backgroundReady = true;
   }
-}
-
-function refreshHudPulse() {
-  if (auraPulseTween) {
-    auraPulseTween.kill();
-    auraPulseTween = null;
-  }
-  if (!renderObjects.aura) return;
-  renderObjects.aura.scale.set(1);
-  if (state.addons.hudPulse && state.addons.glow && !state.visualsLow) {
-    auraPulseTween = gsap.to(renderObjects.aura.scale, {
-      x: 1.08,
-      y: 1.08,
-      duration: 1.6,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
-  }
-}
-
-function applyAddonFilters() {
-  ensureFilters();
-  const allowHeavyFx = !state.visualsLow;
-  if (renderObjects.playerContainer) {
-    renderObjects.playerContainer.filters = allowHeavyFx && state.addons.glow ? [fx.auraGlow] : null;
-  }
-
-  const bloomFilters = allowHeavyFx && state.addons.bloom ? [fx.bloom] : null;
-  renderObjects.fragments.filters = bloomFilters;
-  renderObjects.fragmentRings.filters = bloomFilters;
-  renderObjects.bulletsGlow.filters = bloomFilters;
-
-  renderObjects.backgroundContainer.filters = state.addons.grain ? [fx.noise] : null;
-  renderObjects.hudLayer.filters = allowHeavyFx && state.addons.glow ? [fx.hudGlow] : null;
-
-  if (renderObjects.hudBg) {
-    gsap.to(renderObjects.hudBg, {
-      alpha: state.addons.glow ? 0.54 : 0.36,
-      duration: 0.3,
-      ease: "sine.out"
-    });
-  }
-
-  refreshHudPulse();
-}
-
 function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
@@ -281,75 +202,6 @@ function setupScene() {
   arenaLayers.overlay.addChild(renderObjects.floatingLayer, renderObjects.hudLayer);
 }
 
-const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
-const colors = {
-  player: PIXI.utils.string2hex("#7dd3fc"),
-  collect: PIXI.utils.string2hex("#6ee7b7"),
-  bulletLow: PIXI.utils.string2hex("#fff7ed"),
-  bulletHigh: PIXI.utils.string2hex("#ffd166"),
-  fragment: PIXI.utils.string2hex("#ff7ac3"),
-  fragmentRing: PIXI.utils.string2hex("#ff7ac3"),
-  elite: PIXI.utils.string2hex("#ff9d6c"),
-  hpBg: PIXI.utils.string2hex("#0b1226"),
-  hpFg: PIXI.utils.string2hex("#a3e635"),
-  hudBg: PIXI.utils.string2hex("#0d1530"),
-  hudBorder: PIXI.utils.string2hex("#e2e8f0"),
-};
-
-function toVec4(hex, alpha = 1) {
-  const value = typeof hex === "number" ? hex : PIXI.utils.string2hex(hex);
-  return [
-    ((value >> 16) & 0xff) / 255,
-    ((value >> 8) & 0xff) / 255,
-    (value & 0xff) / 255,
-    alpha
-  ];
-}
-
-const paletteVec4 = palette.map((color) => toVec4(color));
-const webglColors = {
-  player: toVec4(colors.player, 1),
-  playerHalo: toVec4(colors.collect, 0.18),
-  playerAura: toVec4(colors.player, 0.12),
-  collectRing: toVec4(colors.collect, 0.22),
-  bullet: toVec4(colors.bulletHigh, 0.9),
-  bulletLow: toVec4(colors.bulletLow, 0.9),
-  bulletGlow: toVec4(colors.bulletHigh, 0.22),
-  fragment: toVec4(colors.fragment, 1),
-  fragmentRing: toVec4(colors.fragmentRing, 0.35),
-  elite: toVec4(colors.elite, 1),
-  transparent: [0, 0, 0, 0]
-};
-
-const fx = {
-  auraGlow: null,
-  hudGlow: null,
-  bloom: new KawaseBlurFilter([0, 1], 6),
-  noise: new PIXI.filters.NoiseFilter(0.05)
-};
-
-let auraPulseTween;
-
-function ensureFilters() {
-  if (!fx.auraGlow) {
-    fx.auraGlow = new GlowFilter({
-      distance: 16,
-      outerStrength: 2.6,
-      innerStrength: 0.6,
-      color: colors.player,
-      quality: 0.25
-    });
-  }
-  if (!fx.hudGlow) {
-    fx.hudGlow = new GlowFilter({
-      distance: 10,
-      outerStrength: 1.6,
-      innerStrength: 0.4,
-      color: colors.hudBorder,
-      quality: 0.2
-    });
-  }
-}
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
 const toggleSoundBtn = document.getElementById("toggleSound");
@@ -503,7 +355,7 @@ function resizeCanvas(center = false) {
   if (state.performance.graphVisible) {
     drawFpsGraph();
   }
-  applyAddonFilters();
+  applyAddonFilters(state, renderObjects);
 }
 
 const uiRefs = {
@@ -1193,7 +1045,7 @@ function initUI() {
   const toggleAddon = (key) => {
     state.addons[key] = !state.addons[key];
     syncAddonToggles();
-    applyAddonFilters();
+    applyAddonFilters(state, renderObjects);
     playUiToggle();
     saveGame();
   };
@@ -1260,7 +1112,7 @@ function initUI() {
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
     buildBackground(app.renderer.width, app.renderer.height);
     webglCircles?.setEnabled(!state.visualsLow);
-    applyAddonFilters();
+    applyAddonFilters(state, renderObjects);
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
@@ -1364,7 +1216,7 @@ async function bootstrap() {
   setupScene();
   buildBackground(app.renderer.width, app.renderer.height);
   loadSave();
-  applyAddonFilters();
+  applyAddonFilters(state, renderObjects);
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
