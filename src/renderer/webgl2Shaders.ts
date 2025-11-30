@@ -85,7 +85,7 @@ float sdRegularPolygon(vec2 p, float radius, float sides, float rotation) {
   return radial - radius;
 }
 void main() {
-  float aa = 1.5;
+  float aa = 1.0;
   vec2 pos = v_corner * v_radius;
   float radial = length(pos);
   float sides = max(0.0, v_sides);
