@@ -165,7 +165,8 @@ export function render(state: GameState, context: RenderContext): void {
         x: f.x,
         y: f.y - (1.5 - f.life) * 24,
         color: textColor,
-        alpha: Math.max(0, f.life)
+        alpha: Math.max(0, f.life),
+        scale: f.scale ?? 1.8
       });
     });
 

@@ -15,7 +15,9 @@ export const BASE_PLAYER_STATS: PlayerStats = {
   collectRadius: 90,
   critChance: 0.08,
   critMultiplier: 2,
-  speed: 95
+  speed: 95,
+  orbitProjectiles: 4,
+  orbitDelay: 1.2
 };
 
 export const INITIAL_HP = 120;

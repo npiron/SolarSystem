@@ -15,6 +15,8 @@ export interface PlayerStats {
   critChance: number;
   critMultiplier: number;
   speed: number;
+  orbitProjectiles: number;
+  orbitDelay: number;
 }
 
 export interface Player extends PlayerStats {
@@ -26,6 +28,7 @@ export interface Player extends PlayerStats {
   hp: number;
   maxHp: number;
   fireTimer: number;
+  orbitTimer: number;
   spin: number;
 }
 
@@ -70,6 +73,7 @@ export interface FloatingText {
   y: number;
   life: number;
   color: string;
+  scale?: number;
 }
 
 export interface GainTicker {

@@ -48,13 +48,45 @@ function fire(state: GameState): void {
   }
 }
 
+/**
+ * Orbit weapon: fires projectiles in a circular pattern around the player
+ */
+function fireOrbit(state: GameState): void {
+  const count = Math.max(1, state.player.orbitProjectiles);
+  const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, BULLET_LIMITS.maxSpeed);
+  const lifetime = Math.min(1.5 * state.player.range, BULLET_LIMITS.maxLifetime);
+
+  for (let i = 0; i < count; i++) {
+    if (state.bullets.length >= FX_BUDGET.bullets) break;
+    // Evenly distribute projectiles around the player
+    const angle = (TAU * i) / count + state.player.spin;
+    const bullet: Bullet = {
+      x: state.player.x,
+      y: state.player.y,
+      dx: Math.cos(angle) * bulletSpeed,
+      dy: Math.sin(angle) * bulletSpeed,
+      life: lifetime,
+      pierce: Math.max(0, state.player.pierce - 1)
+    };
+    state.bullets.push(bullet);
+  }
+}
+
 export function updateCombat(state: GameState, dt: number, canvas: Canvas): void {
   state.player.fireTimer -= dt;
+  state.player.orbitTimer -= dt;
   state.player.spin = (state.player.spin + dt * 1.2) % TAU;
 
+  // Primary weapon: shotgun
   if (state.player.fireTimer <= 0) {
     fire(state);
     state.player.fireTimer = state.player.fireDelay;
+  }
+
+  // Secondary weapon: orbit
+  if (state.player.orbitTimer <= 0) {
+    fireOrbit(state);
+    state.player.orbitTimer = state.player.orbitDelay;
   }
 
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.player.regen * dt);
