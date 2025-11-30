@@ -129,10 +129,10 @@ function determineEnemyType(hp: number, wave: number, isElite: boolean): EnemyTy
  */
 function getEnemyRadius(type: EnemyType): number {
   switch (type) {
-    case 'weak': return 8;
-    case 'normal': return 10;
-    case 'strong': return 12;
-    case 'elite': return 14;
+    case 'weak': return 6;
+    case 'normal': return 12;
+    case 'strong': return 18;
+    case 'elite': return 24;
   }
 }
 
