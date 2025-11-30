@@ -22,6 +22,7 @@
 - [[Performance-et-Optimisation]]
 - [[Sauvegarde]]
 - [[Interface-et-HUD]]
+- [[Migration-WebGL2]]
 
 ## ❓ Aide
 - [[FAQ]]

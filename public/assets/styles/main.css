@@ -409,7 +409,16 @@ button:disabled {
   min-height: 400px;
 }
 
+.arena-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 #arena {
+  position: relative;
+  z-index: 2;
   display: block;
   width: 100%;
   height: 100%;
@@ -419,10 +428,21 @@ button:disabled {
   background-blend-mode: screen, normal, soft-light;
 }
 
+#webglBackground {
+  z-index: 0;
+  pointer-events: none;
+}
+
+#webglEntities {
+  z-index: 1;
+  pointer-events: none;
+}
+
 .overlay {
   position: absolute;
   left: 8px;
   bottom: 8px;
+  z-index: 2;
   background: rgba(15, 23, 42, 0.8);
   padding: 8px 10px;
   border-radius: 10px;
