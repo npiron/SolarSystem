@@ -152,7 +152,7 @@ export function loadSave(
       const offlineSeconds = Math.min(MAX_OFFLINE_SECONDS, elapsed);
       grantOfflineGains(state, offlineSeconds, computeIdleRate);
       if (elapsed > MAX_OFFLINE_SECONDS) {
-        debugPing(state, `⏳ Gains hors-ligne plafonnés à ${formatDuration(MAX_OFFLINE_SECONDS)}`, "#fbbf24");
+        debugPing(state, `⏳ Offline gains capped at ${formatDuration(MAX_OFFLINE_SECONDS)}`, "#fbbf24");
       }
     }
   } catch (err) {

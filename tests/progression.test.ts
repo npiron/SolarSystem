@@ -96,7 +96,7 @@ describe("progression", () => {
         baseCost: 10,
         level: 2, // Level 2 = apply twice
         max: 10,
-        apply: (s: { player: { damage: number } }) => {
+        apply: (s) => {
           s.player.damage *= 1.15;
         }
       }];

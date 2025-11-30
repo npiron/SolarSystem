@@ -27,10 +27,8 @@ export function applyProgressionEffects(
   upgrades: Upgrade[], 
   talents: Talent[]
 ): TalentBonuses {
-  // Reset to base stats
-  Object.entries(BASE_PLAYER_STATS).forEach(([key, value]) => {
-    (state.player as Record<string, number>)[key] = value;
-  });
+  // Reset to base stats - use Object.assign for type safety
+  Object.assign(state.player, BASE_PLAYER_STATS);
 
   // Apply upgrades
   upgrades.forEach((upgrade) => {
