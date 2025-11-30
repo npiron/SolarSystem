@@ -1,10 +1,15 @@
+// External dependencies (CDN imports)
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import { GlowFilter, KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/pixi-filters@5.3.0/dist/browser/pixi-filters.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
+
+// Configuration
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
 import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
+
+// Systems
 import { updateCombat } from "./systems/combat.ts";
 import { initAssist } from "./systems/assist.ts";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.ts";
@@ -14,10 +19,15 @@ import {
   computeTalentBonuses,
   canUnlockTalent,
   hydrateTalents,
-  prerequisitesMet,
   resetTalents,
   unlockTalent
 } from "./systems/talents.ts";
+
+// State management
+import { BASE_PLAYER_STATS, softResetState } from "./state/gameState.ts";
+
+// UI
+import { getDOMElements, createUIRefs } from "./ui/elements.ts";
 
 const canvas = document.getElementById("arena");
 const app = new PIXI.Application({
@@ -361,63 +371,26 @@ function ensureFilters() {
     });
   }
 }
-const pauseBtn = document.getElementById("pause");
-const resetProgressBtn = document.getElementById("resetProgress");
-const toggleSoundBtn = document.getElementById("toggleSound");
-const softPrestigeBtn = document.getElementById("softPrestige");
-const restartRunBtn = document.getElementById("restartRun");
-const togglePerfBtn = document.getElementById("togglePerf");
-const toggleFpsBtn = document.getElementById("toggleFps");
-const toggleGlowFxBtn = document.getElementById("toggleGlowFx");
-const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
-const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
-const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
-const versionBadge = document.getElementById("versionBadge");
-const debugBtns = {
-  giveEssence: document.getElementById("debugGiveEssence"),
-  giveFragments: document.getElementById("debugGiveFragments"),
-  skipWave: document.getElementById("debugSkipWave"),
-  nuke: document.getElementById("debugNuke")
-};
 
-const essenceEl = document.getElementById("essence");
-const fragmentsEl = document.getElementById("fragments");
-const idleRateEl = document.getElementById("idleRate");
-const waveEl = document.getElementById("wave");
-const hpEl = document.getElementById("hp");
-const dpsEl = document.getElementById("dps");
-const damageRow = document.getElementById("damageRow");
-const spawnRateEl = document.getElementById("spawnRate");
-const statusEl = document.getElementById("statusMessage");
-const generatorsContainer = document.getElementById("generators");
-const upgradesContainer = document.getElementById("upgrades");
-const talentsContainer = document.getElementById("talents");
-const resetTalentsBtn = document.getElementById("resetTalents");
-const talentStatusEl = document.getElementById("talentStatus");
-const fpsValueEl = document.getElementById("fpsValue");
-const fpsCanvas = document.getElementById("fpsGraph");
-const quickHelpList = document.getElementById("quickHelpList");
-const milestoneList = document.getElementById("milestoneList");
-const assistBubbles = document.getElementById("assistBubbles");
+// Initialize DOM elements using centralized module
+const dom = getDOMElements();
+const {
+  buttons: { pause: pauseBtn, resetProgress: resetProgressBtn, toggleSound: toggleSoundBtn, 
+             softPrestige: softPrestigeBtn, restartRun: restartRunBtn, togglePerf: togglePerfBtn,
+             toggleFps: toggleFpsBtn, toggleGlowFx: toggleGlowFxBtn, toggleBloomFx: toggleBloomFxBtn,
+             toggleGrainFx: toggleGrainFxBtn, toggleHudPulse: toggleHudPulseBtn, resetTalents: resetTalentsBtn },
+  debug: debugBtns,
+  stats: { essence: essenceEl, fragments: fragmentsEl, idleRate: idleRateEl, wave: waveEl,
+           hp: hpEl, dps: dpsEl, damageRow, spawnRate: spawnRateEl, status: statusEl,
+           talentStatus: talentStatusEl, fpsValue: fpsValueEl, fpsCanvas, versionBadge },
+  containers: { generators: generatorsContainer, upgrades: upgradesContainer, talents: talentsContainer,
+                quickHelpList, milestoneList, assistBubbles, canvas }
+} = dom;
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
 let talents = hydrateTalents();
 let talentBonuses = computeTalentBonuses(talents);
-
-const BASE_PLAYER_STATS = {
-  damage: 12,
-  fireDelay: 0.65,
-  projectiles: 1,
-  regen: 2,
-  range: 1,
-  bulletSpeed: 260,
-  damageReduction: 0,
-  pierce: 0,
-  collectRadius: 90,
-  critChance: 0.08,
-  critMultiplier: 2,
-  speed: 95
 };
 
 if (versionBadge) {
@@ -516,11 +489,8 @@ function resizeCanvas(center = false) {
   applyAddonFilters();
 }
 
-const uiRefs = {
-  generatorButtons: new Map(),
-  upgradeButtons: new Map(),
-  talentButtons: new Map()
-};
+// Use centralized UI refs module
+const uiRefs = createUIRefs();
 
 async function loadTextures() {
   const entries = await Promise.all(
@@ -977,21 +947,11 @@ function update(dt) {
   updateFloatingText(state, dt);
 }
 
+/**
+ * Performs a soft reset of game state using the centralized state module
+ */
 function softReset() {
-  state.wave = 1;
-  state.player.hp = state.player.maxHp;
-  state.player.fireTimer = 0;
-  state.player.x = app.renderer.width / 2;
-  state.player.y = app.renderer.height / 2;
-  state.enemies = [];
-  state.bullets = [];
-  state.floatingText = [];
-  state.fragmentsOrbs = [];
-  state.gainTicker = { fragments: 0, essence: 0, timer: 0 };
-  state.runStats = { kills: 0, fragments: 0, essence: 0 };
-  state.spawnTimer = 0;
-  state.dead = false;
-  state.running = true;
+  softResetState(state, app.renderer.width / 2, app.renderer.height / 2);
 }
 
 function prestige() {
