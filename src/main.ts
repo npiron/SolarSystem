@@ -9,6 +9,7 @@ import { createGenerators } from "./config/generators.ts";
 import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
+import { loadTuning } from "./config/tuning.ts";
 import { initAssist } from "./systems/assist.ts";
 import { debugPing, formatNumber, updateHud } from "./systems/hud.ts";
 import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
@@ -29,6 +30,7 @@ import {
   renderUpgrades as renderUpgradesUI,
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
+import { initTuningPanel } from "./systems/tuningPanel.ts";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
@@ -96,6 +98,7 @@ const fpsCanvas = document.getElementById("fpsGraph") as HTMLCanvasElement | nul
 const quickHelpList = document.getElementById("quickHelpList");
 const milestoneList = document.getElementById("milestoneList");
 const assistBubbles = document.getElementById("assistBubbles");
+const tuningPanelContainer = document.getElementById("tuningPanel");
 
 // Game data initialization
 const generators = createGenerators();
@@ -403,6 +406,16 @@ function initUI(): void {
   renderGenerators();
   renderUpgrades();
   renderTalents();
+
+  // Initialize tuning panel
+  loadTuning();
+  initTuningPanel({
+    container: tuningPanelContainer,
+    onUpdate: () => {
+      // Refresh UI when tuning changes
+      updateHud(state, hudContext);
+    }
+  });
 
   // Initialize collapsible sections with state persistence
   initCollapsibleSections();
