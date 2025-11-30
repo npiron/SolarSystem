@@ -200,5 +200,38 @@ describe("spawn", () => {
         expect(enemy.y).toBe(20);
       });
     });
+
+    it("should assign enemy type based on HP", () => {
+      const state = createInitialState(800, 600);
+      const canvas = { width: 800, height: 600 };
+
+      // Spawn many enemies to get variety
+      for (let i = 0; i < 100; i++) {
+        spawnEnemy(state, canvas, 0);
+      }
+
+      // All enemies should have a valid type
+      state.enemies.forEach((enemy) => {
+        expect(['weak', 'normal', 'strong', 'elite']).toContain(enemy.type);
+      });
+    });
+
+    it("should assign elite type to elite enemies", () => {
+      const state = createInitialState(800, 600);
+      const canvas = { width: 800, height: 600 };
+
+      // With 100% elite chance
+      spawnEnemy(state, canvas, 1.0);
+      expect(state.enemies[0].type).toBe('elite');
+    });
+
+    it("should give elite enemies larger radius", () => {
+      const state = createInitialState(800, 600);
+      const canvas = { width: 800, height: 600 };
+
+      // Spawn an elite enemy
+      spawnEnemy(state, canvas, 1.0);
+      expect(state.enemies[0].radius).toBe(14);
+    });
   });
 });

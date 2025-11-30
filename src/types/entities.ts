@@ -36,6 +36,8 @@ export interface Bullet {
   pierce: number;
 }
 
+export type EnemyType = 'weak' | 'normal' | 'strong' | 'elite';
+
 export interface Enemy {
   x: number;
   y: number;
@@ -47,6 +49,7 @@ export interface Enemy {
   fireTimer: number;
   fireDelay: number;
   elite: boolean;
+  type: EnemyType;
   hitThisFrame?: boolean;
 }
 

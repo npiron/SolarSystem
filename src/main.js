@@ -22,6 +22,97 @@ import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingTex
 import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
 
+/**
+ * Get the PIXI color for an enemy based on its type.
+ * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
+ * @returns {number} PIXI hex color value
+ */
+function getEnemyColor(type) {
+  switch (type) {
+    case 'weak': return colors.enemyWeak;
+    case 'normal': return colors.enemyNormal;
+    case 'strong': return colors.enemyStrong;
+    case 'elite': return colors.enemyElite;
+    default: return colors.enemyNormal;
+  }
+}
+
+/**
+ * Get the WebGL color array for an enemy based on its type.
+ * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
+ * @returns {number[]} WebGL color as [r, g, b, a] normalized values
+ */
+function getEnemyColorWebGL(type) {
+  switch (type) {
+    case 'weak': return webglColors.enemyWeak;
+    case 'normal': return webglColors.enemyNormal;
+    case 'strong': return webglColors.enemyStrong;
+    case 'elite': return webglColors.enemyElite;
+    default: return webglColors.enemyNormal;
+  }
+}
+
+/**
+ * Get visual properties for a fragment orb based on its value.
+ * Higher value fragments are larger and have brighter colors.
+ * @param {number} value - Fragment value
+ * @param {boolean} allowFx - Whether effects are enabled
+ * @returns {{ color: number[], ringColor: number[], radius: number }}
+ */
+function getFragmentVisuals(value, allowFx) {
+  // Thresholds for fragment value categories
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) {
+    return {
+      color: webglColors.fragmentLow,
+      ringColor: webglColors.fragmentRingLow,
+      radius: 5
+    };
+  } else if (value >= HIGH_THRESHOLD) {
+    return {
+      color: webglColors.fragmentHigh,
+      ringColor: webglColors.fragmentRingHigh,
+      radius: 8
+    };
+  } else {
+    return {
+      color: webglColors.fragmentMedium,
+      ringColor: webglColors.fragmentRingMedium,
+      radius: 6
+    };
+  }
+}
+
+/**
+ * Get PIXI color for fragment orb based on value (for Canvas fallback).
+ * @param {number} value - Fragment value
+ * @returns {number} PIXI hex color value
+ */
+function getFragmentColor(value) {
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) return colors.fragmentLow;
+  if (value >= HIGH_THRESHOLD) return colors.fragmentHigh;
+  return colors.fragmentMedium;
+}
+
+/**
+ * Get radius for fragment orb based on value.
+ * @param {number} value - Fragment value
+ * @returns {number} Radius in pixels
+ */
+function getFragmentRadius(value) {
+  const LOW_THRESHOLD = 3;
+  const HIGH_THRESHOLD = 10;
+  
+  if (value < LOW_THRESHOLD) return 5;
+  if (value >= HIGH_THRESHOLD) return 8;
+  return 6;
+}
+
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
 const webgl2Renderer = webgl2Canvas ? WebGL2Renderer.create(webgl2Canvas) : null;
@@ -1057,27 +1148,32 @@ function render() {
       renderObjects.bulletsGlow.endFill();
     }
 
-    // Render fragments using vector graphics only
+    // Render fragments using vector graphics with value-based colors and sizes
     renderObjects.fragments.clear();
-    renderObjects.fragments.beginFill(colors.fragment);
     state.fragmentsOrbs.forEach((f) => {
-      renderObjects.fragments.drawCircle(f.x, f.y, 6);
+      const fragColor = getFragmentColor(f.value);
+      const fragRadius = getFragmentRadius(f.value);
+      renderObjects.fragments.beginFill(fragColor);
+      renderObjects.fragments.drawCircle(f.x, f.y, fragRadius);
+      renderObjects.fragments.endFill();
     });
-    renderObjects.fragments.endFill();
 
     renderObjects.fragmentRings.clear();
     if (!state.visualsLow) {
-      renderObjects.fragmentRings.lineStyle({ color: colors.fragmentRing, alpha: 0.5, width: 2 });
       state.fragmentsOrbs.forEach((f) => {
-        renderObjects.fragmentRings.drawCircle(f.x, f.y, 11);
+        const fragColor = getFragmentColor(f.value);
+        const fragRadius = getFragmentRadius(f.value);
+        renderObjects.fragmentRings.lineStyle({ color: fragColor, alpha: 0.5, width: 2 });
+        renderObjects.fragmentRings.drawCircle(f.x, f.y, fragRadius + 5);
       });
       renderObjects.fragmentRings.lineStyle(0);
     }
 
-    // Render enemies using vector graphics only
+    // Render enemies using vector graphics with type-based colors
     renderObjects.enemies.clear();
-    state.enemies.forEach((e, idx) => {
-      renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+    state.enemies.forEach((e) => {
+      const enemyColor = getEnemyColor(e.type);
+      renderObjects.enemies.beginFill(enemyColor);
       renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
       renderObjects.enemies.endFill();
     });
@@ -1087,7 +1183,6 @@ function render() {
     const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
     const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
-    const fragmentHalo = allowFx ? { color: webglColors.fragmentRing, scale: 1.65 } : undefined;
 
     webgl2Renderer.beginFrame();
     webgl2Renderer.pushCircle({
@@ -1122,24 +1217,29 @@ function render() {
       })
     );
 
-    state.fragmentsOrbs.forEach((f) =>
+    // Render fragments with value-based colors and sizes
+    state.fragmentsOrbs.forEach((f) => {
+      const { color, ringColor, radius } = getFragmentVisuals(f.value, allowFx);
+      const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
       webgl2Renderer.pushCircle({
         x: f.x,
         y: f.y,
-        radius: 6,
-        color: webglColors.fragment,
+        radius,
+        color,
         halo: fragmentHalo
-      })
-    );
+      });
+    });
 
-    state.enemies.forEach((e, idx) =>
+    // Render enemies with type-based colors
+    state.enemies.forEach((e) => {
+      const enemyColor = getEnemyColorWebGL(e.type);
       webgl2Renderer.pushCircle({
         x: e.x,
         y: e.y,
         radius: e.radius,
-        color: e.elite ? webglColors.elite : paletteVec4[idx % paletteVec4.length]
-      })
-    );
+        color: enemyColor
+      });
+    });
 
     webgl2Renderer.render();
   }
