@@ -17,17 +17,14 @@ import {
   resetTalents,
   unlockTalent
 } from "./systems/talents.ts";
-import { WebGL2Grid } from "./renderer/webgl2Grid.ts";
-import { WebGL2Circles } from "./renderer/webgl2Circles.ts";
+import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
 
 const canvas = document.getElementById("arena");
-const webglCanvas = document.getElementById("webglBackground");
-const webglGrid = webglCanvas ? WebGL2Grid.create(webglCanvas) : null;
-const webglEntitiesCanvas = document.getElementById("webglEntities");
-const webglCircles = webglEntitiesCanvas ? WebGL2Circles.create(webglEntitiesCanvas) : null;
+const webgl2Canvas = document.getElementById("webgl2");
+const webgl2Renderer = webgl2Canvas ? WebGL2Renderer.create(webgl2Canvas) : null;
 
 const app = new PIXI.Application({
   view: canvas,
@@ -108,14 +105,13 @@ function buildBackground(width, height) {
   backgroundReady = false;
   renderObjects.backgroundContainer.removeChildren();
 
-  if (webglGrid) {
-    webglGrid.setEnabled(!state.visualsLow);
+  if (webgl2Renderer) {
+    webgl2Renderer.setGridEnabled(!state.visualsLow);
     if (!state.visualsLow) {
-      webglGrid.resize(width, height);
-      webglGrid.render();
+      webgl2Renderer.resize(width, height);
       backgroundReady = true;
     } else {
-      webglGrid.clear();
+      webgl2Renderer.clear();
     }
     return;
   }
@@ -348,7 +344,7 @@ function resizeCanvas(center = false) {
   const height = rect?.height || canvas.height || 600;
   app.renderer.resize(width, height);
   buildBackground(width, height);
-  webglCircles?.resize(width, height);
+  webgl2Renderer?.resize(width, height);
   if (center) {
     state.player.x = width / 2;
     state.player.y = height / 2;
@@ -840,39 +836,36 @@ function prestige() {
 
 function render() {
   const { width, height } = app.renderer;
-  const usingWebglCircles = Boolean(webglCircles);
+  const usingWebgl2 = Boolean(webgl2Renderer);
   const allowFx = !state.visualsLow;
 
-  webglCircles?.setEnabled(usingWebglCircles);
-  if (usingWebglCircles && webglCircles) {
-    webglCircles.resize(width, height);
+  webgl2Renderer?.setEnabled(usingWebgl2);
+  if (usingWebgl2 && webgl2Renderer) {
+    webgl2Renderer.resize(width, height);
   }
 
   if (state.visualsLow) {
     backgroundReady = false;
     renderObjects.backgroundContainer.removeChildren();
-    webglGrid?.setEnabled(false);
-    if (!usingWebglCircles) {
-      webglCircles?.clear();
-    }
+    webgl2Renderer?.setGridEnabled(false);
   } else if (!backgroundReady) {
     buildBackground(width, height);
-  } else if (webglGrid) {
-    webglGrid.render();
+  } else if (webgl2Renderer) {
+    // Grid is rendered as part of webgl2Renderer.render()
   } else if (!renderObjects.backgroundContainer.children.length) {
     buildBackground(width, height);
   }
 
-  renderObjects.player.visible = !usingWebglCircles;
-  renderObjects.bullets.visible = !usingWebglCircles;
-  renderObjects.bulletsGlow.visible = !usingWebglCircles;
-  renderObjects.fragments.visible = !usingWebglCircles;
-  renderObjects.fragmentRings.visible = !usingWebglCircles;
-  renderObjects.enemies.visible = !usingWebglCircles;
+  renderObjects.player.visible = !usingWebgl2;
+  renderObjects.bullets.visible = !usingWebgl2;
+  renderObjects.bulletsGlow.visible = !usingWebgl2;
+  renderObjects.fragments.visible = !usingWebgl2;
+  renderObjects.fragmentRings.visible = !usingWebgl2;
+  renderObjects.enemies.visible = !usingWebgl2;
 
-  renderObjects.aura.visible = !usingWebglCircles;
+  renderObjects.aura.visible = !usingWebgl2;
 
-  if (!usingWebglCircles) {
+  if (!usingWebgl2) {
     renderObjects.aura.clear();
     renderObjects.aura.beginFill(colors.player, 0.12);
     renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
@@ -888,7 +881,7 @@ function render() {
   // Update player position using vector graphics
   renderObjects.player.position.set(state.player.x, state.player.y);
 
-  if (!usingWebglCircles) {
+  if (!usingWebgl2) {
     renderObjects.bullets.clear();
     renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
     state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
@@ -925,7 +918,7 @@ function render() {
       renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
       renderObjects.enemies.endFill();
     });
-  } else if (webglCircles) {
+  } else if (webgl2Renderer) {
     const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 } : undefined;
     const collectRing = { color: webglColors.collectRing, scale: 1.04 };
     const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 } : undefined;
@@ -933,22 +926,22 @@ function render() {
     const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
     const fragmentHalo = allowFx ? { color: webglColors.fragmentRing, scale: 1.65 } : undefined;
 
-    webglCircles.beginFrame();
-    webglCircles.push({
+    webgl2Renderer.beginFrame();
+    webgl2Renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.radius + 16,
       color: webglColors.playerAura,
       halo: auraHalo
     });
-    webglCircles.push({
+    webgl2Renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.collectRadius * 0.45,
       color: webglColors.transparent,
       halo: collectRing
     });
-    webglCircles.push({
+    webgl2Renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.radius,
@@ -957,7 +950,7 @@ function render() {
     });
 
     state.bullets.forEach((b) =>
-      webglCircles.push({
+      webgl2Renderer.pushCircle({
         x: b.x,
         y: b.y,
         radius: 4,
@@ -967,7 +960,7 @@ function render() {
     );
 
     state.fragmentsOrbs.forEach((f) =>
-      webglCircles.push({
+      webgl2Renderer.pushCircle({
         x: f.x,
         y: f.y,
         radius: 6,
@@ -977,7 +970,7 @@ function render() {
     );
 
     state.enemies.forEach((e, idx) =>
-      webglCircles.push({
+      webgl2Renderer.pushCircle({
         x: e.x,
         y: e.y,
         radius: e.radius,
@@ -985,7 +978,7 @@ function render() {
       })
     );
 
-    webglCircles.render();
+    webgl2Renderer.render();
   }
 
   renderObjects.enemyHp.clear();
@@ -1113,7 +1106,7 @@ function initUI() {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
     buildBackground(app.renderer.width, app.renderer.height);
-    webglCircles?.setEnabled(!state.visualsLow);
+    webgl2Renderer?.setEnabled(!state.visualsLow);
     applyAddonFilters(state, renderObjects);
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>

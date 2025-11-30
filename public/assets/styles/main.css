@@ -428,13 +428,8 @@ button:disabled {
   background-blend-mode: screen, normal, soft-light;
 }
 
-#webglBackground {
+#webgl2 {
   z-index: 0;
-  pointer-events: none;
-}
-
-#webglEntities {
-  z-index: 1;
   pointer-events: none;
 }
 

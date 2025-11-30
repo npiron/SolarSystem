@@ -5,5 +5,6 @@ export * from "./renderer.ts";
 export * from "./shaders.ts";
 export * from "./quads.ts";
 export * from "./webgl2Context.ts";
+export * from "./webgl2Renderer.ts";
 export * from "./cpuParticles.ts";
 export * from "./gpu/index.ts";

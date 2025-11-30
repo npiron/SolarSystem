@@ -151,6 +151,10 @@ export class WebGL2Renderer {
     const gl = this.gl;
 
     gl.viewport(0, 0, this.resolution.width, this.resolution.height);
+    // Clear the entire canvas each frame. Since circles are dynamic and share 
+    // the same canvas as the static grid, we must redraw everything each frame.
+    // The grid vertex buffer is cached via gridNeedsRebuild flag to avoid
+    // unnecessary geometry rebuilding.
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
