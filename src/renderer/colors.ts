@@ -41,14 +41,14 @@ export const paletteVec4 = palette.map((color) => toVec4(color));
 
 export const webglColors = {
   player: toVec4(colors.player, 1),
-  playerHalo: toVec4(colors.collect, 0.18),
-  playerAura: toVec4(colors.player, 0.12),
-  collectRing: toVec4(colors.collect, 0.22),
-  bullet: toVec4(colors.bulletHigh, 0.9),
-  bulletLow: toVec4(colors.bulletLow, 0.9),
-  bulletGlow: toVec4(colors.bulletHigh, 0.22),
+  playerHalo: toVec4(colors.collect, 0.25),
+  playerAura: toVec4(colors.player, 0.18),
+  collectRing: toVec4(colors.collect, 0.3),
+  bullet: toVec4(colors.bulletHigh, 1),
+  bulletLow: toVec4(colors.bulletLow, 1),
+  bulletGlow: toVec4(colors.bulletHigh, 0.35),
   fragment: toVec4(colors.fragment, 1),
-  fragmentRing: toVec4(colors.fragmentRing, 0.35),
+  fragmentRing: toVec4(colors.fragmentRing, 0.45),
   elite: toVec4(colors.elite, 1),
   // Enemy type colors for WebGL
   enemyWeak: toVec4(colors.enemyWeak, 1),
@@ -59,10 +59,10 @@ export const webglColors = {
   fragmentLow: toVec4(colors.fragmentLow, 1),
   fragmentMedium: toVec4(colors.fragmentMedium, 1),
   fragmentHigh: toVec4(colors.fragmentHigh, 1),
-  fragmentRingLow: toVec4(colors.fragmentLow, 0.35),
-  fragmentRingMedium: toVec4(colors.fragmentRing, 0.35),
-  fragmentRingHigh: toVec4(colors.fragmentHigh, 0.35),
-  hpBg: toVec4(colors.hpBg, 0.4),
+  fragmentRingLow: toVec4(colors.fragmentLow, 0.45),
+  fragmentRingMedium: toVec4(colors.fragmentRing, 0.45),
+  fragmentRingHigh: toVec4(colors.fragmentHigh, 0.45),
+  hpBg: toVec4(colors.hpBg, 0.5),
   hpFg: toVec4(colors.hpFg, 1),
   transparent: [0, 0, 0, 0] as const
 };
