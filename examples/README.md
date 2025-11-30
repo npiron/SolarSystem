@@ -95,14 +95,22 @@ This GPU particle system is available under the **Apache 2.0 license**, which me
    const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
    const gl = canvas.getContext('webgl2');
    
-   // Create particle system (16384 particles)
-   const particles = new GPUParticles(gl, 16384);
+   // Create particle system with fallback for browsers without WebGL2
+   let particles: GPUParticles | CPUParticles;
+   if (gl) {
+     particles = new GPUParticles(gl, 16384);
+   } else {
+     // Fallback to CPU-based particles (fewer particles for performance)
+     particles = new CPUParticles(null, 4096, canvas);
+   }
    particles.setBounds(canvas.width, canvas.height);
    ```
 
 3. **Spawn particles** in your game loop:
    ```typescript
    // Spawn a single particle at position (x, y) with velocity (vx, vy)
+   // The first parameter (-1) means auto-assign to the next available slot
+   // You can also specify a specific index (0 to count-1) to replace a particle
    particles.spawn(-1, x, y, vx, vy);
 
    // Or spawn a batch for explosions/effects
