@@ -106,3 +106,38 @@ void main() {
   }
   outColor = vec4(color, alpha);
 }`;
+
+/**
+ * Vertex shader for instanced health bar quads.
+ */
+export const healthVertexShader = `#version 300 es
+in vec2 a_corner;
+in vec2 a_center;
+in float a_halfWidth;
+in float a_ratio;
+uniform vec2 u_resolution;
+uniform float u_height;
+uniform float u_yOffset;
+uniform int u_fillMode;
+void main() {
+  float width = a_halfWidth * (u_fillMode == 0 ? 1.0 : a_ratio);
+  vec2 halfSize = vec2(width, u_height * 0.5);
+  vec2 world = vec2(a_center.x + a_corner.x * halfSize.x, (a_center.y - u_yOffset) + a_corner.y * halfSize.y);
+  vec2 zeroToOne = world / u_resolution;
+  vec2 clip = zeroToOne * 2.0 - 1.0;
+  clip.y *= -1.0;
+  gl_Position = vec4(clip, 0.0, 1.0);
+}`;
+
+/**
+ * Fragment shader for health bars with dual pass (background + fill).
+ */
+export const healthFragmentShader = `#version 300 es
+precision highp float;
+uniform vec4 u_bgColor;
+uniform vec4 u_fgColor;
+uniform int u_fillMode;
+out vec4 outColor;
+void main() {
+  outColor = u_fillMode == 0 ? u_bgColor : u_fgColor;
+}`;

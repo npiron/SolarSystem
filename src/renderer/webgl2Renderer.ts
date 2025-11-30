@@ -5,7 +5,9 @@ import {
   gridVertexShader,
   gridFragmentShader,
   circlesVertexShader,
-  circlesFragmentShader
+  circlesFragmentShader,
+  healthVertexShader,
+  healthFragmentShader
 } from "./webgl2Shaders.ts";
 
 const GRID_SPACING = 64;
@@ -24,9 +26,19 @@ type ShapeInstance = {
   };
 };
 
+type HealthBarInstance = {
+  x: number;
+  y: number;
+  width: number;
+  ratio: number;
+};
+
 export type { TextInstance };
 
 const FLOATS_PER_SHAPE = 14;
+const FLOATS_PER_HEALTH = 4;
+const HEALTH_BAR_HEIGHT = 6;
+const HEALTH_BAR_OFFSET = 12;
 
 /**
  * Unified WebGL2 renderer that combines grid and circles rendering
@@ -63,6 +75,23 @@ export class WebGL2Renderer {
   private circlesData: Float32Array;
   private circlesCapacity = 0;
   private circlesCount = 0;
+
+  // Health bar rendering resources
+  private healthProgram: WebGLProgram;
+  private healthVao: WebGLVertexArrayObject | null;
+  private healthQuadBuffer: WebGLBuffer | null;
+  private healthInstanceBuffer: WebGLBuffer | null;
+  private healthUniforms: {
+    resolution: WebGLUniformLocation | null;
+    barHeight: WebGLUniformLocation | null;
+    yOffset: WebGLUniformLocation | null;
+    bgColor: WebGLUniformLocation | null;
+    fgColor: WebGLUniformLocation | null;
+    fillMode: WebGLUniformLocation | null;
+  };
+  private healthData: Float32Array;
+  private healthCapacity = 0;
+  private healthCount = 0;
 
   // Text rendering
   private textRenderer: WebGL2TextRenderer;
@@ -103,6 +132,26 @@ export class WebGL2Renderer {
     this.configureCirclesQuad();
     this.configureCirclesInstanceAttributes();
 
+    // Initialize health bar program
+    this.healthProgram = createProgram(gl, healthVertexShader, healthFragmentShader);
+    this.healthVao = gl.createVertexArray();
+    this.healthQuadBuffer = gl.createBuffer();
+    this.healthInstanceBuffer = gl.createBuffer();
+    this.healthUniforms = {
+      resolution: gl.getUniformLocation(this.healthProgram, "u_resolution"),
+      barHeight: gl.getUniformLocation(this.healthProgram, "u_height"),
+      yOffset: gl.getUniformLocation(this.healthProgram, "u_yOffset"),
+      bgColor: gl.getUniformLocation(this.healthProgram, "u_bgColor"),
+      fgColor: gl.getUniformLocation(this.healthProgram, "u_fgColor"),
+      fillMode: gl.getUniformLocation(this.healthProgram, "u_fillMode")
+    };
+    this.healthData = new Float32Array(0);
+
+    gl.useProgram(this.healthProgram);
+    gl.bindVertexArray(this.healthVao);
+    this.configureHealthQuad();
+    this.configureHealthInstanceAttributes();
+
     // Set up blending and other GL state
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -139,6 +188,7 @@ export class WebGL2Renderer {
 
   beginFrame() {
     this.circlesCount = 0;
+    this.healthCount = 0;
     this.textRenderer.beginFrame();
   }
 
@@ -168,6 +218,17 @@ export class WebGL2Renderer {
     this.circlesCount += 1;
   }
 
+  pushHealthBar(instance: HealthBarInstance) {
+    if (!this.enabled) return;
+    this.ensureHealthCapacity(this.healthCount + 1);
+    const offset = this.healthCount * FLOATS_PER_HEALTH;
+    this.healthData[offset] = instance.x * this.dpr;
+    this.healthData[offset + 1] = instance.y * this.dpr;
+    this.healthData[offset + 2] = (instance.width * 0.5) * this.dpr;
+    this.healthData[offset + 3] = Math.max(0, Math.min(1, instance.ratio));
+    this.healthCount += 1;
+  }
+
   /**
    * Add text to be rendered this frame
    */
@@ -195,6 +256,9 @@ export class WebGL2Renderer {
 
     // Render circles on top
     this.renderCircles();
+
+    // Render health bars
+    this.renderHealthBars();
 
     // Render text last (on top of everything)
     this.textRenderer.render(this.resolution);
@@ -226,6 +290,12 @@ export class WebGL2Renderer {
     if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);
     if (this.circlesInstanceBuffer) gl.deleteBuffer(this.circlesInstanceBuffer);
     if (this.circlesProgram) gl.deleteProgram(this.circlesProgram);
+
+    // Clean up health resources
+    if (this.healthVao) gl.deleteVertexArray(this.healthVao);
+    if (this.healthQuadBuffer) gl.deleteBuffer(this.healthQuadBuffer);
+    if (this.healthInstanceBuffer) gl.deleteBuffer(this.healthInstanceBuffer);
+    if (this.healthProgram) gl.deleteProgram(this.healthProgram);
   }
 
   private renderGrid() {
@@ -265,6 +335,43 @@ export class WebGL2Renderer {
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.circlesCount);
   }
 
+  private renderHealthBars() {
+    if (!this.healthCount) return;
+
+    const gl = this.gl;
+    gl.useProgram(this.healthProgram);
+    gl.bindVertexArray(this.healthVao);
+
+    if (this.healthUniforms.resolution) {
+      gl.uniform2f(this.healthUniforms.resolution, this.resolution.width, this.resolution.height);
+    }
+    if (this.healthUniforms.barHeight) {
+      gl.uniform1f(this.healthUniforms.barHeight, HEALTH_BAR_HEIGHT * this.dpr);
+    }
+    if (this.healthUniforms.yOffset) {
+      gl.uniform1f(this.healthUniforms.yOffset, HEALTH_BAR_OFFSET * this.dpr);
+    }
+    if (this.healthUniforms.bgColor) {
+      gl.uniform4f(this.healthUniforms.bgColor, ...webglColors.hpBg);
+    }
+    if (this.healthUniforms.fgColor) {
+      gl.uniform4f(this.healthUniforms.fgColor, ...webglColors.hpFg);
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.healthInstanceBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.healthData.subarray(0, this.healthCount * FLOATS_PER_HEALTH));
+
+    if (this.healthUniforms.fillMode) {
+      gl.uniform1i(this.healthUniforms.fillMode, 0);
+    }
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.healthCount);
+
+    if (this.healthUniforms.fillMode) {
+      gl.uniform1i(this.healthUniforms.fillMode, 1);
+    }
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.healthCount);
+  }
+
   private buildGrid() {
     const gl = this.gl;
     if (!this.gridBuffer) return;
@@ -294,6 +401,15 @@ export class WebGL2Renderer {
     this.circlesData = new Float32Array(this.circlesCapacity * FLOATS_PER_SHAPE);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circlesInstanceBuffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, this.circlesData.byteLength, this.gl.DYNAMIC_DRAW);
+  }
+
+  private ensureHealthCapacity(targetInstances: number) {
+    if (targetInstances <= this.healthCapacity) return;
+    const nextCapacity = Math.max(targetInstances, Math.max(32, this.healthCapacity * 2));
+    this.healthCapacity = nextCapacity;
+    this.healthData = new Float32Array(this.healthCapacity * FLOATS_PER_HEALTH);
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.healthInstanceBuffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, this.healthData.byteLength, this.gl.DYNAMIC_DRAW);
   }
 
   private configureCirclesQuad() {
@@ -355,5 +471,46 @@ export class WebGL2Renderer {
     gl.enableVertexAttribArray(rotationLoc);
     gl.vertexAttribPointer(rotationLoc, 1, gl.FLOAT, false, stride, 52);
     gl.vertexAttribDivisor(rotationLoc, 1);
+  }
+
+  private configureHealthQuad() {
+    const gl = this.gl;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.healthQuadBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([
+        -1, -1,
+        1, -1,
+        -1, 1,
+        1, 1
+      ]),
+      gl.STATIC_DRAW
+    );
+
+    const cornerLoc = gl.getAttribLocation(this.healthProgram, "a_corner");
+    gl.enableVertexAttribArray(cornerLoc);
+    gl.vertexAttribPointer(cornerLoc, 2, gl.FLOAT, false, 0, 0);
+  }
+
+  private configureHealthInstanceAttributes() {
+    const gl = this.gl;
+    const stride = FLOATS_PER_HEALTH * 4;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.healthInstanceBuffer);
+
+    const centerLoc = gl.getAttribLocation(this.healthProgram, "a_center");
+    gl.enableVertexAttribArray(centerLoc);
+    gl.vertexAttribPointer(centerLoc, 2, gl.FLOAT, false, stride, 0);
+    gl.vertexAttribDivisor(centerLoc, 1);
+
+    const halfWidthLoc = gl.getAttribLocation(this.healthProgram, "a_halfWidth");
+    gl.enableVertexAttribArray(halfWidthLoc);
+    gl.vertexAttribPointer(halfWidthLoc, 1, gl.FLOAT, false, stride, 8);
+    gl.vertexAttribDivisor(halfWidthLoc, 1);
+
+    const ratioLoc = gl.getAttribLocation(this.healthProgram, "a_ratio");
+    gl.enableVertexAttribArray(ratioLoc);
+    gl.vertexAttribPointer(ratioLoc, 1, gl.FLOAT, false, stride, 12);
+    gl.vertexAttribDivisor(ratioLoc, 1);
   }
 }

@@ -1067,6 +1067,7 @@ function render() {
   renderObjects.fragments.visible = !usingWebgl2;
   renderObjects.fragmentRings.visible = !usingWebgl2;
   renderObjects.enemies.visible = !usingWebgl2;
+  renderObjects.enemyHp.visible = !usingWebgl2;
 
   renderObjects.aura.visible = !usingWebgl2;
 
@@ -1204,6 +1205,15 @@ function render() {
         sides: enemyShape.sides,
         rotation: enemyShape.rotation
       });
+
+      if (!state.visualsLow || e.hitThisFrame) {
+        webgl2Renderer.pushHealthBar({
+          x: e.x,
+          y: e.y - e.radius,
+          width: e.radius * 2,
+          ratio: e.hp / e.maxHp
+        });
+      }
     });
 
     // Render floating text using native WebGL2 text renderer
@@ -1223,21 +1233,24 @@ function render() {
     webgl2Renderer.render();
   }
 
-  renderObjects.enemyHp.clear();
-  state.enemies.forEach((e) => {
-    if (!state.visualsLow || e.hitThisFrame) {
-      renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
-      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
-      renderObjects.enemyHp.endFill();
-
-      renderObjects.enemyHp.beginFill(colors.hpFg);
-      renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
-      renderObjects.enemyHp.endFill();
-    }
-  });
-
-  // Only use PixiJS floating text when WebGL2 is not available
   if (!usingWebgl2) {
+    renderObjects.enemyHp.clear();
+    state.enemies.forEach((e) => {
+      if (!state.visualsLow || e.hitThisFrame) {
+        renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
+        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
+        renderObjects.enemyHp.endFill();
+
+        renderObjects.enemyHp.beginFill(colors.hpFg);
+        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
+        renderObjects.enemyHp.endFill();
+      }
+    });
+  }
+
+  // Only use PixiJS floating text when WebGL2 initialization fails
+  if (!usingWebgl2) {
+    renderObjects.floatingLayer.visible = true;
     const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
     recycledFloatingText.forEach((text) => releaseFloatingText(text));
 
@@ -1250,10 +1263,12 @@ function render() {
       text.y = f.y - (1.5 - f.life) * 24;
       renderObjects.floatingLayer.addChild(text);
     });
-  } else {
-    // Clear PixiJS floating text layer when using WebGL2
+  } else if (renderObjects.floatingLayer.children.length) {
     const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
     recycledFloatingText.forEach((text) => releaseFloatingText(text));
+    renderObjects.floatingLayer.visible = false;
+  } else {
+    renderObjects.floatingLayer.visible = false;
   }
 
   renderObjects.hudLabels.wave.text = `${icons.wave} Vague ${state.wave.toFixed(1)}`;
