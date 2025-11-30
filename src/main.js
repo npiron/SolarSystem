@@ -1,4 +1,3 @@
-import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
@@ -18,8 +17,7 @@ import {
   resetTalents,
   unlockTalent
 } from "./systems/talents.ts";
-import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
-import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
+import * as renderer from "./renderer/index.ts";
 import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import {
   getEnemyColor,
@@ -28,7 +26,6 @@ import {
   getFragmentColor,
   getFragmentRadius
 } from "./renderer/entityColors.ts";
-import { createEffects } from "./renderer/effects.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
 import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
@@ -36,7 +33,7 @@ import { initCollapsibleSections } from "./systems/collapsible.ts";
 
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
-const webgl2Renderer = webgl2Canvas ? WebGL2Renderer.create(webgl2Canvas) : null;
+const webgl2Renderer = webgl2Canvas ? renderer.init(webgl2Canvas) : null;
 
 function syncCanvasVisibility(usingWebgl2) {
   canvas?.classList.toggle("hidden-layer", usingWebgl2);
@@ -45,103 +42,11 @@ function syncCanvasVisibility(usingWebgl2) {
 
 syncCanvasVisibility(Boolean(webgl2Renderer));
 
-const app = new PIXI.Application({
-  view: canvas,
-  antialias: true,
-  backgroundAlpha: 0,
-});
-app.stop();
-
-const arenaLayers = {
-  background: new PIXI.Container(),
-  entities: new PIXI.Container(),
-  overlay: new PIXI.Container(),
-};
-
-const hudTextOptions = {
-  fontFamily: "Baloo 2, Fredoka, Nunito, sans-serif",
-  fontSize: 15,
-  fill: "#fff7ed",
-  stroke: "#0b1024",
-  strokeThickness: 3,
-  dropShadow: true,
-  dropShadowColor: "#0b1024",
-  dropShadowBlur: 5,
-  dropShadowAlpha: 0.9,
-  dropShadowDistance: 0,
-};
-
-const hudTextStyle = new PIXI.TextStyle(hudTextOptions);
-
-// PIXI v7 n'inclut pas `toJSON` sur TextStyle, mais le constructeur de Text
-// tente de l'appeler pour sérialiser le style. Sans ce shim, l'initialisation
-// du HUD plante et empêche le jeu de se charger. On ajoute donc une version
-// minimale qui renvoie simplement les options actuelles.
-if (typeof hudTextStyle.toJSON !== "function") {
-  hudTextStyle.toJSON = () => ({ ...hudTextOptions });
-}
-
-const hudAccentStyle = new PIXI.TextStyle({
-  ...hudTextOptions,
-  fill: "#f472b6",
-});
-
-if (typeof hudAccentStyle.toJSON !== "function") {
-  hudAccentStyle.toJSON = () => ({ ...hudTextOptions, fill: "#f472b6" });
-}
-
-const renderObjects = {
-  backgroundContainer: new PIXI.Container(),
-  grid: new PIXI.Graphics(),
-  aura: new PIXI.Graphics(),
-  playerContainer: null,
-  player: new PIXI.Graphics(),
-  bullets: new PIXI.Graphics(),
-  bulletsGlow: new PIXI.Graphics(),
-  fragments: new PIXI.Graphics(),
-  fragmentRings: new PIXI.Graphics(),
-  enemies: new PIXI.Graphics(),
-  enemyHp: new PIXI.Graphics(),
-  floatingLayer: new PIXI.Container(),
-  hudLayer: new PIXI.Container(),
-  hudBg: new PIXI.Graphics(),
-  hudLabels: {
-    wave: null,
-    kills: null,
-    fragments: null,
-    essence: null,
-    gain: null,
-  },
-};
-
 let backgroundReady = false;
-
-app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
-
-const { applyAddonFilters } = createEffects(colors);
 
 const PLAYER_SHAPE = { sides: 6, rotation: Math.PI / 6 };
 const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
-
-function regularPolygonPoints(sides, radius, rotation = 0, x = 0, y = 0) {
-  const points = [];
-  const step = (Math.PI * 2) / sides;
-  for (let i = 0; i < sides; i++) {
-    const angle = rotation + i * step;
-    points.push(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
-  }
-  return points;
-}
-
-function drawShape(graphics, x, y, radius, sides, rotation = 0) {
-  if (sides < 3) {
-    graphics.drawCircle(x, y, radius);
-    return;
-  }
-  const points = regularPolygonPoints(sides, radius, rotation, x, y);
-  graphics.drawPolygon(points);
-}
 
 function getEnemyShape(type) {
   switch (type) {
@@ -157,9 +62,6 @@ function getEnemyShape(type) {
 }
 
 function buildBackground(width, height) {
-  backgroundReady = false;
-  renderObjects.backgroundContainer.removeChildren();
-
   if (webgl2Renderer) {
     webgl2Renderer.setGridEnabled(!state.visualsLow);
     if (!state.visualsLow) {
@@ -168,92 +70,9 @@ function buildBackground(width, height) {
     } else {
       webgl2Renderer.clear();
     }
-    return;
-  }
-
-  if (!state.visualsLow) {
-    renderObjects.grid.clear();
-    renderObjects.grid.lineStyle({ color: 0xffd166, alpha: 0.08, width: 2 });
-    for (let x = 0; x < width; x += 64) {
-      renderObjects.grid.moveTo(x, 0);
-      renderObjects.grid.lineTo(x, height);
-    }
-    for (let y = 0; y < height; y += 64) {
-      renderObjects.grid.moveTo(0, y);
-      renderObjects.grid.lineTo(width, y);
-    }
-    renderObjects.backgroundContainer.addChild(renderObjects.grid);
-    backgroundReady = true;
   }
 }
 
-function setupScene() {
-  arenaLayers.background.addChild(renderObjects.backgroundContainer);
-
-  renderObjects.aura.beginFill(colors.player, 0.18);
-  drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
-  renderObjects.aura.endFill();
-  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.28, width: 3 });
-  drawShape(renderObjects.aura, 0, 0, state.player.collectRadius * 0.45, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
-  renderObjects.aura.lineStyle(0);
-
-  // Draw the player as a vector circle
-  renderObjects.player.beginFill(colors.player, 1);
-  drawShape(renderObjects.player, 0, 0, state.player.radius, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
-  renderObjects.player.endFill();
-
-  const playerContainer = new PIXI.Container();
-  playerContainer.addChild(renderObjects.aura);
-  playerContainer.addChild(renderObjects.player);
-  renderObjects.playerContainer = playerContainer;
-
-  arenaLayers.entities.addChild(
-    playerContainer,
-    renderObjects.bullets,
-    renderObjects.bulletsGlow,
-    renderObjects.fragments,
-    renderObjects.fragmentRings,
-    renderObjects.enemies,
-    renderObjects.enemyHp
-  );
-
-  renderObjects.hudLayer.addChild(renderObjects.hudBg);
-  renderObjects.hudLabels.wave = new PIXI.Text({ text: "", style: hudTextStyle });
-  renderObjects.hudLabels.kills = new PIXI.Text({ text: "", style: hudTextStyle });
-  renderObjects.hudLabels.fragments = new PIXI.Text({ text: "", style: hudTextStyle });
-  renderObjects.hudLabels.essence = new PIXI.Text({ text: "", style: hudTextStyle });
-  renderObjects.hudLabels.gain = new PIXI.Text({ text: "", style: hudAccentStyle });
-
-  const hudEntries = [
-    { label: renderObjects.hudLabels.wave, y: 28 },
-    { label: renderObjects.hudLabels.kills, y: 48 },
-    { label: renderObjects.hudLabels.fragments, y: 68 },
-    { label: renderObjects.hudLabels.essence, y: 88 },
-    { label: renderObjects.hudLabels.gain, y: 108 },
-  ];
-
-  hudEntries.forEach(({ label, y }) => {
-    label.x = 24;
-    label.y = y;
-    renderObjects.hudLayer.addChild(label);
-  });
-
-  const x = 12;
-  const y = 12;
-  const w = 190;
-  const h = 126;
-  const r = 10;
-  renderObjects.hudBg.beginFill(colors.hudBg, 0.45);
-  renderObjects.hudBg.lineStyle({ color: colors.hudBorder, alpha: 0.08, width: 1 });
-  renderObjects.hudBg.drawRoundedRect(x, y, w, h, r);
-  renderObjects.hudBg.endFill();
-
-  // Scale down the HUD block so it doesn't eat too much screen real estate
-  renderObjects.hudLayer.scale.set(0.82);
-  renderObjects.hudLayer.position.set(4, 4);
-
-  arenaLayers.overlay.addChild(renderObjects.floatingLayer, renderObjects.hudLayer);
-}
 
 const pauseBtn = document.getElementById("pause");
 const resetProgressBtn = document.getElementById("resetProgress");
@@ -346,8 +165,8 @@ const state = {
     essence: 0
   },
   player: {
-    x: app.renderer.width / 2,
-    y: app.renderer.height / 2,
+    x: canvas.width / 2,
+    y: canvas.height / 2,
     vx: 0,
     vy: 0,
     radius: 12,
@@ -403,7 +222,7 @@ let assistUi = {
 };
 
 function clampPlayerToBounds() {
-  const { width, height } = app.renderer;
+  const { width, height } = canvas.getBoundingClientRect();
   state.player.x = Math.max(30, Math.min(width - 30, state.player.x));
   state.player.y = Math.max(30, Math.min(height - 30, state.player.y));
 }
@@ -412,7 +231,6 @@ function resizeCanvas(center = false) {
   const rect = canvas.parentElement?.getBoundingClientRect();
   const width = rect?.width || canvas.width || 960;
   const height = rect?.height || canvas.height || 600;
-  app.renderer.resize(width, height);
   buildBackground(width, height);
   webgl2Renderer?.resize(width, height);
   if (center) {
@@ -423,7 +241,6 @@ function resizeCanvas(center = false) {
   if (state.performance.graphVisible) {
     drawFpsGraph(fpsCanvas, state.performance);
   }
-  applyAddonFilters(state, renderObjects);
 }
 
 const uiRefs = {
@@ -864,7 +681,7 @@ function findBestFragment() {
 function calculatePlayerMovement() {
   const healthRatio = state.player.hp / state.player.maxHp;
   const danger = calculateDangerVector();
-  const { width, height } = app.renderer;
+  const { width, height } = canvas.getBoundingClientRect();
 
   // Survival mode: prioritize avoiding enemies when health is low
   const survivalThreshold = 0.35;
@@ -1012,8 +829,8 @@ function softReset() {
   state.player.fireTimer = 0;
   state.player.vx = 0;
   state.player.vy = 0;
-  state.player.x = app.renderer.width / 2;
-  state.player.y = app.renderer.height / 2;
+  state.player.x = canvas.width / 2;
+  state.player.y = canvas.height / 2;
   state.player.vx = 0;
   state.player.vy = 0;
   state.enemies = [];
@@ -1040,105 +857,30 @@ function prestige() {
 }
 
 function render() {
-  const { width, height } = app.renderer;
+  const { width, height } = canvas.getBoundingClientRect();
   const usingWebgl2 = Boolean(webgl2Renderer);
   const allowFx = !state.visualsLow;
 
-  webgl2Renderer?.setEnabled(usingWebgl2);
-  if (usingWebgl2 && webgl2Renderer) {
-    webgl2Renderer.resize(width, height);
+  if (usingWebgl2) {
+    renderer.resize(width, height);
   }
 
-  if (state.visualsLow) {
-    backgroundReady = false;
-    renderObjects.backgroundContainer.removeChildren();
-    webgl2Renderer?.setGridEnabled(false);
-  } else if (!backgroundReady) {
-    buildBackground(width, height);
-  } else if (webgl2Renderer) {
-    // Grid is rendered as part of webgl2Renderer.render()
-  } else if (!renderObjects.backgroundContainer.children.length) {
-    buildBackground(width, height);
-  }
-
-  renderObjects.player.visible = !usingWebgl2;
-  renderObjects.bullets.visible = !usingWebgl2;
-  renderObjects.bulletsGlow.visible = !usingWebgl2;
-  renderObjects.fragments.visible = !usingWebgl2;
-  renderObjects.fragmentRings.visible = !usingWebgl2;
-  renderObjects.enemies.visible = !usingWebgl2;
-  renderObjects.enemyHp.visible = !usingWebgl2;
-
-  renderObjects.aura.visible = !usingWebgl2;
-
-  if (!usingWebgl2) {
-    renderObjects.aura.clear();
-    renderObjects.aura.beginFill(colors.player, 0.12);
-    drawShape(renderObjects.aura, 0, 0, state.player.radius + 16, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
-    renderObjects.aura.endFill();
-    renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
-    drawShape(renderObjects.aura, 0, 0, state.player.collectRadius * 0.45, PLAYER_SHAPE.sides, PLAYER_SHAPE.rotation);
-    renderObjects.aura.lineStyle(0);
-    renderObjects.aura.position.set(state.player.x, state.player.y);
-  } else {
-    renderObjects.aura.clear();
-  }
-
-  // Update player position using vector graphics
-  renderObjects.player.position.set(state.player.x, state.player.y);
-
-  if (!usingWebgl2) {
-    renderObjects.bullets.clear();
-    renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
-    state.bullets.forEach((b) => drawShape(renderObjects.bullets, b.x, b.y, 4, BULLET_SHAPE.sides, BULLET_SHAPE.rotation));
-    renderObjects.bullets.endFill();
-
-    renderObjects.bulletsGlow.clear();
-    if (!state.visualsLow) {
-      renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
-      state.bullets.forEach((b) => drawShape(renderObjects.bulletsGlow, b.x, b.y, 8, BULLET_SHAPE.sides, BULLET_SHAPE.rotation));
-      renderObjects.bulletsGlow.endFill();
-    }
-
-    // Render fragments using vector graphics with value-based colors and sizes
-    renderObjects.fragments.clear();
-    state.fragmentsOrbs.forEach((f) => {
-      const fragColor = getFragmentColor(f.value);
-      const fragRadius = getFragmentRadius(f.value);
-      renderObjects.fragments.beginFill(fragColor);
-      drawShape(renderObjects.fragments, f.x, f.y, fragRadius, FRAGMENT_SHAPE.sides, FRAGMENT_SHAPE.rotation);
-      renderObjects.fragments.endFill();
+  if (webgl2Renderer) {
+    renderer.pushCircle({
+      x: 12 + 190 / 2,
+      y: 12 + 126 / 2,
+      radius: 100,
+      color: [0.1, 0.1, 0.1, 0.45],
+      sides: 6
     });
-
-    renderObjects.fragmentRings.clear();
-    if (!state.visualsLow) {
-      state.fragmentsOrbs.forEach((f) => {
-        const fragColor = getFragmentColor(f.value);
-        const fragRadius = getFragmentRadius(f.value);
-        renderObjects.fragmentRings.lineStyle({ color: fragColor, alpha: 0.5, width: 2 });
-        drawShape(renderObjects.fragmentRings, f.x, f.y, fragRadius + 5, FRAGMENT_SHAPE.sides, FRAGMENT_SHAPE.rotation);
-      });
-      renderObjects.fragmentRings.lineStyle(0);
-    }
-
-    // Render enemies using vector graphics with type-based colors
-    renderObjects.enemies.clear();
-    state.enemies.forEach((e) => {
-      const enemyColor = getEnemyColor(e.type);
-      const enemyShape = getEnemyShape(e.type);
-      renderObjects.enemies.beginFill(enemyColor);
-      drawShape(renderObjects.enemies, e.x, e.y, e.radius, enemyShape.sides, enemyShape.rotation);
-      renderObjects.enemies.endFill();
-    });
-  } else if (webgl2Renderer) {
     const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 } : undefined;
     const collectRing = { color: webglColors.collectRing, scale: 1.04 };
     const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
     const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
 
-    webgl2Renderer.beginFrame();
-    webgl2Renderer.pushCircle({
+    renderer.beginFrame();
+    renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.radius + 16,
@@ -1147,7 +889,7 @@ function render() {
       rotation: PLAYER_SHAPE.rotation,
       halo: auraHalo
     });
-    webgl2Renderer.pushCircle({
+    renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.collectRadius * 0.45,
@@ -1156,7 +898,7 @@ function render() {
       rotation: PLAYER_SHAPE.rotation,
       halo: collectRing
     });
-    webgl2Renderer.pushCircle({
+    renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.radius,
@@ -1167,7 +909,7 @@ function render() {
     });
 
     state.bullets.forEach((b) =>
-      webgl2Renderer.pushCircle({
+      renderer.pushCircle({
         x: b.x,
         y: b.y,
         radius: 4,
@@ -1182,7 +924,7 @@ function render() {
     state.fragmentsOrbs.forEach((f) => {
       const { color, ringColor, radius } = getFragmentVisuals(f.value);
       const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
-      webgl2Renderer.pushCircle({
+      renderer.pushCircle({
         x: f.x,
         y: f.y,
         radius,
@@ -1197,7 +939,7 @@ function render() {
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColorWebGL(e.type);
       const enemyShape = getEnemyShape(e.type);
-      webgl2Renderer.pushCircle({
+      renderer.pushCircle({
         x: e.x,
         y: e.y,
         radius: e.radius,
@@ -1207,7 +949,7 @@ function render() {
       });
 
       if (!state.visualsLow || e.hitThisFrame) {
-        webgl2Renderer.pushHealthBar({
+        renderer.pushHealthBar({
           x: e.x,
           y: e.y - e.radius,
           width: e.radius * 2,
@@ -1221,7 +963,7 @@ function render() {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
       if (!label) return;
       const textColor = hexStringToVec4(f.color || "#fef08a", Math.max(0, f.life));
-      webgl2Renderer.pushText({
+      renderer.pushText({
         text: label,
         x: f.x,
         y: f.y - (1.5 - f.life) * 24,
@@ -1230,64 +972,30 @@ function render() {
       });
     });
 
-    webgl2Renderer.render();
+    renderer.render();
   }
 
-  if (!usingWebgl2) {
-    renderObjects.enemyHp.clear();
-    state.enemies.forEach((e) => {
-      if (!state.visualsLow || e.hitThisFrame) {
-        renderObjects.enemyHp.beginFill(colors.hpBg, 0.4);
-        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, e.radius * 2, 6);
-        renderObjects.enemyHp.endFill();
+  const hudTexts = [
+    { text: `${icons.wave} Vague ${state.wave.toFixed(1)}`, x: 24, y: 28 },
+    { text: `⚔️ Kills ${state.runStats.kills}`, x: 24, y: 48 },
+    { text: `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, x: 24, y: 68 },
+    { text: `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, x: 24, y: 88 },
+  ];
 
-        renderObjects.enemyHp.beginFill(colors.hpFg);
-        renderObjects.enemyHp.drawRect(e.x - e.radius, e.y - e.radius - 12, (e.hp / e.maxHp) * e.radius * 2, 6);
-        renderObjects.enemyHp.endFill();
-      }
+  if (state.gainTicker.fragments > 0) {
+    hudTexts.push({ text: `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, x: 24, y: 108 });
+  }
+
+  hudTexts.forEach(({ text, x, y }) => {
+    renderer.pushText({
+      text,
+      x,
+      y,
+      color: [1, 1, 1, 1],
+      alpha: 1,
     });
-  }
-
-  // Only use PixiJS floating text when WebGL2 initialization fails
-  if (!usingWebgl2) {
-    renderObjects.floatingLayer.visible = true;
-    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
-    recycledFloatingText.forEach((text) => releaseFloatingText(text));
-
-    state.floatingText.forEach((f) => {
-      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
-      const text = acquireFloatingText(f.color);
-      text.text = label;
-      text.alpha = Math.max(0, f.life);
-      text.x = f.x;
-      text.y = f.y - (1.5 - f.life) * 24;
-      renderObjects.floatingLayer.addChild(text);
-    });
-  } else if (renderObjects.floatingLayer.children.length) {
-    const recycledFloatingText = renderObjects.floatingLayer.removeChildren();
-    recycledFloatingText.forEach((text) => releaseFloatingText(text));
-    renderObjects.floatingLayer.visible = false;
-  } else {
-    renderObjects.floatingLayer.visible = false;
-  }
-
-  renderObjects.hudLabels.wave.text = `${icons.wave} Vague ${state.wave.toFixed(1)}`;
-  renderObjects.hudLabels.kills.text = `⚔️ Kills ${state.runStats.kills}`;
-  renderObjects.hudLabels.fragments.text = `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`;
-  renderObjects.hudLabels.essence.text = `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`;
-  renderObjects.hudLabels.gain.text = `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`;
-  renderObjects.hudLabels.gain.visible = state.gainTicker.fragments > 0;
+  });
 }
-
-app.ticker.add((delta) => {
-  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
-  recordFpsSample(state.performance, frameMs);
-  const dt = Math.min(0.05, delta / 60);
-  update(dt);
-  updateHud(state, hudContext);
-  updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
-  render();
-});
 
 function initUI() {
   const syncSoundToggle = () => {
@@ -1300,14 +1008,6 @@ function initUI() {
     if (toggleBloomFxBtn) toggleBloomFxBtn.textContent = state.addons.bloom ? "🌟 Bloom ON" : "🌟 Bloom OFF";
     if (toggleGrainFxBtn) toggleGrainFxBtn.textContent = state.addons.grain ? "🎞️ Grain ON" : "🎞️ Grain OFF";
     if (toggleHudPulseBtn) toggleHudPulseBtn.textContent = state.addons.hudPulse ? "💫 Pulse ON" : "💫 Pulse OFF";
-  };
-
-  const toggleAddon = (key) => {
-    state.addons[key] = !state.addons[key];
-    syncAddonToggles();
-    applyAddonFilters(state, renderObjects);
-    playUiToggle();
-    saveGame();
   };
 
   const armAudioUnlock = () => {
@@ -1370,9 +1070,8 @@ function initUI() {
   togglePerfBtn.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
-    buildBackground(app.renderer.width, app.renderer.height);
+    buildBackground(canvas.width, canvas.height);
     webgl2Renderer?.setEnabled(!state.visualsLow);
-    applyAddonFilters(state, renderObjects);
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
@@ -1421,10 +1120,8 @@ function initUI() {
 
 async function bootstrap() {
   resizeCanvas(true);
-  setupScene();
-  buildBackground(app.renderer.width, app.renderer.height);
+  buildBackground(canvas.width, canvas.height);
   loadSave();
-  applyAddonFilters(state, renderObjects);
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
@@ -1442,8 +1139,26 @@ async function bootstrap() {
   });
   initUI();
   window.addEventListener("resize", () => resizeCanvas());
-  app.start();
   setInterval(saveGame, 5000);
+
+  let lastTime = performance.now();
+
+  function gameLoop(currentTime) {
+    const frameMs = currentTime - lastTime;
+    lastTime = currentTime;
+
+    recordFpsSample(state.performance, frameMs);
+    const dt = Math.min(0.05, frameMs / 1000);
+
+    update(dt);
+    updateHud(state, hudContext);
+    updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
+    render();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  requestAnimationFrame(gameLoop);
 }
 
 bootstrap();

@@ -14,7 +14,7 @@ import {
 const GRID_SPACING = 64;
 const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
 
-type ShapeInstance = {
+export type ShapeInstance = {
   x: number;
   y: number;
   radius: number;
@@ -27,7 +27,7 @@ type ShapeInstance = {
   };
 };
 
-type HealthBarInstance = {
+export type HealthBarInstance = {
   x: number;
   y: number;
   width: number;
