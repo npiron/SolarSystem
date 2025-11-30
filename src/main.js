@@ -310,11 +310,15 @@ const paletteVec4 = palette.map((color) => toVec4(color));
 const webglColors = {
   player: toVec4(colors.player, 1),
   playerHalo: toVec4(colors.collect, 0.18),
+  playerAura: toVec4(colors.player, 0.12),
+  collectRing: toVec4(colors.collect, 0.22),
   bullet: toVec4(colors.bulletHigh, 0.9),
+  bulletLow: toVec4(colors.bulletLow, 0.9),
   bulletGlow: toVec4(colors.bulletHigh, 0.22),
   fragment: toVec4(colors.fragment, 1),
   fragmentRing: toVec4(colors.fragmentRing, 0.35),
-  elite: toVec4(colors.elite, 1)
+  elite: toVec4(colors.elite, 1),
+  transparent: [0, 0, 0, 0]
 };
 
 const fx = {
@@ -982,7 +986,8 @@ function prestige() {
 
 function render() {
   const { width, height } = app.renderer;
-  const usingWebglCircles = Boolean(webglCircles && !state.visualsLow);
+  const usingWebglCircles = Boolean(webglCircles);
+  const allowFx = !state.visualsLow;
 
   webglCircles?.setEnabled(usingWebglCircles);
   if (usingWebglCircles && webglCircles) {
@@ -993,7 +998,9 @@ function render() {
     backgroundReady = false;
     renderObjects.backgroundContainer.removeChildren();
     webglGrid?.setEnabled(false);
-    webglCircles?.clear();
+    if (!usingWebglCircles) {
+      webglCircles?.clear();
+    }
   } else if (!backgroundReady) {
     buildBackground(width, height);
   } else if (webglGrid) {
@@ -1009,14 +1016,20 @@ function render() {
   renderObjects.fragmentRings.visible = !usingWebglCircles;
   renderObjects.enemies.visible = !usingWebglCircles;
 
-  renderObjects.aura.clear();
-  renderObjects.aura.beginFill(colors.player, 0.12);
-  renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
-  renderObjects.aura.endFill();
-  renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
-  renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
-  renderObjects.aura.lineStyle(0);
-  renderObjects.aura.position.set(state.player.x, state.player.y);
+  renderObjects.aura.visible = !usingWebglCircles;
+
+  if (!usingWebglCircles) {
+    renderObjects.aura.clear();
+    renderObjects.aura.beginFill(colors.player, 0.12);
+    renderObjects.aura.drawCircle(0, 0, state.player.radius + 16);
+    renderObjects.aura.endFill();
+    renderObjects.aura.lineStyle({ color: colors.collect, alpha: 0.2, width: 2 });
+    renderObjects.aura.drawCircle(0, 0, state.player.collectRadius * 0.45);
+    renderObjects.aura.lineStyle(0);
+    renderObjects.aura.position.set(state.player.x, state.player.y);
+  } else {
+    renderObjects.aura.clear();
+  }
 
   // Update player position using vector graphics
   renderObjects.player.position.set(state.player.x, state.player.y);
@@ -1059,13 +1072,34 @@ function render() {
       renderObjects.enemies.endFill();
     });
   } else if (webglCircles) {
+    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 } : undefined;
+    const collectRing = { color: webglColors.collectRing, scale: 1.04 };
+    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 } : undefined;
+    const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
+    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
+    const fragmentHalo = allowFx ? { color: webglColors.fragmentRing, scale: 1.65 } : undefined;
+
     webglCircles.beginFrame();
+    webglCircles.push({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.radius + 16,
+      color: webglColors.playerAura,
+      halo: auraHalo
+    });
+    webglCircles.push({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.collectRadius * 0.45,
+      color: webglColors.transparent,
+      halo: collectRing
+    });
     webglCircles.push({
       x: state.player.x,
       y: state.player.y,
       radius: state.player.radius,
       color: webglColors.player,
-      halo: { color: webglColors.playerHalo, scale: 1.35 }
+      halo: playerHalo
     });
 
     state.bullets.forEach((b) =>
@@ -1073,8 +1107,8 @@ function render() {
         x: b.x,
         y: b.y,
         radius: 4,
-        color: webglColors.bullet,
-        halo: { color: webglColors.bulletGlow, scale: 1.8 }
+        color: bulletColor,
+        halo: bulletHalo
       })
     );
 
@@ -1084,7 +1118,7 @@ function render() {
         y: f.y,
         radius: 6,
         color: webglColors.fragment,
-        halo: { color: webglColors.fragmentRing, scale: 1.65 }
+        halo: fragmentHalo
       })
     );
 
