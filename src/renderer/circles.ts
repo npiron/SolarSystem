@@ -1,3 +1,4 @@
+import type { Shape } from "../types/entities.ts";
 import { bindAttributePointers, createBuffer, createQuadCorners, ensureCapacity } from "./buffers.ts";
 import { circleFragmentShader, circleVertexShader, createProgram } from "./shaders.ts";
 
@@ -6,6 +7,7 @@ export type CircleInstance = {
   radius: number;
   color: readonly [number, number, number, number];
   halo?: { color: readonly [number, number, number, number]; scale: number };
+  shape?: Shape;
 };
 
 const FLOATS_PER_CIRCLE = 12;
