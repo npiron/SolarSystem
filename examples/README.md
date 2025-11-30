@@ -75,3 +75,72 @@ If WebGL2 is not available, the demo automatically falls back to CPU rendering.
 See the source files for detailed comments:
 - `src/gpuParticles.ts` - Main particle system implementation
 - `src/demo-gpu.ts` - Demo application and WebGL2 detection
+
+## Using in Your Own Video Game
+
+This GPU particle system is available under the **Apache 2.0 license**, which means you can freely use, modify, and integrate it into your own video game projects (commercial or personal).
+
+### Quick Integration
+
+1. **Copy the particle system module** to your project:
+   ```bash
+   cp src/gpuParticles.ts your-game/src/
+   ```
+
+2. **Import and initialize** in your game code:
+   ```typescript
+   import { GPUParticles, CPUParticles, createOrthoMatrix } from './gpuParticles';
+
+   // Initialize with WebGL2 context
+   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+   const gl = canvas.getContext('webgl2');
+   
+   // Create particle system (16384 particles)
+   const particles = new GPUParticles(gl, 16384);
+   particles.setBounds(canvas.width, canvas.height);
+   ```
+
+3. **Spawn particles** in your game loop:
+   ```typescript
+   // Spawn a single particle at position (x, y) with velocity (vx, vy)
+   particles.spawn(-1, x, y, vx, vy);
+
+   // Or spawn a batch for explosions/effects
+   const burst = [
+     100, 200, 50, -100,  // particle 1: x, y, vx, vy
+     110, 200, -30, -120, // particle 2
+     // ...more particles
+   ];
+   particles.spawnBatch(burst);
+   ```
+
+4. **Update and render** each frame:
+   ```typescript
+   function gameLoop(deltaTime: number) {
+     // Update particle physics
+     particles.step(deltaTime);
+     
+     // Render particles
+     const projMatrix = createOrthoMatrix(0, canvas.width, canvas.height, 0);
+     particles.render(projMatrix, 4); // 4 = particle size in pixels
+   }
+   ```
+
+### Customization
+
+The particle system is designed to be extensible:
+
+- **Modify physics**: Edit the `SIM_FRAG` shader in `gpuParticles.ts` to change gravity, damping, or add forces
+- **Change colors**: Edit the `RENDER_FRAG` shader to customize the color gradient based on velocity
+- **Adjust particle count**: Pass a different count to the constructor (GPU supports up to 16M particles)
+- **CPU fallback**: Use `CPUParticles` for browsers without WebGL2 support
+
+### License
+
+This code is licensed under the [Apache License 2.0](../LICENSE). You are free to:
+- ✅ Use in personal and commercial projects
+- ✅ Modify and adapt for your needs
+- ✅ Distribute in your games
+- ✅ Use without attribution (though attribution is appreciated)
+
+See the full license text in the [LICENSE](../LICENSE) file at the repository root.
