@@ -7,6 +7,7 @@ import { createUpgrades } from "./config/upgrades.ts";
 import { updateCombat } from "./systems/combat.ts";
 import { initAssist } from "./systems/assist.ts";
 import { debugPing, formatNumber, updateFloatingText, updateHud } from "./systems/hud.ts";
+import { accelerationFromDirection, applyInertiaStep } from "./systems/movement.ts";
 import { updateSpawn } from "./systems/spawn.ts";
 import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
 import {
@@ -371,6 +372,8 @@ const state = {
   player: {
     x: app.renderer.width / 2,
     y: app.renderer.height / 2,
+    vx: 0,
+    vy: 0,
     radius: 12,
     ...BASE_PLAYER_STATS,
     hp: 120,
@@ -945,9 +948,9 @@ function findBestFragment() {
  * Calculate intelligent player movement based on health, threats, and objectives.
  * Implements survival mode when health is low, balances fragment collection with danger.
  * @param {number} dt - Delta time in seconds since last frame
- * @returns {{ moveX: number, moveY: number }} Object containing movement deltas:
- *   - moveX: Horizontal movement distance for this frame
- *   - moveY: Vertical movement distance for this frame
+ * @returns {{ moveX: number, moveY: number }} Object containing directional movement weights:
+ *   - moveX: Horizontal movement weight for this frame (unitless direction)
+ *   - moveY: Vertical movement weight for this frame (unitless direction)
  */
 function calculatePlayerMovement(dt) {
   const healthRatio = state.player.hp / state.player.maxHp;
@@ -963,13 +966,13 @@ function calculatePlayerMovement(dt) {
 
   if (isSurvivalMode) {
     // In survival mode, heavily weight escape direction
-    moveX = danger.dx * state.player.speed * dt * 1.3;
-    moveY = danger.dy * state.player.speed * dt * 1.3;
+    moveX = danger.dx * 1.3;
+    moveY = danger.dy * 1.3;
 
     // Add some randomness to avoid predictable patterns
     const jitter = 0.2;
-    moveX += (Math.random() - 0.5) * jitter * state.player.speed * dt;
-    moveY += (Math.random() - 0.5) * jitter * state.player.speed * dt;
+    moveX += (Math.random() - 0.5) * jitter;
+    moveY += (Math.random() - 0.5) * jitter;
   } else {
     // Normal mode: balance fragment collection with safety
     const targetFragment = findBestFragment();
@@ -990,14 +993,14 @@ function calculatePlayerMovement(dt) {
 
       // Normalize blended direction
       const blendMag = Math.hypot(fragmentDx, fragmentDy) || 1;
-      moveX = (fragmentDx / blendMag) * state.player.speed * dt * 1.1;
-      moveY = (fragmentDy / blendMag) * state.player.speed * dt * 1.1;
+      moveX = (fragmentDx / blendMag) * 1.1;
+      moveY = (fragmentDy / blendMag) * 1.1;
     } else {
       // No fragments: patrol pattern with danger awareness
       if (danger.threat > 0.3) {
         // Move away from danger
-        moveX = danger.dx * state.player.speed * dt * 0.9;
-        moveY = danger.dy * state.player.speed * dt * 0.9;
+        moveX = danger.dx * 0.9;
+        moveY = danger.dy * 0.9;
       } else {
         // Patrol in smooth orbit pattern toward center
         const centerX = width / 2;
@@ -1013,14 +1016,18 @@ function calculatePlayerMovement(dt) {
 
         // Stronger pull toward center when far from it
         const centerPull = Math.min(0.5, distToCenter / 300);
-        moveX = (orbitMoveX * (1 - centerPull) + (toCenterX / distToCenter) * centerPull) * state.player.speed * dt;
-        moveY = (orbitMoveY * (1 - centerPull) + (toCenterY / distToCenter) * centerPull) * state.player.speed * dt;
+        moveX = (orbitMoveX * (1 - centerPull) + (toCenterX / distToCenter) * centerPull);
+        moveY = (orbitMoveY * (1 - centerPull) + (toCenterY / distToCenter) * centerPull);
       }
     }
   }
 
   return { moveX, moveY };
 }
+
+const PLAYER_ACCELERATION_MULT = 4.2;
+const PLAYER_FRICTION = 2.5;
+const PLAYER_MAX_SPEED_MULT = 1.8;
 
 function update(dt) {
   if (!state.running) return;
@@ -1031,8 +1038,22 @@ function update(dt) {
 
   // Use intelligent movement system
   const movement = calculatePlayerMovement(dt);
-  state.player.x += movement.moveX;
-  state.player.y += movement.moveY;
+  const acceleration = accelerationFromDirection(
+    movement,
+    state.player.speed * PLAYER_ACCELERATION_MULT
+  );
+  const nextVelocity = applyInertiaStep({
+    velocity: { vx: state.player.vx, vy: state.player.vy },
+    acceleration,
+    friction: PLAYER_FRICTION,
+    maxSpeed: state.player.speed * PLAYER_MAX_SPEED_MULT,
+    dt
+  });
+
+  state.player.vx = nextVelocity.vx;
+  state.player.vy = nextVelocity.vy;
+  state.player.x += state.player.vx * dt;
+  state.player.y += state.player.vy * dt;
   clampPlayerToBounds();
 
   updateCombat(state, dt, canvas);
@@ -1063,6 +1084,8 @@ function softReset() {
   state.wave = 1;
   state.player.hp = state.player.maxHp;
   state.player.fireTimer = 0;
+  state.player.vx = 0;
+  state.player.vy = 0;
   state.player.x = app.renderer.width / 2;
   state.player.y = app.renderer.height / 2;
   state.enemies = [];

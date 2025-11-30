@@ -20,6 +20,8 @@ export interface PlayerStats {
 export interface Player extends PlayerStats {
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   radius: number;
   hp: number;
   maxHp: number;
