@@ -37,6 +37,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     player: {
       x: canvasWidth / 2,
       y: canvasHeight / 2,
+      vx: 0,
+      vy: 0,
       radius: PLAYER_RADIUS,
       ...BASE_PLAYER_STATS,
       hp: INITIAL_HP,
@@ -88,6 +90,8 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.player.fireTimer = 0;
   state.player.x = canvasWidth / 2;
   state.player.y = canvasHeight / 2;
+  state.player.vx = 0;
+  state.player.vy = 0;
   state.enemies = [];
   state.bullets = [];
   state.floatingText = [];
