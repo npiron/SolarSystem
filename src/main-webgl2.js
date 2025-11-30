@@ -139,43 +139,10 @@ const state = {
   running: true,
   wave: 1,
   time: 0,
-  enemies: [] as Array<{
-    x;
-    y;
-    radius;
-    hp;
-    maxHp;
-    elite?;
-    hitThisFrame?;
-    vx;
-    vy;
-    damage;
-    reward;
-  }>,
-  bullets: [] as Array<{
-    x;
-    y;
-    vx;
-    vy;
-    life;
-    pierce;
-    damage;
-    crit;
-  }>,
-  floatingText: [] as Array<{
-    x;
-    y;
-    text | number;
-    life;
-    color?;
-  }>,
-  fragmentsOrbs: [] as Array<{
-    x;
-    y;
-    vx;
-    vy;
-    value;
-  }>,
+  enemies: [],
+  bullets: [],
+  floatingText: [],
+  fragmentsOrbs: [],
   gainTicker: { fragments: 0, essence: 0, timer: 0 },
   runStats: {
     kills: 0,
@@ -205,7 +172,7 @@ const state = {
     firstPurchase: false,
     firstPrestige: false,
     bestWave: 1,
-    completed: [] as string[]
+    completed: []
   },
   spawnTimer: 0,
   overlayFade: 0.12,
@@ -217,7 +184,7 @@ const state = {
   },
   performance: {
     fps: 0,
-    history: [] as number[],
+    history: [],
     maxSamples: 240,
     graphVisible: false
   },
@@ -298,14 +265,14 @@ function loadSave() {
     state.player.critMultiplier = save.player?.critMultiplier ?? state.player.critMultiplier;
     state.player.speed = save.player?.speed ?? state.player.speed;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
-    save.generators?.forEach((g: { level; cost }, idx) => {
+    save.generators?.forEach((g, idx) => {
       if (generators[idx]) {
         generators[idx].level = g.level || 0;
         generators[idx].rate = computeGeneratorRate(generators[idx]);
         generators[idx].cost = g.cost || generators[idx].cost;
       }
     });
-    save.upgrades?.forEach((entry: { level?; cost? } | number, idx) => {
+    save.upgrades?.forEach((entry, idx) => {
       const upgrade = upgrades[idx];
       if (!upgrade) return;
       if (typeof entry === "number") {
@@ -390,7 +357,7 @@ function grantOfflineGains(seconds) {
 
 function applyProgressionEffects() {
   Object.entries(BASE_PLAYER_STATS).forEach(([key, value]) => {
-    (state.player as )[key] = value;
+    state.player[key] = value;
   });
 
   upgrades.forEach((upgrade) => {
@@ -417,7 +384,7 @@ function applyUpgradeEffects() {
   // Placeholder - upgrade effects are applied in applyProgressionEffects
 }
 
-function computeGeneratorRate(generator: { baseRate; level }) {
+function computeGeneratorRate(generator) {
   return generator.baseRate * Math.pow(1.10, generator.level) * state.resources.idleMultiplier * talentBonuses.economy;
 }
 
@@ -520,7 +487,7 @@ const hudContext = {
   canUnlockTalent
 };
 
-function buyGenerator(gen: typeof generators[0]) {
+function buyGenerator(gen) {
   if (state.resources.essence < gen.cost) return;
   state.resources.essence -= gen.cost;
   gen.level += 1;
@@ -558,7 +525,7 @@ function renderGenerators() {
   });
 }
 
-function buyUpgrade(upgrade: typeof upgrades[0]) {
+function buyUpgrade(upgrade) {
   if (upgrade.level >= upgrade.max) return;
   if (state.resources.fragments < upgrade.cost) return;
   state.resources.fragments -= upgrade.cost;
@@ -594,7 +561,7 @@ function renderUpgrades() {
   });
 }
 
-function buyTalent(talent: typeof talents[0]) {
+function buyTalent(talent) {
   if (!unlockTalent(talent, talents, state)) return false;
   applyProgressionEffects();
   refreshGeneratorRates();
@@ -750,7 +717,7 @@ function prestige() {
 
 function render() {
   // Render game using WebGL2 renderer
-  gameRenderer.render(state as any);
+  gameRenderer.render(state);
   
   // Render particles on top
   gameRenderer.renderParticles();
@@ -787,7 +754,7 @@ function initUI() {
     if (toggleHudPulseBtn) toggleHudPulseBtn.textContent = state.addons.hudPulse ? "💫 Pulse ON" : "💫 Pulse OFF";
   };
 
-  const toggleAddon = (key: keyof typeof state.addons) => {
+  const toggleAddon = (key) => {
     state.addons[key] = !state.addons[key];
     syncAddonToggles();
     playUiToggle();
@@ -898,7 +865,7 @@ function initUI() {
 
   // Initialize collapsible sections
   const COLLAPSIBLE_KEY = 'neo-survivors-collapsible';
-  let collapsibleStates:  = {};
+  let collapsibleStates = {};
   try {
     const saved = localStorage.getItem(COLLAPSIBLE_KEY);
     if (saved) {
