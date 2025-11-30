@@ -1,7 +1,7 @@
 /**
  * Player movement logic and AI behavior
  */
-import type { GameState, FragmentOrb } from "./types/index.ts";
+import type { GameState, FragmentOrb, Canvas } from "./types/index.ts";
 
 /**
  * Find the nearest fragment orb to the player
@@ -130,7 +130,8 @@ interface MovementResult {
  *   - dirX: Desired horizontal direction (unitless, centered around -1 to 1)
  *   - dirY: Desired vertical direction (unitless, centered around -1 to 1)
  */
-export function calculatePlayerMovement(state: GameState, canvasWidth: number, canvasHeight: number): MovementResult {
+export function calculatePlayerMovement(state: GameState, canvas: Canvas): MovementResult {
+  const { width: canvasWidth, height: canvasHeight } = canvas;
   const healthRatio = state.player.hp / state.player.maxHp;
   const danger = calculateDangerVector(state);
 
@@ -205,7 +206,8 @@ export function calculatePlayerMovement(state: GameState, canvasWidth: number, c
 /**
  * Clamp the player position to stay within canvas bounds
  */
-export function clampPlayerToBounds(state: GameState, canvasWidth: number, canvasHeight: number): void {
-  state.player.x = Math.max(30, Math.min(canvasWidth - 30, state.player.x));
-  state.player.y = Math.max(30, Math.min(canvasHeight - 30, state.player.y));
+export function clampPlayerToBounds(state: GameState, canvas: Canvas): void {
+  const { width, height } = canvas;
+  state.player.x = Math.max(30, Math.min(width - 30, state.player.x));
+  state.player.y = Math.max(30, Math.min(height - 30, state.player.y));
 }

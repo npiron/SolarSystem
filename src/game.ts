@@ -36,14 +36,15 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   if (!state.running) return;
 
   const { canvasWidth, canvasHeight, generators, talentBonuses, assistUi } = context;
+  const canvas = { width: canvasWidth, height: canvasHeight };
 
   state.time += dt;
 
   // Update enemy spawning
-  updateSpawn(state, dt, { width: canvasWidth, height: canvasHeight });
+  updateSpawn(state, dt, canvas);
 
   // Get the desired movement direction using AI
-  const movement = calculatePlayerMovement(state, canvasWidth, canvasHeight);
+  const movement = calculatePlayerMovement(state, canvas);
   const targetVx = movement.dirX * state.player.speed;
   const targetVy = movement.dirY * state.player.speed;
 
@@ -71,10 +72,10 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   // Update position based on velocity
   state.player.x += state.player.vx * dt;
   state.player.y += state.player.vy * dt;
-  clampPlayerToBounds(state, canvasWidth, canvasHeight);
+  clampPlayerToBounds(state, canvas);
 
   // Update combat (bullets, enemies, collisions)
-  updateCombat(state, dt, { width: canvasWidth, height: canvasHeight });
+  updateCombat(state, dt, canvas);
 
   // Track first shot for assist system
   if (!state.assist.firstShot && state.bullets.length > 0) {

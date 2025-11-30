@@ -145,7 +145,7 @@ function resizeCanvas(center = false): void {
     state.player.x = width / 2;
     state.player.y = height / 2;
   }
-  clampPlayerToBounds(state, width, height);
+  clampPlayerToBounds(state, { width, height });
   if (state.performance.graphVisible && fpsCanvas) {
     drawFpsGraph(fpsCanvas, state.performance);
   }
