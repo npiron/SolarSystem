@@ -19,8 +19,8 @@ export function beginFrame() {
   renderer?.beginFrame();
 }
 
-export function render() {
-  renderer?.render();
+export function render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number) {
+  renderer?.render(addons, time);
 }
 
 export function pushCircle(options: ShapeInstance) {
