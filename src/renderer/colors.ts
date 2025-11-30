@@ -12,6 +12,15 @@ export const colors = {
   fragment: PIXI.utils.string2hex("#ff7ac3"),
   fragmentRing: PIXI.utils.string2hex("#ff7ac3"),
   elite: PIXI.utils.string2hex("#ff9d6c"),
+  // Enemy type colors - distinct hues for visual differentiation
+  enemyWeak: PIXI.utils.string2hex("#a5d6a7"),     // Green - easy to kill
+  enemyNormal: PIXI.utils.string2hex("#90caf9"),   // Blue - standard threat
+  enemyStrong: PIXI.utils.string2hex("#ce93d8"),   // Purple - dangerous
+  enemyElite: PIXI.utils.string2hex("#ffab91"),    // Orange - boss-like
+  // Fragment value colors - brightness indicates value
+  fragmentLow: PIXI.utils.string2hex("#b39ddb"),   // Light purple - low value
+  fragmentMedium: PIXI.utils.string2hex("#ff7ac3"), // Pink - medium value
+  fragmentHigh: PIXI.utils.string2hex("#ffd54f"),  // Gold - high value
   hpBg: PIXI.utils.string2hex("#0b1226"),
   hpFg: PIXI.utils.string2hex("#a3e635"),
   hudBg: PIXI.utils.string2hex("#0d1530"),
@@ -41,5 +50,17 @@ export const webglColors = {
   fragment: toVec4(colors.fragment, 1),
   fragmentRing: toVec4(colors.fragmentRing, 0.35),
   elite: toVec4(colors.elite, 1),
+  // Enemy type colors for WebGL
+  enemyWeak: toVec4(colors.enemyWeak, 1),
+  enemyNormal: toVec4(colors.enemyNormal, 1),
+  enemyStrong: toVec4(colors.enemyStrong, 1),
+  enemyElite: toVec4(colors.enemyElite, 1),
+  // Fragment value colors for WebGL
+  fragmentLow: toVec4(colors.fragmentLow, 1),
+  fragmentMedium: toVec4(colors.fragmentMedium, 1),
+  fragmentHigh: toVec4(colors.fragmentHigh, 1),
+  fragmentRingLow: toVec4(colors.fragmentLow, 0.35),
+  fragmentRingMedium: toVec4(colors.fragmentRing, 0.35),
+  fragmentRingHigh: toVec4(colors.fragmentHigh, 0.35),
   transparent: [0, 0, 0, 0]
 };

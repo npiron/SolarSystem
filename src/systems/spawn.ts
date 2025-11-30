@@ -100,6 +100,42 @@ export function calculateSpawnPosition(
   return { x, y };
 }
 
+import type { EnemyType } from "../types/index.ts";
+
+/**
+ * Determine enemy type based on HP relative to wave baseline.
+ * - weak: HP below 70% of wave baseline
+ * - normal: HP between 70% and 130% of wave baseline
+ * - strong: HP above 130% of wave baseline
+ * - elite: flagged as elite (overrides other types)
+ */
+function determineEnemyType(hp: number, wave: number, isElite: boolean): EnemyType {
+  if (isElite) return 'elite';
+  
+  const baselineHp = (25 + wave * 6) * (1 + wave * 0.015);
+  const ratio = hp / baselineHp;
+  
+  if (ratio < 0.7) return 'weak';
+  if (ratio > 1.3) return 'strong';
+  return 'normal';
+}
+
+/**
+ * Calculate enemy radius based on type for visual differentiation.
+ * - weak: smaller (8)
+ * - normal: base size (10)
+ * - strong: larger (12)
+ * - elite: largest (14)
+ */
+function getEnemyRadius(type: EnemyType): number {
+  switch (type) {
+    case 'weak': return 8;
+    case 'normal': return 10;
+    case 'strong': return 12;
+    case 'elite': return 14;
+  }
+}
+
 export function spawnEnemy(
   state: GameState,
   canvas: Canvas,
@@ -119,20 +155,30 @@ export function spawnEnemy(
 
   const elite = Math.random() < chance;
   const waveScale = 1 + state.wave * 0.015;
-  const hp = (25 + state.wave * 6) * waveScale * (elite ? 2.5 : 1);
+  
+  // Add variance to HP for more diversity (±30%)
+  const hpVariance = 0.7 + Math.random() * 0.6;
+  const baseHp = (25 + state.wave * 6) * waveScale;
+  const hp = baseHp * hpVariance * (elite ? 2.5 : 1);
+  
   const speed = (45 + state.wave * 1.5) * (elite ? 0.85 : 1);
   const fireDelay = Math.max(1.4, (elite ? 3.2 : 4.2) - state.wave * 0.05);
+  
+  const type = determineEnemyType(hp, state.wave, elite);
+  const radius = getEnemyRadius(type);
+  
   const enemy: Enemy = {
     x,
     y,
-    radius: 10,
+    radius,
     hp,
     maxHp: hp,
     speed,
     reward: (2.5 + state.wave * 0.6) * (elite ? 2.5 : 1),
     fireTimer: fireDelay * Math.random(),
     fireDelay,
-    elite
+    elite,
+    type
   };
   state.enemies.push(enemy);
 }
