@@ -144,8 +144,40 @@ export class WebGL2TextRenderer {
     }
     
     // Calculate atlas dimensions (approximate square)
+    // Start with estimated size and increase if needed
     const totalArea = glyphSizes.reduce((sum, g) => sum + g.width * g.height, 0);
-    const atlasSize = Math.max(256, Math.pow(2, Math.ceil(Math.log2(Math.sqrt(totalArea * 1.3)))));
+    let atlasSize = Math.max(256, Math.pow(2, Math.ceil(Math.log2(Math.sqrt(totalArea * 1.3)))));
+    const maxAtlasSize = 4096; // WebGL2 guaranteed minimum texture size
+    
+    // Try to fit all glyphs, increasing atlas size if needed
+    let fitsAll = false;
+    while (!fitsAll && atlasSize <= maxAtlasSize) {
+      let testX = 0;
+      let testY = 0;
+      let testRowHeight = 0;
+      fitsAll = true;
+      
+      for (const glyph of glyphSizes) {
+        if (testX + glyph.width > atlasSize) {
+          testX = 0;
+          testY += testRowHeight;
+          testRowHeight = 0;
+        }
+        if (testY + glyph.height > atlasSize) {
+          fitsAll = false;
+          atlasSize *= 2;
+          break;
+        }
+        testX += glyph.width;
+        testRowHeight = Math.max(testRowHeight, glyph.height);
+      }
+    }
+    
+    if (!fitsAll) {
+      console.warn(`WebGL2TextRenderer: Atlas size ${atlasSize} exceeds maximum, some glyphs may be missing`);
+      atlasSize = maxAtlasSize;
+    }
+    
     this.atlasWidth = atlasSize;
     this.atlasHeight = atlasSize;
     this.lineHeight = fontSize + totalPadding;

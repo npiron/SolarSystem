@@ -1,22 +1,5 @@
 import { describe, expect, it } from "vitest";
-
-/**
- * Convert a CSS hex color string to a WebGL vec4 color array.
- * This is a copy of the function from main.js for testing.
- */
-function hexStringToVec4(hexStr: string, alpha = 1): readonly [number, number, number, number] {
-  const hex = hexStr.replace("#", "");
-  const fullHex = hex.length === 3
-    ? hex.split("").map((c) => c + c).join("")
-    : hex;
-  const value = parseInt(fullHex, 16);
-  return [
-    ((value >> 16) & 0xff) / 255,
-    ((value >> 8) & 0xff) / 255,
-    (value & 0xff) / 255,
-    alpha
-  ];
-}
+import { hexStringToVec4 } from "../src/renderer/colorUtils.ts";
 
 describe("hexStringToVec4", () => {
   it("converts 6-digit hex to vec4", () => {

@@ -19,28 +19,8 @@ import {
 } from "./systems/talents.ts";
 import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
-import { colors, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
+import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
-
-/**
- * Convert a CSS hex color string to a WebGL vec4 color array.
- * @param {string} hexStr - Hex color string (e.g., "#fef08a" or "#fff")
- * @param {number} alpha - Alpha value (0-1)
- * @returns {readonly [number, number, number, number]} RGBA color array with values 0-1
- */
-function hexStringToVec4(hexStr, alpha = 1) {
-  const hex = hexStr.replace("#", "");
-  const fullHex = hex.length === 3
-    ? hex.split("").map((c) => c + c).join("")
-    : hex;
-  const value = parseInt(fullHex, 16);
-  return [
-    ((value >> 16) & 0xff) / 255,
-    ((value >> 8) & 0xff) / 255,
-    (value & 0xff) / 255,
-    alpha
-  ];
-}
 
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");

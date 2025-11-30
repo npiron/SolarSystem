@@ -1,5 +1,6 @@
 export * from "./buffers.ts";
 export * from "./circles.ts";
+export * from "./colorUtils.ts";
 export * from "./lines.ts";
 export * from "./renderer.ts";
 export * from "./shaders.ts";

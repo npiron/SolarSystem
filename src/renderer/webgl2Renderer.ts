@@ -195,6 +195,27 @@ export class WebGL2Renderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
+  /**
+   * Clean up WebGL resources
+   */
+  dispose() {
+    const gl = this.gl;
+    
+    // Dispose text renderer
+    this.textRenderer.dispose();
+    
+    // Clean up grid resources
+    if (this.gridVao) gl.deleteVertexArray(this.gridVao);
+    if (this.gridBuffer) gl.deleteBuffer(this.gridBuffer);
+    if (this.gridProgram) gl.deleteProgram(this.gridProgram);
+    
+    // Clean up circles resources
+    if (this.circlesVao) gl.deleteVertexArray(this.circlesVao);
+    if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);
+    if (this.circlesInstanceBuffer) gl.deleteBuffer(this.circlesInstanceBuffer);
+    if (this.circlesProgram) gl.deleteProgram(this.circlesProgram);
+  }
+
   private renderGrid() {
     if (this.gridNeedsRebuild) {
       this.buildGrid();
