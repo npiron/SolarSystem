@@ -506,24 +506,6 @@ button:disabled {
   font-size: 12px;
 }
 
-.version-badge {
-  position: fixed;
-  right: 10px;
-  bottom: 56px;
-  padding: 4px 8px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  border-radius: 6px;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  z-index: 20;
-  pointer-events: none;
-}
-
 .assist-list {
   list-style: none;
   margin: 0;
@@ -593,6 +575,420 @@ button:disabled {
 }
 
 .muted { color: var(--muted); }
+
+/* Version badge with doc button */
+.version-container {
+  position: fixed;
+  right: 10px;
+  bottom: 56px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 20;
+}
+
+.version-badge {
+  position: static;
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.doc-btn {
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.doc-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 209, 102, 0.6);
+  color: #ffd166;
+  transform: translateY(-1px);
+}
+
+/* Documentation Dialog */
+.doc-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  padding: 0;
+  border: 2px solid rgba(255, 220, 170, 0.35);
+  border-radius: 16px;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 45%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95));
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-dialog::backdrop {
+  background: rgba(11, 18, 36, 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.doc-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(90deg, rgba(255, 122, 195, 0.12), rgba(125, 211, 252, 0.12), rgba(255, 209, 102, 0.12));
+}
+
+.doc-dialog-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #fff2c8;
+}
+
+.doc-close-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doc-close-btn:hover {
+  background: rgba(244, 63, 94, 0.3);
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #fca5a5;
+}
+
+/* Tab navigation */
+.doc-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+}
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.doc-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.doc-tab.active {
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.2), rgba(125, 211, 252, 0.15));
+  border-color: rgba(255, 209, 102, 0.5);
+  color: #ffd166;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+.tab-label {
+  font-size: 12px;
+}
+
+/* Tab content */
+.doc-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.doc-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.doc-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.doc-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.doc-content h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: #fff2c8;
+}
+
+.doc-intro {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.doc-section {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.doc-section h4 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #7dd3fc;
+}
+
+.doc-section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.doc-section a {
+  color: #7dd3fc;
+  text-decoration: none;
+}
+
+.doc-section a:hover {
+  text-decoration: underline;
+}
+
+/* Code documentation items */
+.doc-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.doc-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.doc-item code {
+  display: block;
+  margin-bottom: 4px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 209, 102, 0.2);
+  border-radius: 6px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 12px;
+  color: #ffd166;
+  word-break: break-word;
+}
+
+.doc-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Wiki items */
+.wiki-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.wiki-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.wiki-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #f472b6;
+  font-size: 13px;
+}
+
+.wiki-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wiki-item code {
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 11px;
+  color: #ffd166;
+}
+
+/* Changelog items */
+.changelog-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.changelog-item:last-child {
+  margin-bottom: 0;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-add {
+  background: rgba(110, 231, 183, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(110, 231, 183, 0.4);
+}
+
+.badge-fix {
+  background: rgba(125, 211, 252, 0.2);
+  color: #7dd3fc;
+  border: 1px solid rgba(125, 211, 252, 0.4);
+}
+
+.badge-change {
+  background: rgba(255, 209, 102, 0.2);
+  color: #ffd166;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+}
+
+.changelog-item p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Roadmap items */
+.roadmap-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.roadmap-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.roadmap-item strong {
+  color: #f472b6;
+  font-size: 13px;
+}
+
+.roadmap-item p {
+  width: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-planned {
+  background: rgba(255, 209, 102, 0.2);
+  color: #ffd166;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+}
+
+.status-idea {
+  background: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+.status-wip {
+  background: rgba(125, 211, 252, 0.2);
+  color: #7dd3fc;
+  border: 1px solid rgba(125, 211, 252, 0.4);
+}
+
+/* Responsive dialog */
+@media (max-width: 640px) {
+  .doc-dialog {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .doc-tabs {
+    padding: 8px 12px;
+  }
+  
+  .doc-tab {
+    padding: 6px 10px;
+  }
+  
+  .tab-label {
+    display: none;
+  }
+  
+  .doc-content {
+    padding: 16px;
+  }
+}
 
 @media (max-width: 1200px) {
   body { overflow: auto; height: auto; }

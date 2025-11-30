@@ -164,8 +164,188 @@
     <p>Made for fun · Pas de serveur · Tout reste dans tes cookies</p>
   </footer>
 
-  <div id="versionBadge" class="version-badge"></div>
+  <div class="version-container">
+    <button id="docBtn" class="doc-btn" aria-label="Ouvrir la documentation">📚</button>
+    <div id="versionBadge" class="version-badge"></div>
+  </div>
   <div id="assistBubbles" class="assist-bubbles"></div>
+
+  <!-- Documentation dialog (works independently of main.js) -->
+  <dialog id="docDialog" class="doc-dialog">
+    <div class="doc-dialog-header">
+      <h2>📚 Documentation</h2>
+      <button class="doc-close-btn" aria-label="Fermer" onclick="document.getElementById('docDialog').close()">✕</button>
+    </div>
+    <div class="doc-tabs" id="docTabs">
+      <button class="doc-tab active" data-tab="code"><span class="tab-icon">📝</span><span class="tab-label">Code</span></button>
+      <button class="doc-tab" data-tab="wiki"><span class="tab-icon">📖</span><span class="tab-label">Wiki</span></button>
+      <button class="doc-tab" data-tab="changelog"><span class="tab-icon">📋</span><span class="tab-label">Versions</span></button>
+      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon">🗺️</span><span class="tab-label">Roadmap</span></button>
+    </div>
+    <div class="doc-content" id="docContent"></div>
+  </dialog>
+
+  <script>
+    // Documentation dialog - works independently of main game modules
+    (function() {
+      const VERSION = "v0.1.0";
+      const dialog = document.getElementById('docDialog');
+      const docBtn = document.getElementById('docBtn');
+      const tabs = document.getElementById('docTabs');
+      const content = document.getElementById('docContent');
+      const versionBadge = document.getElementById('versionBadge');
+      
+      if (versionBadge) versionBadge.textContent = VERSION;
+
+      const tabContent = {
+        code: `
+<h3>📝 Documentation du Code</h3>
+<p class="doc-intro">API et signatures des principales fonctions du jeu.</p>
+<div class="doc-section">
+  <h4>⚙️ Configuration</h4>
+  <div class="doc-item"><code>STORAGE_KEY: string</code><p>Clé localStorage pour la sauvegarde (<code>"neo-survivors-save"</code>)</p></div>
+  <div class="doc-item"><code>VERSION: string</code><p>Version actuelle du jeu (<code>${VERSION}</code>)</p></div>
+  <div class="doc-item"><code>MAX_OFFLINE_SECONDS: number</code><p>Durée max des gains hors-ligne (3 heures)</p></div>
+</div>
+<div class="doc-section">
+  <h4>🎮 Systèmes de Jeu</h4>
+  <div class="doc-item"><code>updateCombat(state: GameState, dt: number, canvas: HTMLCanvasElement): void</code><p>Met à jour la logique de combat : collisions, dégâts, mort des ennemis.</p></div>
+  <div class="doc-item"><code>updateSpawn(state: GameState, dt: number, canvas: HTMLCanvasElement): void</code><p>Gère le spawn des ennemis selon la vague courante.</p></div>
+  <div class="doc-item"><code>updateHud(state: GameState, context: HudContext): void</code><p>Actualise l'affichage HUD (ressources, stats, boutons).</p></div>
+</div>
+<div class="doc-section">
+  <h4>💾 Persistance</h4>
+  <div class="doc-item"><code>loadSave(): void</code><p>Charge la sauvegarde depuis localStorage.</p></div>
+  <div class="doc-item"><code>saveGame(): void</code><p>Sauvegarde l'état du jeu dans localStorage.</p></div>
+  <div class="doc-item"><code>grantOfflineGains(seconds: number): void</code><p>Applique les gains passifs accumulés hors-ligne.</p></div>
+</div>
+<div class="doc-section">
+  <h4>⚡ Progression</h4>
+  <div class="doc-item"><code>computeIdleRate(): number</code><p>Calcule le taux de production passive total (⚡/s).</p></div>
+  <div class="doc-item"><code>computeTalentBonuses(talents: Talent[]): TalentBonuses</code><p>Calcule les bonus cumulés des talents débloqués.</p></div>
+  <div class="doc-item"><code>prestige(): void</code><p>Lance une Consolidation et augmente le multiplicateur passif.</p></div>
+</div>
+<div class="doc-section">
+  <h4>🎨 Rendu</h4>
+  <div class="doc-item"><code>WebGL2Renderer.create(canvas: HTMLCanvasElement): WebGL2Renderer</code><p>Crée une instance du renderer WebGL2 optimisé.</p></div>
+  <div class="doc-item"><code>addFloatingText(state, text, x, y, color?): void</code><p>Ajoute un texte flottant animé (dégâts, gains).</p></div>
+</div>
+<div class="doc-section">
+  <h4>🔊 Audio</h4>
+  <div class="doc-item"><code>initSound(enabled: boolean): void</code><p>Initialise le système audio procédural.</p></div>
+  <div class="doc-item"><code>playPurchase(): void</code><p>Joue le son d'achat.</p></div>
+</div>`,
+
+        wiki: `
+<h3>📖 Wiki du Jeu</h3>
+<p class="doc-intro">Documentation complète de Neo Survivors Idle.</p>
+<div class="doc-section">
+  <h4>🚀 Démarrage</h4>
+  <div class="wiki-item"><strong>Démarrage Rapide</strong><p>Ouvrez <code>index.html</code> ou lancez un serveur local avec <code>python -m http.server 8000</code>.</p></div>
+  <div class="wiki-item"><strong>Premiers Pas</strong><p>Le personnage se déplace et tire automatiquement. Achetez des générateurs avec l'Essence ⚡ et des upgrades avec les Fragments ✦.</p></div>
+</div>
+<div class="doc-section">
+  <h4>🎯 Mécaniques de Jeu</h4>
+  <div class="wiki-item"><strong>Combat Automatique</strong><p>Projectiles rotatifs autour du joueur, dégâts critiques, perforation. Le joueur se déplace vers les fragments à collecter.</p></div>
+  <div class="wiki-item"><strong>Vagues Infinies</strong><p>Les ennemis spawn depuis les bords. Fréquence et HP augmentent avec la vague. Les élites donnent ×3 récompenses.</p></div>
+</div>
+<div class="doc-section">
+  <h4>💰 Économie</h4>
+  <div class="wiki-item"><strong>⚡ Essence</strong><p>Produite passivement par les générateurs. Sert à acheter plus de générateurs.</p></div>
+  <div class="wiki-item"><strong>✦ Fragments</strong><p>Droppés par les ennemis, aspirés automatiquement. Servent aux upgrades et talents.</p></div>
+</div>
+<div class="doc-section">
+  <h4>⟳ Prestige</h4>
+  <div class="wiki-item"><strong>Consolidation</strong><p>Remet la vague à 1 mais augmente le multiplicateur passif permanent. Formule : <code>1 + √(vague) × 0.25</code>.</p></div>
+</div>
+<div class="doc-section">
+  <h4>🌳 Talents</h4>
+  <div class="wiki-item"><strong>Arbre de Talents</strong><p>Synergies persistantes : dégâts, cadence, économie, défense. Chaque talent a des prérequis et un coût en Fragments.</p></div>
+</div>
+<div class="doc-section">
+  <h4>❓ FAQ</h4>
+  <div class="wiki-item"><strong>Sauvegarde</strong><p>Automatique toutes les 5 secondes dans localStorage. Jusqu'à 3h de gains hors-ligne.</p></div>
+  <div class="wiki-item"><strong>Performance</strong><p>Mode Perfo réduit les effets visuels. Cible : 60 FPS, acceptable : 30+ FPS.</p></div>
+</div>`,
+
+        changelog: `
+<h3>📋 Historique des Versions</h3>
+<p class="doc-intro">Toutes les modifications notables du jeu.</p>
+<div class="doc-section">
+  <h4>🚧 [Unreleased]</h4>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Dialogue de documentation avec onglets (code, wiki, versions, roadmap).</p></div>
+</div>
+<div class="doc-section">
+  <h4>🎉 [v0.1.0] - 2025-11-27</h4>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Première version jouable de Neo Survivors Idle : auto-battler idle 100% client-side.</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Boucle de combat infinie avec déplacement automatique, tirs circulaires, vagues progressives.</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Fragments aspirés par aimant et essence générée passivement.</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Arbre d'améliorations et générateurs configurables.</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Mode performance pour limiter les effets visuels.</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>HUD complet (vague, kills, ressources, badge de version).</p></div>
+  <div class="changelog-item"><span class="badge badge-add">Ajout</span><p>Prestige de consolidation et outils de debug intégrés.</p></div>
+</div>`,
+
+        roadmap: `
+<h3>🗺️ Roadmap</h3>
+<p class="doc-intro">Fonctionnalités prévues pour les prochaines versions.</p>
+<div class="doc-section">
+  <h4>📅 v0.2.0 - Amélioration de l'Expérience</h4>
+  <div class="roadmap-item"><span class="status status-planned">Planifié</span><strong>Nouveaux types d'ennemis</strong><p>Boss de fin de vague, ennemis à patterns spéciaux.</p></div>
+  <div class="roadmap-item"><span class="status status-planned">Planifié</span><strong>Système d'achievements</strong><p>Badges et récompenses pour les jalons atteints.</p></div>
+  <div class="roadmap-item"><span class="status status-planned">Planifié</span><strong>Export/Import de sauvegarde</strong><p>Possibilité de transférer sa progression entre appareils.</p></div>
+</div>
+<div class="doc-section">
+  <h4>📅 v0.3.0 - Contenu Additionnel</h4>
+  <div class="roadmap-item"><span class="status status-idea">Idée</span><strong>Nouveaux talents</strong><p>Extension de l'arbre de talents avec de nouvelles synergies.</p></div>
+  <div class="roadmap-item"><span class="status status-idea">Idée</span><strong>Skins de personnage</strong><p>Personnalisation visuelle du héros.</p></div>
+  <div class="roadmap-item"><span class="status status-idea">Idée</span><strong>Modes de jeu alternatifs</strong><p>Mode speedrun, mode survie chronométré.</p></div>
+</div>
+<div class="doc-section">
+  <h4>🔮 À Long Terme</h4>
+  <div class="roadmap-item"><span class="status status-idea">Idée</span><strong>Multijoueur asynchrone</strong><p>Classements et défis communautaires.</p></div>
+  <div class="roadmap-item"><span class="status status-idea">Idée</span><strong>Application mobile</strong><p>Version PWA installable sur mobile.</p></div>
+</div>
+<div class="doc-section">
+  <h4>💡 Suggérer une Fonctionnalité</h4>
+  <p>Ouvrez une issue sur le <a href="https://github.com/npiron/SolarSystem/issues" target="_blank" rel="noopener">dépôt GitHub</a> pour proposer vos idées !</p>
+</div>`
+      };
+
+      function switchTab(tabId) {
+        tabs.querySelectorAll('.doc-tab').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+        if (tabContent[tabId]) {
+          content.innerHTML = tabContent[tabId];
+        }
+      }
+
+      // Initialize with code tab
+      switchTab('code');
+
+      // Tab click handler
+      tabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('.doc-tab');
+        if (btn && btn.dataset.tab) {
+          switchTab(btn.dataset.tab);
+        }
+      });
+
+      // Open dialog button
+      docBtn.addEventListener('click', () => dialog.showModal());
+
+      // Close on backdrop click
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) dialog.close();
+      });
+
+      // Close on Escape
+      dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') dialog.close();
+      });
+    })();
+  </script>
 
   <script type="module" src="./src/main.js"></script>
 </body>
