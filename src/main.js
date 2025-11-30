@@ -1153,7 +1153,7 @@ async function bootstrap() {
     update(dt);
     updateHud(state, hudContext);
     updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
-    render();
+    render(state.addons, state.time);
 
     requestAnimationFrame(gameLoop);
   }
