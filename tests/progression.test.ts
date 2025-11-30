@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { 
-  computeGeneratorRate, 
-  computeIdleRate, 
+import {
+  computeGeneratorRate,
+  computeIdleRate,
   refreshGeneratorRates,
   applyProgressionEffects
 } from "../src/systems/progression.ts";
-import type { Generator, Upgrade, GameState } from "../src/types/index.ts";
-import type { Talent } from "../src/systems/talents.ts";
+import type { Generator, Upgrade, GameState, Talent } from "../src/types/index.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
 
 describe("progression", () => {
