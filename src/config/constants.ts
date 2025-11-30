@@ -18,8 +18,6 @@ export const BULLET_LIMITS: BulletLimits = {
   offscreenPadding: 120
 };
 
-export const palette: string[] = ["#7dd3fc", "#f9a8d4", "#ffd166", "#a5b4fc", "#6ee7b7"];
-
 export const icons: Icons = {
   essence: "⚡",
   fragments: "✦",

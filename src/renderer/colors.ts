@@ -1,34 +1,43 @@
-import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { palette } from "../config/constants.ts";
 export { hexStringToVec4, hexToVec4 } from "./colorUtils.ts";
 
-export const paletteHex = palette.map((color) => PIXI.utils.string2hex(color));
+/**
+ * Convert a CSS hex color string to a numeric hex value.
+ * @param hex - Hex color string (e.g., "#fef08a" or "#fff")
+ * @returns Numeric hex value (e.g., 0xfef08a)
+ */
+function string2hex(hex: string): number {
+  const clean = hex.replace("#", "");
+  const fullHex = clean.length === 3
+    ? clean.split("").map((c) => c + c).join("")
+    : clean;
+  return parseInt(fullHex, 16);
+}
 
 export const colors = {
-  player: PIXI.utils.string2hex("#7dd3fc"),
-  collect: PIXI.utils.string2hex("#6ee7b7"),
-  bulletLow: PIXI.utils.string2hex("#fff7ed"),
-  bulletHigh: PIXI.utils.string2hex("#ffd166"),
-  fragment: PIXI.utils.string2hex("#ff7ac3"),
-  fragmentRing: PIXI.utils.string2hex("#ff7ac3"),
-  elite: PIXI.utils.string2hex("#ff9d6c"),
+  player: string2hex("#7dd3fc"),
+  collect: string2hex("#6ee7b7"),
+  bulletLow: string2hex("#fff7ed"),
+  bulletHigh: string2hex("#ffd166"),
+  fragment: string2hex("#ff7ac3"),
+  fragmentRing: string2hex("#ff7ac3"),
+  elite: string2hex("#ff9d6c"),
   // Enemy type colors - distinct hues for visual differentiation
-  enemyWeak: PIXI.utils.string2hex("#a5d6a7"),     // Green - easy to kill
-  enemyNormal: PIXI.utils.string2hex("#90caf9"),   // Blue - standard threat
-  enemyStrong: PIXI.utils.string2hex("#ce93d8"),   // Purple - dangerous
-  enemyElite: PIXI.utils.string2hex("#ffab91"),    // Orange - boss-like
+  enemyWeak: string2hex("#a5d6a7"),     // Green - easy to kill
+  enemyNormal: string2hex("#90caf9"),   // Blue - standard threat
+  enemyStrong: string2hex("#ce93d8"),   // Purple - dangerous
+  enemyElite: string2hex("#ffab91"),    // Orange - boss-like
   // Fragment value colors - brightness indicates value
-  fragmentLow: PIXI.utils.string2hex("#b39ddb"),   // Light purple - low value
-  fragmentMedium: PIXI.utils.string2hex("#ff7ac3"), // Pink - medium value
-  fragmentHigh: PIXI.utils.string2hex("#ffd54f"),  // Gold - high value
-  hpBg: PIXI.utils.string2hex("#0b1226"),
-  hpFg: PIXI.utils.string2hex("#a3e635"),
-  hudBg: PIXI.utils.string2hex("#0d1530"),
-  hudBorder: PIXI.utils.string2hex("#e2e8f0"),
+  fragmentLow: string2hex("#b39ddb"),   // Light purple - low value
+  fragmentMedium: string2hex("#ff7ac3"), // Pink - medium value
+  fragmentHigh: string2hex("#ffd54f"),  // Gold - high value
+  hpBg: string2hex("#0b1226"),
+  hpFg: string2hex("#a3e635"),
+  hudBg: string2hex("#0d1530"),
+  hudBorder: string2hex("#e2e8f0"),
 };
 
 export function toVec4(hex: number | string, alpha = 1): [number, number, number, number] {
-  const value = typeof hex === "number" ? hex : PIXI.utils.string2hex(hex);
+  const value = typeof hex === "number" ? hex : string2hex(hex);
   return [
     ((value >> 16) & 0xff) / 255,
     ((value >> 8) & 0xff) / 255,
@@ -36,8 +45,6 @@ export function toVec4(hex: number | string, alpha = 1): [number, number, number
     alpha
   ] as const;
 }
-
-export const paletteVec4 = palette.map((color) => toVec4(color));
 
 export const webglColors = {
   player: toVec4(colors.player, 1),

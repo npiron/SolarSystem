@@ -18,7 +18,7 @@ L'interface est organisée en **trois colonnes** principales :
 │   GAUCHE      │       CENTRALE       │       DROIT           │
 │               │                      │                       │
 │  Statistiques │   Zone de combat     │   Améliorations       │
-│  Production   │   Canvas PixiJS      │   Talents             │
+│  Production   │   Canvas WebGL2      │   Talents             │
 │  Performance  │                      │   Prestige            │
 │  Générateurs  │                      │   Aide                │
 │               │                      │                       │
@@ -97,7 +97,7 @@ Liste des **générateurs** avec :
 
 ### Canvas
 
-Zone de combat rendue avec PixiJS.
+Zone de combat rendue avec WebGL2.
 
 ### Éléments Affichés
 

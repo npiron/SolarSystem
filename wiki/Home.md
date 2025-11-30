@@ -50,7 +50,7 @@ Bienvenue dans la documentation complète de **Neo Survivors Idle**, un jeu incr
 | 🌐 100% Client-side | Aucun serveur requis, tout tourne dans le navigateur |
 | 💾 Sauvegarde locale | Progression stockée via `localStorage` |
 | ⏰ Gains hors-ligne | Continue de progresser même en fermant l'onglet |
-| 🎨 Rendu PixiJS | Graphismes WebGL/Canvas fluides |
+| 🎨 Rendu WebGL2 | Graphismes WebGL2 natif fluides |
 | 🔊 Audio procédural | Sons générés dynamiquement |
 
 ---
