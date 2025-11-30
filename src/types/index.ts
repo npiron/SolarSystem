@@ -2,153 +2,8 @@
  * Type definitions for game state and configuration
  */
 
-export interface PlayerStats {
-  damage: number;
-  fireDelay: number;
-  projectiles: number;
-  regen: number;
-  range: number;
-  bulletSpeed: number;
-  damageReduction: number;
-  pierce: number;
-  collectRadius: number;
-  critChance: number;
-  critMultiplier: number;
-  speed: number;
-}
-
-export interface Player extends PlayerStats {
-  x: number;
-  y: number;
-  radius: number;
-  hp: number;
-  maxHp: number;
-  fireTimer: number;
-  spin: number;
-}
-
-export interface Bullet {
-  x: number;
-  y: number;
-  dx: number;
-  dy: number;
-  life: number;
-  pierce: number;
-}
-
-export interface Enemy {
-  x: number;
-  y: number;
-  radius: number;
-  hp: number;
-  maxHp: number;
-  speed: number;
-  reward: number;
-  fireTimer: number;
-  fireDelay: number;
-  elite: boolean;
-  hitThisFrame?: boolean;
-}
-
-export interface FragmentOrb {
-  x: number;
-  y: number;
-  value: number;
-  vx: number;
-  vy: number;
-  life: number;
-}
-
-export interface FloatingText {
-  text: string;
-  x: number;
-  y: number;
-  life: number;
-  color: string;
-}
-
-export interface GainTicker {
-  fragments: number;
-  essence: number;
-  timer: number;
-}
-
-export interface RunStats {
-  kills: number;
-  fragments: number;
-  essence: number;
-}
-
-export interface Resources {
-  essence: number;
-  fragments: number;
-  idleMultiplier: number;
-}
-
-export interface TalentBonuses {
-  damage: number;
-  fireDelay: number;
-  economy: number;
-  collectRadius: number;
-  projectiles: number;
-  regen: number;
-  damageReduction: number;
-  critChance: number;
-  critMultiplier: number;
-  bulletSpeed: number;
-}
-
-export interface Assist {
-  firstShot: boolean;
-  firstPurchase: boolean;
-  firstPrestige: boolean;
-  bestWave: number;
-  completed: string[];
-}
-
-export interface Addons {
-  glow: boolean;
-  bloom: boolean;
-  grain: boolean;
-  hudPulse: boolean;
-}
-
-export interface AudioState {
-  enabled: boolean;
-}
-
-export interface PerformanceState {
-  fps: number;
-  history: number[];
-  maxSamples: number;
-  graphVisible: boolean;
-}
-
-export interface GameState {
-  running: boolean;
-  wave: number;
-  time: number;
-  enemies: Enemy[];
-  bullets: Bullet[];
-  floatingText: FloatingText[];
-  fragmentsOrbs: FragmentOrb[];
-  gainTicker: GainTicker;
-  runStats: RunStats;
-  player: Player;
-  resources: Resources;
-  talents: {
-    bonuses: TalentBonuses;
-  };
-  assist: Assist;
-  spawnTimer: number;
-  overlayFade: number;
-  prestigeCooldown: number;
-  dead: boolean;
-  visualsLow: boolean;
-  audio: AudioState;
-  performance: PerformanceState;
-  addons: Addons;
-}
+export * from './entities';
+export * from './state';
 
 export interface Generator {
   id: string;
@@ -167,7 +22,7 @@ export interface Upgrade {
   baseCost: number;
   level: number;
   max: number;
-  apply: (state: { player: PlayerStats }) => void;
+  apply: (state: { player: import('./entities').PlayerStats }) => void;
 }
 
 export interface TalentEffect {
@@ -227,7 +82,7 @@ export interface HudContext {
   canUnlockTalent: (
     talent: Talent,
     talents: Talent[],
-    resources: Resources
+    resources: import('./state').Resources
   ) => boolean;
 }
 
