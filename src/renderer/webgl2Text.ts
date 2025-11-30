@@ -142,7 +142,7 @@ export class WebGL2TextRenderer {
       }
     }
     
-    // Start position (centered horizontally, bottom-aligned as in PixiJS anchor 0.5, 1)
+    // Start position (centered horizontally, bottom-aligned with anchor 0.5, 1)
     let cursorX = instance.x * this.dpr - textWidth / 2;
     const baseY = instance.y * this.dpr;
     

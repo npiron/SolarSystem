@@ -1,14 +1,14 @@
 /**
  * Entity color helpers for rendering enemies and fragments.
- * Provides color mappings for both PIXI (Canvas fallback) and WebGL2 renderers.
+ * Provides color mappings for WebGL2 renderers.
  */
 
 import { colors, webglColors } from "./colors.ts";
 
 /**
- * Get the PIXI color for an enemy based on its type.
+ * Get the hex color for an enemy based on its type.
  * @param type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
- * @returns PIXI hex color value
+ * @returns Numeric hex color value
  */
 export function getEnemyColor(type: string): number {
   switch (type) {
@@ -74,9 +74,9 @@ export function getFragmentVisuals(value: number): FragmentVisuals {
 }
 
 /**
- * Get PIXI color for fragment orb based on value (for Canvas fallback).
+ * Get hex color for fragment orb based on value.
  * @param value - Fragment value
- * @returns PIXI hex color value
+ * @returns Numeric hex color value
  */
 export function getFragmentColor(value: number): number {
   if (value < LOW_THRESHOLD) return colors.fragmentLow;

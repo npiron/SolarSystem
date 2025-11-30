@@ -7,7 +7,6 @@ import {
   TAU,
   VERSION,
   icons,
-  palette,
 } from "../src/config/constants.ts";
 import { createGenerators } from "../src/config/generators.ts";
 import { createUpgrades } from "../src/config/upgrades.ts";
@@ -40,7 +39,6 @@ describe("config factories", () => {
     expect(MAX_OFFLINE_SECONDS).toBe(10800);
     expect(FX_BUDGET).toMatchObject({ fragments: 200, bullets: 520 });
     expect(BULLET_LIMITS.maxLifetime).toBeCloseTo(2.4);
-    expect(palette).toContain("#ffd166");
     expect(Object.keys(icons)).toEqual(
       expect.arrayContaining(["essence", "fragments", "wave"])
     );

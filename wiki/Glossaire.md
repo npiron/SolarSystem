@@ -49,7 +49,7 @@ Configuration d'upgrades et de talents choisie pour une stratégie spécifique.
 Vitesse de tir, mesurée en secondes entre chaque tir.
 
 ### Canvas
-Élément HTML où le jeu est rendu via PixiJS.
+Élément HTML où le jeu est rendu via WebGL2.
 
 ### Clear
 Éliminer tous les ennemis à l'écran.
@@ -123,8 +123,8 @@ Groupe d'ennemis apparaissant ensemble.
 ### Perforation (Pierce)
 Capacité d'un projectile à traverser plusieurs ennemis.
 
-### PixiJS
-Bibliothèque JavaScript de rendu 2D utilisée pour le canvas.
+### WebGL2
+API graphique native du navigateur utilisée pour le rendu 2D haute performance.
 
 ### Prestige
 Mécanisme de réinitialisation avec bonus permanent (voir Consolidation).
@@ -184,7 +184,7 @@ Amélioration achetable avec des Fragments.
 Niveau de difficulté qui augmente continuellement.
 
 ### WebGL
-Technologie de rendu graphique utilisée par PixiJS.
+Technologie de rendu graphique utilisée pour le canvas.
 
 ---
 
