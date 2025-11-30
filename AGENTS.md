@@ -21,6 +21,7 @@ These instructions apply to the entire repository.
 ## Coding details and quality bar
 - Prefer TypeScript over JavaScript for new logic; keep types narrow and avoid `any` except as a last resort.
 - Stick to functional, deterministic systems: avoid hidden global state; gate side effects behind explicit functions.
+- Keep the project well-organized and modular: no file should exceed 400 lines. If a file grows beyond this limit, split it into smaller, focused modules.
 - Keep rendering helpers pure (input → output) and push DOM access through `renderer` utilities rather than scattering `document` calls.
 - Maintain consistent naming: `systems/*` files focus on state transitions, `config/*` files hold data/constants, and `renderer/*` files handle presentation.
 - When touching math/physics helpers, add a small Vitest unit test in `tests/` to document edge cases.
