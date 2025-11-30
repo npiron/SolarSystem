@@ -18,8 +18,15 @@ import {
   resetTalents,
   unlockTalent
 } from "./systems/talents.ts";
+import { WebGL2Grid } from "./renderer/webgl2Grid.ts";
+import { WebGL2Circles } from "./renderer/webgl2Circles.ts";
 
 const canvas = document.getElementById("arena");
+const webglCanvas = document.getElementById("webglBackground");
+const webglGrid = webglCanvas ? WebGL2Grid.create(webglCanvas) : null;
+const webglEntitiesCanvas = document.getElementById("webglEntities");
+const webglCircles = webglEntitiesCanvas ? WebGL2Circles.create(webglEntitiesCanvas) : null;
+
 const app = new PIXI.Application({
   view: canvas,
   antialias: true,
@@ -106,6 +113,8 @@ const renderObjects = {
   },
 };
 
+let backgroundReady = false;
+
 app.stage.addChild(arenaLayers.background, arenaLayers.entities, arenaLayers.overlay);
 
 function getFloatingTextStyle(color = floatingTextStyleOptions.fill) {
@@ -128,7 +137,20 @@ function acquireFloatingText(color) {
 }
 
 function buildBackground(width, height) {
+  backgroundReady = false;
   renderObjects.backgroundContainer.removeChildren();
+
+  if (webglGrid) {
+    webglGrid.setEnabled(!state.visualsLow);
+    if (!state.visualsLow) {
+      webglGrid.resize(width, height);
+      webglGrid.render();
+      backgroundReady = true;
+    } else {
+      webglGrid.clear();
+    }
+    return;
+  }
 
   if (!state.visualsLow) {
     renderObjects.grid.clear();
@@ -142,6 +164,7 @@ function buildBackground(width, height) {
       renderObjects.grid.lineTo(width, y);
     }
     renderObjects.backgroundContainer.addChild(renderObjects.grid);
+    backgroundReady = true;
   }
 }
 
@@ -271,6 +294,27 @@ const colors = {
   hpFg: PIXI.utils.string2hex("#a3e635"),
   hudBg: PIXI.utils.string2hex("#0d1530"),
   hudBorder: PIXI.utils.string2hex("#e2e8f0"),
+};
+
+function toVec4(hex, alpha = 1) {
+  const value = typeof hex === "number" ? hex : PIXI.utils.string2hex(hex);
+  return [
+    ((value >> 16) & 0xff) / 255,
+    ((value >> 8) & 0xff) / 255,
+    (value & 0xff) / 255,
+    alpha
+  ];
+}
+
+const paletteVec4 = palette.map((color) => toVec4(color));
+const webglColors = {
+  player: toVec4(colors.player, 1),
+  playerHalo: toVec4(colors.collect, 0.18),
+  bullet: toVec4(colors.bulletHigh, 0.9),
+  bulletGlow: toVec4(colors.bulletHigh, 0.22),
+  fragment: toVec4(colors.fragment, 1),
+  fragmentRing: toVec4(colors.fragmentRing, 0.35),
+  elite: toVec4(colors.elite, 1)
 };
 
 const fx = {
@@ -446,6 +490,7 @@ function resizeCanvas(center = false) {
   const height = rect?.height || canvas.height || 600;
   app.renderer.resize(width, height);
   buildBackground(width, height);
+  webglCircles?.resize(width, height);
   if (center) {
     state.player.x = width / 2;
     state.player.y = height / 2;
@@ -937,12 +982,32 @@ function prestige() {
 
 function render() {
   const { width, height } = app.renderer;
+  const usingWebglCircles = Boolean(webglCircles && !state.visualsLow);
+
+  webglCircles?.setEnabled(usingWebglCircles);
+  if (usingWebglCircles && webglCircles) {
+    webglCircles.resize(width, height);
+  }
 
   if (state.visualsLow) {
+    backgroundReady = false;
     renderObjects.backgroundContainer.removeChildren();
+    webglGrid?.setEnabled(false);
+    webglCircles?.clear();
+  } else if (!backgroundReady) {
+    buildBackground(width, height);
+  } else if (webglGrid) {
+    webglGrid.render();
   } else if (!renderObjects.backgroundContainer.children.length) {
     buildBackground(width, height);
   }
+
+  renderObjects.player.visible = !usingWebglCircles;
+  renderObjects.bullets.visible = !usingWebglCircles;
+  renderObjects.bulletsGlow.visible = !usingWebglCircles;
+  renderObjects.fragments.visible = !usingWebglCircles;
+  renderObjects.fragmentRings.visible = !usingWebglCircles;
+  renderObjects.enemies.visible = !usingWebglCircles;
 
   renderObjects.aura.clear();
   renderObjects.aura.beginFill(colors.player, 0.12);
@@ -956,42 +1021,84 @@ function render() {
   // Update player position using vector graphics
   renderObjects.player.position.set(state.player.x, state.player.y);
 
-  renderObjects.bullets.clear();
-  renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
-  state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
-  renderObjects.bullets.endFill();
+  if (!usingWebglCircles) {
+    renderObjects.bullets.clear();
+    renderObjects.bullets.beginFill(state.visualsLow ? colors.bulletLow : colors.bulletHigh, 0.9);
+    state.bullets.forEach((b) => renderObjects.bullets.drawCircle(b.x, b.y, 4));
+    renderObjects.bullets.endFill();
 
-  renderObjects.bulletsGlow.clear();
-  if (!state.visualsLow) {
-    renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
-    state.bullets.forEach((b) => renderObjects.bulletsGlow.drawCircle(b.x, b.y, 8));
-    renderObjects.bulletsGlow.endFill();
-  }
+    renderObjects.bulletsGlow.clear();
+    if (!state.visualsLow) {
+      renderObjects.bulletsGlow.beginFill(colors.bulletHigh, 0.25);
+      state.bullets.forEach((b) => renderObjects.bulletsGlow.drawCircle(b.x, b.y, 8));
+      renderObjects.bulletsGlow.endFill();
+    }
 
-  // Render fragments using vector graphics only
-  renderObjects.fragments.clear();
-  renderObjects.fragments.beginFill(colors.fragment);
-  state.fragmentsOrbs.forEach((f) => {
-    renderObjects.fragments.drawCircle(f.x, f.y, 6);
-  });
-  renderObjects.fragments.endFill();
-
-  renderObjects.fragmentRings.clear();
-  if (!state.visualsLow) {
-    renderObjects.fragmentRings.lineStyle({ color: colors.fragmentRing, alpha: 0.5, width: 2 });
+    // Render fragments using vector graphics only
+    renderObjects.fragments.clear();
+    renderObjects.fragments.beginFill(colors.fragment);
     state.fragmentsOrbs.forEach((f) => {
-      renderObjects.fragmentRings.drawCircle(f.x, f.y, 11);
+      renderObjects.fragments.drawCircle(f.x, f.y, 6);
     });
-    renderObjects.fragmentRings.lineStyle(0);
-  }
+    renderObjects.fragments.endFill();
 
-  // Render enemies using vector graphics only
-  renderObjects.enemies.clear();
-  state.enemies.forEach((e, idx) => {
-    renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
-    renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
-    renderObjects.enemies.endFill();
-  });
+    renderObjects.fragmentRings.clear();
+    if (!state.visualsLow) {
+      renderObjects.fragmentRings.lineStyle({ color: colors.fragmentRing, alpha: 0.5, width: 2 });
+      state.fragmentsOrbs.forEach((f) => {
+        renderObjects.fragmentRings.drawCircle(f.x, f.y, 11);
+      });
+      renderObjects.fragmentRings.lineStyle(0);
+    }
+
+    // Render enemies using vector graphics only
+    renderObjects.enemies.clear();
+    state.enemies.forEach((e, idx) => {
+      renderObjects.enemies.beginFill(e.elite ? colors.elite : paletteHex[idx % paletteHex.length]);
+      renderObjects.enemies.drawCircle(e.x, e.y, e.radius);
+      renderObjects.enemies.endFill();
+    });
+  } else if (webglCircles) {
+    webglCircles.beginFrame();
+    webglCircles.push({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.radius,
+      color: webglColors.player,
+      halo: { color: webglColors.playerHalo, scale: 1.35 }
+    });
+
+    state.bullets.forEach((b) =>
+      webglCircles.push({
+        x: b.x,
+        y: b.y,
+        radius: 4,
+        color: webglColors.bullet,
+        halo: { color: webglColors.bulletGlow, scale: 1.8 }
+      })
+    );
+
+    state.fragmentsOrbs.forEach((f) =>
+      webglCircles.push({
+        x: f.x,
+        y: f.y,
+        radius: 6,
+        color: webglColors.fragment,
+        halo: { color: webglColors.fragmentRing, scale: 1.65 }
+      })
+    );
+
+    state.enemies.forEach((e, idx) =>
+      webglCircles.push({
+        x: e.x,
+        y: e.y,
+        radius: e.radius,
+        color: e.elite ? webglColors.elite : paletteVec4[idx % paletteVec4.length]
+      })
+    );
+
+    webglCircles.render();
+  }
 
   renderObjects.enemyHp.clear();
   state.enemies.forEach((e) => {
@@ -1118,6 +1225,7 @@ function initUI() {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
     buildBackground(app.renderer.width, app.renderer.height);
+    webglCircles?.setEnabled(!state.visualsLow);
     applyAddonFilters();
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
