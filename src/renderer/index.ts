@@ -1,12 +1,36 @@
-export * from "./buffers.ts";
-export * from "./circles.ts";
-export * from "./colorUtils.ts";
-export * from "./lines.ts";
-export * from "./renderer.ts";
-export * from "./shaders.ts";
-export * from "./quads.ts";
-export * from "./webgl2Context.ts";
-export { WebGL2Renderer as UnifiedWebGL2Renderer } from "./webgl2Renderer.ts";
-export * from "./webgl2Text.ts";
-export * from "./cpuParticles.ts";
-export * from "./gpu/index.ts";
+import { WebGL2Renderer, type ShapeInstance, type TextInstance, type HealthBarInstance } from "./webgl2Renderer.ts";
+
+let renderer: WebGL2Renderer | null = null;
+
+export function init(canvas: HTMLCanvasElement) {
+  renderer = WebGL2Renderer.create(canvas);
+  return renderer;
+}
+
+export function getRenderer() {
+  return renderer;
+}
+
+export function resize(width: number, height: number) {
+  renderer?.resize(width, height);
+}
+
+export function beginFrame() {
+  renderer?.beginFrame();
+}
+
+export function render() {
+  renderer?.render();
+}
+
+export function pushCircle(options: ShapeInstance) {
+  renderer?.pushCircle(options);
+}
+
+export function pushText(options: TextInstance) {
+  renderer?.pushText(options);
+}
+
+export function pushHealthBar(options: HealthBarInstance) {
+  renderer?.pushHealthBar(options);
+}
