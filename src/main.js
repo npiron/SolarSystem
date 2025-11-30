@@ -21,97 +21,16 @@ import { WebGL2Renderer } from "./renderer/webgl2Renderer.ts";
 import { acquireFloatingText, releaseFloatingText } from "./renderer/floatingText.ts";
 import { colors, hexStringToVec4, paletteHex, paletteVec4, webglColors } from "./renderer/colors.ts";
 import { createEffects } from "./renderer/effects.ts";
-
-/**
- * Get the PIXI color for an enemy based on its type.
- * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
- * @returns {number} PIXI hex color value
- */
-function getEnemyColor(type) {
-  switch (type) {
-    case 'weak': return colors.enemyWeak;
-    case 'normal': return colors.enemyNormal;
-    case 'strong': return colors.enemyStrong;
-    case 'elite': return colors.enemyElite;
-    default: return colors.enemyNormal;
-  }
-}
-
-/**
- * Get the WebGL color array for an enemy based on its type.
- * @param {string} type - Enemy type: 'weak', 'normal', 'strong', or 'elite'
- * @returns {number[]} WebGL color as [r, g, b, a] normalized values
- */
-function getEnemyColorWebGL(type) {
-  switch (type) {
-    case 'weak': return webglColors.enemyWeak;
-    case 'normal': return webglColors.enemyNormal;
-    case 'strong': return webglColors.enemyStrong;
-    case 'elite': return webglColors.enemyElite;
-    default: return webglColors.enemyNormal;
-  }
-}
-
-/**
- * Get visual properties for a fragment orb based on its value.
- * Higher value fragments are larger and have brighter colors.
- * @param {number} value - Fragment value
- * @param {boolean} allowFx - Whether effects are enabled
- * @returns {{ color: number[], ringColor: number[], radius: number }}
- */
-function getFragmentVisuals(value, allowFx) {
-  // Thresholds for fragment value categories
-  const LOW_THRESHOLD = 3;
-  const HIGH_THRESHOLD = 10;
-  
-  if (value < LOW_THRESHOLD) {
-    return {
-      color: webglColors.fragmentLow,
-      ringColor: webglColors.fragmentRingLow,
-      radius: 5
-    };
-  } else if (value >= HIGH_THRESHOLD) {
-    return {
-      color: webglColors.fragmentHigh,
-      ringColor: webglColors.fragmentRingHigh,
-      radius: 8
-    };
-  } else {
-    return {
-      color: webglColors.fragmentMedium,
-      ringColor: webglColors.fragmentRingMedium,
-      radius: 6
-    };
-  }
-}
-
-/**
- * Get PIXI color for fragment orb based on value (for Canvas fallback).
- * @param {number} value - Fragment value
- * @returns {number} PIXI hex color value
- */
-function getFragmentColor(value) {
-  const LOW_THRESHOLD = 3;
-  const HIGH_THRESHOLD = 10;
-  
-  if (value < LOW_THRESHOLD) return colors.fragmentLow;
-  if (value >= HIGH_THRESHOLD) return colors.fragmentHigh;
-  return colors.fragmentMedium;
-}
-
-/**
- * Get radius for fragment orb based on value.
- * @param {number} value - Fragment value
- * @returns {number} Radius in pixels
- */
-function getFragmentRadius(value) {
-  const LOW_THRESHOLD = 3;
-  const HIGH_THRESHOLD = 10;
-  
-  if (value < LOW_THRESHOLD) return 5;
-  if (value >= HIGH_THRESHOLD) return 8;
-  return 6;
-}
+import {
+  getEnemyColor,
+  getEnemyColorWebGL,
+  getFragmentVisuals,
+  getFragmentColor,
+  getFragmentRadius
+} from "./renderer/entityColors.ts";
+import { calculatePlayerMovement } from "./systems/movement.ts";
+import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
+import { initCollapsibleSections } from "./systems/collapsible.ts";
 
 const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
@@ -442,7 +361,7 @@ function resizeCanvas(center = false) {
   }
   clampPlayerToBounds();
   if (state.performance.graphVisible) {
-    drawFpsGraph();
+    drawFpsGraph(fpsCanvas, state.performance);
   }
   applyAddonFilters(state, renderObjects);
 }
@@ -614,74 +533,6 @@ function computeIdleRate() {
   return generators.reduce((sum, g) => sum + computeGeneratorRate(g) * g.level, 0);
 }
 
-function recordFpsSample() {
-  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
-  const fps = 1000 / frameMs;
-  state.performance.fps = fps;
-  state.performance.history.push(fps);
-  if (state.performance.history.length > state.performance.maxSamples) {
-    state.performance.history.shift();
-  }
-}
-
-function drawFpsGraph() {
-  if (!fpsCanvas || !state.performance.graphVisible) return;
-  if (fpsCanvas.width !== fpsCanvas.clientWidth) fpsCanvas.width = fpsCanvas.clientWidth;
-  if (fpsCanvas.height !== fpsCanvas.clientHeight) fpsCanvas.height = fpsCanvas.clientHeight;
-  const ctx = fpsCanvas.getContext("2d");
-  if (!ctx) return;
-
-  const history = state.performance.history;
-  const { width, height } = fpsCanvas;
-  ctx.clearRect(0, 0, width, height);
-  if (!history.length) return;
-
-  const maxFps = Math.max(30, ...history);
-  const minFps = Math.min(0, ...history);
-  const range = Math.max(1, maxFps - minFps);
-  const stepX = history.length > 1 ? width / (history.length - 1) : width;
-
-  const targetFps = 60;
-  const targetY = height - ((targetFps - minFps) / range) * height;
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = "rgba(255, 220, 170, 0.35)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, targetY);
-  ctx.lineTo(width, targetY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.strokeStyle = "#d6b96c";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  history.forEach((fpsValue, idx) => {
-    const x = idx * stepX;
-    const y = height - ((fpsValue - minFps) / range) * height;
-    if (idx === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-  ctx.stroke();
-
-  ctx.fillStyle = "rgba(214, 185, 108, 0.12)";
-  ctx.lineTo(width, height);
-  ctx.lineTo(0, height);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function updatePerformanceHud() {
-  if (fpsValueEl) {
-    fpsValueEl.textContent = Math.round(state.performance.fps).toString();
-  }
-  if (state.performance.graphVisible) {
-    drawFpsGraph();
-  }
-}
-
 const hudContext = {
   elements: {
     essenceEl,
@@ -836,192 +687,6 @@ function renderTalents() {
   }
 }
 
-function nearestFragment() {
-  let closest = null;
-  let bestDist = Infinity;
-  state.fragmentsOrbs.forEach((f) => {
-    const dx = f.x - state.player.x;
-    const dy = f.y - state.player.y;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      closest = f;
-    }
-  });
-  return closest;
-}
-
-/**
- * Calculate a danger repulsion vector from nearby enemies.
- * Returns normalized direction away from danger center of mass.
- * @returns {{ dx: number, dy: number, threat: number }} Object containing:
- *   - dx: Normalized x-direction away from threats (-1 to 1)
- *   - dy: Normalized y-direction away from threats (-1 to 1)
- *   - threat: Normalized threat level (0 to 1) indicating danger intensity
- */
-function calculateDangerVector() {
-  if (state.enemies.length === 0) return { dx: 0, dy: 0, threat: 0 };
-
-  const DANGER_RADIUS = 150; // Distance at which enemies become threatening
-  let threatDx = 0;
-  let threatDy = 0;
-  let totalThreat = 0;
-
-  state.enemies.forEach((e) => {
-    const dx = e.x - state.player.x;
-    const dy = e.y - state.player.y;
-    const dist = Math.hypot(dx, dy);
-
-    if (dist < DANGER_RADIUS && dist > 0) {
-      // Closer enemies are more threatening (inverse square relationship)
-      const threat = Math.pow((DANGER_RADIUS - dist) / DANGER_RADIUS, 2);
-      // Elite enemies are more threatening
-      const eliteMult = e.elite ? 1.8 : 1;
-      const weight = threat * eliteMult;
-
-      threatDx += (dx / dist) * weight;
-      threatDy += (dy / dist) * weight;
-      totalThreat += weight;
-    }
-  });
-
-  if (totalThreat === 0) return { dx: 0, dy: 0, threat: 0 };
-
-  // Normalize and return the direction away from threats (negative)
-  const mag = Math.hypot(threatDx, threatDy) || 1;
-  return {
-    dx: -threatDx / mag,
-    dy: -threatDy / mag,
-    threat: Math.min(1, totalThreat / 3) // Normalized threat level
-  };
-}
-
-/**
- * Find the safest fragment to collect, considering both distance and danger.
- * Balances proximity to fragment with enemy threat at the fragment's location.
- * @returns {Object|null} The best fragment orb to collect, or null if no fragments exist
- */
-function findBestFragment() {
-  if (state.fragmentsOrbs.length === 0) return null;
-
-  const DANGER_WEIGHT = 0.4; // How much danger affects fragment choice
-  let bestFragment = null;
-  let bestScore = -Infinity;
-
-  state.fragmentsOrbs.forEach((f) => {
-    const dx = f.x - state.player.x;
-    const dy = f.y - state.player.y;
-    const distToFragment = Math.hypot(dx, dy) || 1;
-
-    // Calculate danger at fragment's position
-    let dangerAtFragment = 0;
-    state.enemies.forEach((e) => {
-      const eDx = e.x - f.x;
-      const eDy = e.y - f.y;
-      const eDist = Math.hypot(eDx, eDy);
-      if (eDist < 120) {
-        dangerAtFragment += (120 - eDist) / 120;
-      }
-    });
-
-    // Score: prefer close fragments with low danger
-    // Higher score = better choice
-    const distScore = 1 / (1 + distToFragment / 100); // Close is better
-    const safetyScore = 1 / (1 + dangerAtFragment); // Less danger is better
-    const valueScore = f.value / 10; // Higher value fragments preferred slightly
-
-    const score = distScore * (1 - DANGER_WEIGHT) + safetyScore * DANGER_WEIGHT + valueScore * 0.1;
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestFragment = f;
-    }
-  });
-
-  return bestFragment;
-}
-
-/**
- * Calculate intelligent player movement based on health, threats, and objectives.
- * Implements survival mode when health is low, balances fragment collection with danger.
- * @param {number} dt - Delta time in seconds since last frame
- * @returns {{ moveX: number, moveY: number }} Object containing movement deltas:
- *   - moveX: Horizontal movement distance for this frame
- *   - moveY: Vertical movement distance for this frame
- */
-function calculatePlayerMovement(dt) {
-  const healthRatio = state.player.hp / state.player.maxHp;
-  const danger = calculateDangerVector();
-  const { width, height } = app.renderer;
-
-  // Survival mode: prioritize avoiding enemies when health is low
-  const survivalThreshold = 0.35;
-  const isSurvivalMode = healthRatio < survivalThreshold && danger.threat > 0.2;
-
-  let moveX = 0;
-  let moveY = 0;
-
-  if (isSurvivalMode) {
-    // In survival mode, heavily weight escape direction
-    moveX = danger.dx * state.player.speed * dt * 1.3;
-    moveY = danger.dy * state.player.speed * dt * 1.3;
-
-    // Add some randomness to avoid predictable patterns
-    const jitter = 0.2;
-    moveX += (Math.random() - 0.5) * jitter * state.player.speed * dt;
-    moveY += (Math.random() - 0.5) * jitter * state.player.speed * dt;
-  } else {
-    // Normal mode: balance fragment collection with safety
-    const targetFragment = findBestFragment();
-
-    if (targetFragment) {
-      const dx = targetFragment.x - state.player.x;
-      const dy = targetFragment.y - state.player.y;
-      const dist = Math.hypot(dx, dy) || 1;
-
-      // Direction toward fragment
-      let fragmentDx = dx / dist;
-      let fragmentDy = dy / dist;
-
-      // Blend with danger avoidance based on threat level and health
-      const dangerBlend = danger.threat * (1.2 - healthRatio);
-      fragmentDx = fragmentDx * (1 - dangerBlend) + danger.dx * dangerBlend;
-      fragmentDy = fragmentDy * (1 - dangerBlend) + danger.dy * dangerBlend;
-
-      // Normalize blended direction
-      const blendMag = Math.hypot(fragmentDx, fragmentDy) || 1;
-      moveX = (fragmentDx / blendMag) * state.player.speed * dt * 1.1;
-      moveY = (fragmentDy / blendMag) * state.player.speed * dt * 1.1;
-    } else {
-      // No fragments: patrol pattern with danger awareness
-      if (danger.threat > 0.3) {
-        // Move away from danger
-        moveX = danger.dx * state.player.speed * dt * 0.9;
-        moveY = danger.dy * state.player.speed * dt * 0.9;
-      } else {
-        // Patrol in smooth orbit pattern toward center
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const toCenterX = centerX - state.player.x;
-        const toCenterY = centerY - state.player.y;
-        const distToCenter = Math.hypot(toCenterX, toCenterY) || 1;
-
-        // Mix orbital movement with drift toward center
-        const orbit = Math.sin(state.time * 0.6) * 0.4;
-        const orbitMoveX = Math.cos(state.time * 0.8 + orbit);
-        const orbitMoveY = Math.sin(state.time * 0.5);
-
-        // Stronger pull toward center when far from it
-        const centerPull = Math.min(0.5, distToCenter / 300);
-        moveX = (orbitMoveX * (1 - centerPull) + (toCenterX / distToCenter) * centerPull) * state.player.speed * dt;
-        moveY = (orbitMoveY * (1 - centerPull) + (toCenterY / distToCenter) * centerPull) * state.player.speed * dt;
-      }
-    }
-  }
-
-  return { moveX, moveY };
-}
-
 function update(dt) {
   if (!state.running) return;
 
@@ -1030,7 +695,8 @@ function update(dt) {
   updateSpawn(state, dt, canvas);
 
   // Use intelligent movement system
-  const movement = calculatePlayerMovement(dt);
+  const { width, height } = app.renderer;
+  const movement = calculatePlayerMovement(state, dt, width, height);
   state.player.x += movement.moveX;
   state.player.y += movement.moveY;
   clampPlayerToBounds();
@@ -1219,7 +885,7 @@ function render() {
 
     // Render fragments with value-based colors and sizes
     state.fragmentsOrbs.forEach((f) => {
-      const { color, ringColor, radius } = getFragmentVisuals(f.value, allowFx);
+      const { color, ringColor, radius } = getFragmentVisuals(f.value);
       const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
       webgl2Renderer.pushCircle({
         x: f.x,
@@ -1300,11 +966,12 @@ function render() {
 }
 
 app.ticker.add((delta) => {
-  recordFpsSample();
+  const frameMs = Math.max(1, app.ticker.deltaMS || 0);
+  recordFpsSample(state.performance, frameMs);
   const dt = Math.min(0.05, delta / 60);
   update(dt);
   updateHud(state, hudContext);
-  updatePerformanceHud();
+  updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
   render();
 });
 
@@ -1402,7 +1069,7 @@ function initUI() {
     state.performance.graphVisible = !state.performance.graphVisible;
     fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
     toggleFpsBtn.textContent = state.performance.graphVisible ? "📉 Masquer le graph" : "📈 Afficher le graph";
-    drawFpsGraph();
+    drawFpsGraph(fpsCanvas, state.performance);
   });
 
   debugBtns.giveEssence?.addEventListener("click", () => {
@@ -1435,59 +1102,7 @@ function initUI() {
   renderTalents();
 
   // Initialize collapsible sections with state persistence
-  const COLLAPSIBLE_KEY = 'neo-survivors-collapsible';
-  let collapsibleStates = {};
-  try {
-    const saved = localStorage.getItem(COLLAPSIBLE_KEY);
-    if (saved) {
-      collapsibleStates = JSON.parse(saved);
-    }
-  } catch (e) {
-    console.warn('Failed to load collapsible states:', e);
-  }
-
-  document.querySelectorAll('.stat-block.collapsible').forEach((block, index) => {
-    const header = block.querySelector('h2');
-    if (!header) return;
-    
-    const key = header.textContent.replace(/[▶▼\s]/g, '').trim() || `section-${index}`;
-    
-    // Restore saved state if available
-    if (collapsibleStates[key] !== undefined) {
-      block.classList.toggle('collapsed', collapsibleStates[key]);
-    }
-    
-    // Add keyboard accessibility attributes
-    header.setAttribute('tabindex', '0');
-    header.setAttribute('role', 'button');
-    header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
-    
-    const toggleCollapsed = () => {
-      block.classList.toggle('collapsed');
-      header.setAttribute('aria-expanded', !block.classList.contains('collapsed'));
-      
-      // Save state
-      try {
-        collapsibleStates[key] = block.classList.contains('collapsed');
-        localStorage.setItem(COLLAPSIBLE_KEY, JSON.stringify(collapsibleStates));
-      } catch (err) {
-        console.warn('Failed to save collapsible state:', err);
-      }
-    };
-    
-    header.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleCollapsed();
-    });
-    
-    // Add keyboard support for Enter and Space keys
-    header.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        toggleCollapsed();
-      }
-    });
-  });
+  initCollapsibleSections();
 }
 
 async function bootstrap() {
