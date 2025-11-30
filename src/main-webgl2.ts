@@ -9,6 +9,7 @@
  * - For WebGL2 version: use main-webgl2.ts
  */
 
+// @ts-ignore External ESM import without bundled types
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { MAX_OFFLINE_SECONDS, STORAGE_KEY, VERSION, icons, palette } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
@@ -27,18 +28,22 @@ import {
   unlockTalent
 } from "./systems/talents.ts";
 import { GameRenderer, createGameRenderer } from "./renderer/index.ts";
-
-// Type definitions to match main.js behavior (less strict than types/index.ts)
-
-
-
-
+import type {
+  Addons,
+  AssistUi,
+  GameState,
+  Generator,
+  FragmentOrb,
+  PlayerStats,
+  Talent,
+  Upgrade,
+} from "./types/index.ts";
 
 // Get canvas element
-const canvas = document.getElementById("arena");
+const canvas = document.getElementById("arena") as HTMLCanvasElement;
 
 // Create WebGL2 game renderer
-let gameRenderer;
+let gameRenderer: GameRenderer;
 try {
   gameRenderer = createGameRenderer({
     canvas,
@@ -68,23 +73,23 @@ const colors = {
 };
 
 // UI Elements
-const pauseBtn = document.getElementById("pause");
-const resetProgressBtn = document.getElementById("resetProgress");
-const toggleSoundBtn = document.getElementById("toggleSound");
-const softPrestigeBtn = document.getElementById("softPrestige");
-const restartRunBtn = document.getElementById("restartRun");
-const togglePerfBtn = document.getElementById("togglePerf");
-const toggleFpsBtn = document.getElementById("toggleFps");
-const toggleGlowFxBtn = document.getElementById("toggleGlowFx");
-const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
-const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
-const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
+const pauseBtn = document.getElementById("pause") as HTMLButtonElement | null;
+const resetProgressBtn = document.getElementById("resetProgress") as HTMLButtonElement | null;
+const toggleSoundBtn = document.getElementById("toggleSound") as HTMLButtonElement | null;
+const softPrestigeBtn = document.getElementById("softPrestige") as HTMLButtonElement | null;
+const restartRunBtn = document.getElementById("restartRun") as HTMLButtonElement | null;
+const togglePerfBtn = document.getElementById("togglePerf") as HTMLButtonElement | null;
+const toggleFpsBtn = document.getElementById("toggleFps") as HTMLButtonElement | null;
+const toggleGlowFxBtn = document.getElementById("toggleGlowFx") as HTMLButtonElement | null;
+const toggleBloomFxBtn = document.getElementById("toggleBloomFx") as HTMLButtonElement | null;
+const toggleGrainFxBtn = document.getElementById("toggleGrainFx") as HTMLButtonElement | null;
+const toggleHudPulseBtn = document.getElementById("toggleHudPulse") as HTMLButtonElement | null;
 const versionBadge = document.getElementById("versionBadge");
 const debugBtns = {
-  giveEssence: document.getElementById("debugGiveEssence"),
-  giveFragments: document.getElementById("debugGiveFragments"),
-  skipWave: document.getElementById("debugSkipWave"),
-  nuke: document.getElementById("debugNuke")
+  giveEssence: document.getElementById("debugGiveEssence") as HTMLButtonElement | null,
+  giveFragments: document.getElementById("debugGiveFragments") as HTMLButtonElement | null,
+  skipWave: document.getElementById("debugSkipWave") as HTMLButtonElement | null,
+  nuke: document.getElementById("debugNuke") as HTMLButtonElement | null
 };
 
 const essenceEl = document.getElementById("essence");
@@ -99,20 +104,20 @@ const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators");
 const upgradesContainer = document.getElementById("upgrades");
 const talentsContainer = document.getElementById("talents");
-const resetTalentsBtn = document.getElementById("resetTalents");
+const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
 const talentStatusEl = document.getElementById("talentStatus");
 const fpsValueEl = document.getElementById("fpsValue");
-const fpsCanvas = document.getElementById("fpsGraph");
+const fpsCanvas = document.getElementById("fpsGraph") as HTMLCanvasElement | null;
 const quickHelpList = document.getElementById("quickHelpList");
 const milestoneList = document.getElementById("milestoneList");
 const assistBubbles = document.getElementById("assistBubbles");
 
 const generators = createGenerators();
 const upgrades = createUpgrades();
-let talents = hydrateTalents();
-let talentBonuses = computeTalentBonuses(talents);
+let talents: Talent[] = hydrateTalents();
+let talentBonuses: ReturnType<typeof computeTalentBonuses> = computeTalentBonuses(talents);
 
-const BASE_PLAYER_STATS = {
+const BASE_PLAYER_STATS: PlayerStats = {
   damage: 12,
   fireDelay: 0.65,
   projectiles: 1,
@@ -135,47 +140,14 @@ if (versionBadge) {
 const initialWidth = canvas.parentElement?.getBoundingClientRect().width || 960;
 const initialHeight = canvas.parentElement?.getBoundingClientRect().height || 600;
 
-const state = {
+const state: GameState = {
   running: true,
   wave: 1,
   time: 0,
-  enemies: [] as Array<{
-    x;
-    y;
-    radius;
-    hp;
-    maxHp;
-    elite?;
-    hitThisFrame?;
-    vx;
-    vy;
-    damage;
-    reward;
-  }>,
-  bullets: [] as Array<{
-    x;
-    y;
-    vx;
-    vy;
-    life;
-    pierce;
-    damage;
-    crit;
-  }>,
-  floatingText: [] as Array<{
-    x;
-    y;
-    text | number;
-    life;
-    color?;
-  }>,
-  fragmentsOrbs: [] as Array<{
-    x;
-    y;
-    vx;
-    vy;
-    value;
-  }>,
+  enemies: [],
+  bullets: [],
+  floatingText: [],
+  fragmentsOrbs: [],
   gainTicker: { fragments: 0, essence: 0, timer: 0 },
   runStats: {
     kills: 0,
@@ -205,7 +177,7 @@ const state = {
     firstPurchase: false,
     firstPrestige: false,
     bestWave: 1,
-    completed: [] as string[]
+    completed: []
   },
   spawnTimer: 0,
   overlayFade: 0.12,
@@ -217,7 +189,7 @@ const state = {
   },
   performance: {
     fps: 0,
-    history: [] as number[],
+    history: [],
     maxSamples: 240,
     graphVisible: false
   },
@@ -229,11 +201,11 @@ const state = {
   }
 };
 
-let assistUi = {
+let assistUi: AssistUi = {
   recordShot: () => {},
   recordPurchase: () => {},
   recordPrestige: () => {},
-  trackWave: (_wave) => {},
+  trackWave: (_wave: number) => {},
   refreshMilestones: () => {}
 };
 
@@ -266,7 +238,7 @@ const uiRefs = {
   talentButtons: new Map()
 };
 
-function formatDuration(seconds) {
+function formatDuration(seconds: number): string {
   const totalSeconds = Math.max(0, Math.floor(seconds));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -298,14 +270,14 @@ function loadSave() {
     state.player.critMultiplier = save.player?.critMultiplier ?? state.player.critMultiplier;
     state.player.speed = save.player?.speed ?? state.player.speed;
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
-    save.generators?.forEach((g: { level; cost }, idx) => {
+    save.generators?.forEach((g: Partial<Pick<Generator, "level" | "cost">>, idx: number) => {
       if (generators[idx]) {
         generators[idx].level = g.level || 0;
         generators[idx].rate = computeGeneratorRate(generators[idx]);
         generators[idx].cost = g.cost || generators[idx].cost;
       }
     });
-    save.upgrades?.forEach((entry: { level?; cost? } | number, idx) => {
+    save.upgrades?.forEach((entry: Partial<Pick<Upgrade, "level" | "cost">> | number, idx: number) => {
       const upgrade = upgrades[idx];
       if (!upgrade) return;
       if (typeof entry === "number") {
@@ -378,7 +350,7 @@ function saveGame() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-function grantOfflineGains(seconds) {
+function grantOfflineGains(seconds: number): void {
   const rate = computeIdleRate();
   const earnedEssence = rate * seconds;
   const earnedFragments = earnedEssence * 0.4;
@@ -390,7 +362,8 @@ function grantOfflineGains(seconds) {
 
 function applyProgressionEffects() {
   Object.entries(BASE_PLAYER_STATS).forEach(([key, value]) => {
-    (state.player as )[key] = value;
+    const statKey = key as keyof PlayerStats;
+    state.player[statKey] = value;
   });
 
   upgrades.forEach((upgrade) => {
@@ -417,7 +390,7 @@ function applyUpgradeEffects() {
   // Placeholder - upgrade effects are applied in applyProgressionEffects
 }
 
-function computeGeneratorRate(generator: { baseRate; level }) {
+function computeGeneratorRate(generator: Generator): number {
   return generator.baseRate * Math.pow(1.10, generator.level) * state.resources.idleMultiplier * talentBonuses.economy;
 }
 
@@ -431,7 +404,7 @@ function computeIdleRate() {
   return generators.reduce((sum, g) => sum + computeGeneratorRate(g) * g.level, 0);
 }
 
-function recordFpsSample(deltaMs) {
+function recordFpsSample(deltaMs: number): void {
   const fps = 1000 / Math.max(1, deltaMs);
   state.performance.fps = fps;
   state.performance.history.push(fps);
@@ -654,10 +627,10 @@ function renderTalents() {
   }
 }
 
-function nearestFragment() {
-  let closest = null;
+function nearestFragment(): FragmentOrb | null {
+  let closest: FragmentOrb | null = null;
   let bestDist = Infinity;
-  state.fragmentsOrbs.forEach((f) => {
+  state.fragmentsOrbs.forEach((f: FragmentOrb) => {
     const dx = f.x - state.player.x;
     const dy = f.y - state.player.y;
     const dist = dx * dx + dy * dy;
@@ -669,7 +642,7 @@ function nearestFragment() {
   return closest;
 }
 
-function update(dt) {
+function update(dt: number): void {
   if (!state.running) return;
 
   state.time += dt;
@@ -759,7 +732,7 @@ function render() {
 // Animation loop
 let lastTime = 0;
 
-function loop(time) {
+function loop(time: number) {
   const deltaMs = time - lastTime;
   lastTime = time;
   
@@ -898,7 +871,7 @@ function initUI() {
 
   // Initialize collapsible sections
   const COLLAPSIBLE_KEY = 'neo-survivors-collapsible';
-  let collapsibleStates:  = {};
+  let collapsibleStates: Record<string, boolean> = {};
   try {
     const saved = localStorage.getItem(COLLAPSIBLE_KEY);
     if (saved) {
