@@ -229,7 +229,7 @@ export class WebGL2Circles {
       + `in float v_haloScale;\n`
       + `out vec4 outColor;\n`
       + `void main() {\n`
-      + `  float aa = 1.5;\n`
+      + `  float aa = 1.0;\n`
       + `  float distPx = length(v_corner * v_radius);\n`
       + `  float fill = smoothstep(v_radius, v_radius - aa, distPx) * v_color.a;\n`
       + `  float halo = 0.0;\n`
