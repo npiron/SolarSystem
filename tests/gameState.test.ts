@@ -41,7 +41,7 @@ describe("gameState", () => {
       expect(state.player.hp).toBe(120);
       expect(state.player.maxHp).toBe(120);
       expect(state.player.damage).toBe(12);
-      expect(state.player.radius).toBe(12);
+      expect(state.player.radius).toBe(24);
     });
 
     it("should initialize player velocity to zero for inertia system", () => {

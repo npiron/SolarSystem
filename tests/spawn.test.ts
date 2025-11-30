@@ -231,7 +231,7 @@ describe("spawn", () => {
 
       // Spawn an elite enemy
       spawnEnemy(state, canvas, 1.0);
-      expect(state.enemies[0].radius).toBe(14);
+      expect(state.enemies[0].radius).toBe(24);
     });
   });
 });

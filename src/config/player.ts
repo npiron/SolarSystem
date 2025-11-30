@@ -20,4 +20,4 @@ export const BASE_PLAYER_STATS: PlayerStats = {
 
 export const INITIAL_HP = 120;
 export const INITIAL_MAX_HP = 120;
-export const PLAYER_RADIUS = 12;
+export const PLAYER_RADIUS = 24;

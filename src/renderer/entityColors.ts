@@ -56,19 +56,19 @@ export function getFragmentVisuals(value: number): FragmentVisuals {
     return {
       color: webglColors.fragmentLow,
       ringColor: webglColors.fragmentRingLow,
-      radius: 5
+      radius: 1
     };
   } else if (value >= HIGH_THRESHOLD) {
     return {
       color: webglColors.fragmentHigh,
       ringColor: webglColors.fragmentRingHigh,
-      radius: 8
+      radius: 3
     };
   } else {
     return {
       color: webglColors.fragmentMedium,
       ringColor: webglColors.fragmentRingMedium,
-      radius: 6
+      radius: 2
     };
   }
 }
@@ -90,7 +90,7 @@ export function getFragmentColor(value: number): number {
  * @returns Radius in pixels
  */
 export function getFragmentRadius(value: number): number {
-  if (value < LOW_THRESHOLD) return 5;
-  if (value >= HIGH_THRESHOLD) return 8;
-  return 6;
+  if (value < LOW_THRESHOLD) return 1;
+  if (value >= HIGH_THRESHOLD) return 3;
+  return 2;
 }
