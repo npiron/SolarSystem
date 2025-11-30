@@ -38,6 +38,13 @@ const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
 const webgl2Renderer = webgl2Canvas ? WebGL2Renderer.create(webgl2Canvas) : null;
 
+function syncCanvasVisibility(usingWebgl2) {
+  canvas?.classList.toggle("hidden-layer", usingWebgl2);
+  webgl2Canvas?.classList.toggle("hidden-layer", !usingWebgl2);
+}
+
+syncCanvasVisibility(Boolean(webgl2Renderer));
+
 const app = new PIXI.Application({
   view: canvas,
   antialias: true,
