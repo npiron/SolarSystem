@@ -41,3 +41,9 @@ export {
   createRenderer,
 } from './renderer.ts';
 export type { RendererConfig, Renderer } from './renderer.ts';
+
+export {
+  GameRenderer,
+  createGameRenderer,
+} from './gameRenderer.ts';
+export type { GameRendererConfig } from './gameRenderer.ts';

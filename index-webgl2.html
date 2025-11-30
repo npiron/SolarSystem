@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neo Survivors Idle</title>
+  <!-- Import map for bare @pixi/* specifiers used by pixi-filters. PIXI.js 7.x
+       bundles all modules together, so all mappings point to the same main bundle. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@pixi/core": "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs",
+        "@pixi/filter-blur": "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs",
+        "@pixi/filter-alpha": "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs"
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="./public/assets/styles/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="./public/assets/logo.svg" alt="Neo Survivors Idle Logo" class="game-logo" />
+      <div>
+        <p class="eyebrow">Incremental x Survivors</p>
+        <h1>Neo Survivors Idle</h1>
+        <p class="lede">Un auto-battler infini, 100% client-side, qui tourne même quand tu fermes l'onglet.</p>
+      </div>
+    </div>
+    <div class="cta">
+      <button id="resetProgress" class="ghost">Réinitialiser la progression</button>
+      <button id="toggleSound" class="ghost">🔊 Son ON</button>
+      <button id="togglePerf" class="ghost">⚙️ Mode perfo</button>
+      <button id="pause" class="primary">⏸ Pause</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel stats">
+      <div class="stat-block">
+        <h2>Ressources</h2>
+        <div class="stat-row">
+          <span><span class="icon">⚡</span> Essence</span>
+          <span id="essence">0</span>
+        </div>
+        <div class="stat-row">
+          <span><span class="icon">✦</span> Fragments</span>
+          <span id="fragments">0</span>
+        </div>
+        <div class="stat-row muted">
+          <span><span class="icon">⏱</span> Gain passif</span>
+          <span id="idleRate">0 /s</span>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <h2>Run en cours</h2>
+        <div class="stat-row"><span><span class="icon">🌊</span> Vague</span><span id="wave">1</span></div>
+        <div class="stat-row"><span><span class="icon">❤️</span> Vie</span><span id="hp">100</span></div>
+        <div class="stat-row tooltip" id="damageRow"><span><span class="icon">🔥</span> Dégâts</span><span id="dps">0</span></div>
+        <div class="stat-row"><span><span class="icon">🎯</span> Critiques</span><span id="crit">0%</span></div>
+        <div class="stat-row"><span><span class="icon">🧿</span> Bouclier</span><span id="shield">0%</span></div>
+        <div class="stat-row"><span><span class="icon">🧲</span> Collecte</span><span id="collect">0</span></div>
+        <div class="stat-row muted"><span><span class="icon">🌀</span> Spawn</span><span id="spawnRate">0/s</span></div>
+      </div>
+
+      <div class="stat-block collapsible collapsed">
+        <h2>Performance</h2>
+        <div class="stat-row"><span><span class="icon">🎞️</span> FPS</span><span id="fpsValue">--</span></div>
+        <button id="toggleFps" class="ghost small">📈 Afficher le graph</button>
+        <canvas id="fpsGraph" class="fps-chart" width="260" height="80"></canvas>
+      </div>
+
+      <div class="stat-block collapsible collapsed">
+        <h2>Addons visuels</h2>
+        <p class="muted">Filtres PIXI optionnels.</p>
+        <div class="debug-grid">
+          <button id="toggleGlowFx" class="ghost">✨ Aura</button>
+          <button id="toggleBloomFx" class="ghost">🌟 Bloom</button>
+          <button id="toggleGrainFx" class="ghost">🎞️ Grain</button>
+          <button id="toggleHudPulse" class="ghost">💫 Pulse</button>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <h2>Production passive</h2>
+        <div id="generators" class="list"></div>
+      </div>
+    </section>
+
+    <section class="arena-wrapper">
+      <canvas id="arena" width="960" height="600"></canvas>
+      <div class="overlay">
+        <p>Le personnage se déplace et tire automatiquement. Les ennemis arrivent par vagues sans fin. Achetez des améliorations pour accélérer l'inflation de dégâts.</p>
+        <p class="muted">Sauvegardé dans le navigateur : cookies/localStorage, aucun serveur requis.</p>
+        <p class="status" id="statusMessage"></p>
+      </div>
+    </section>
+
+    <section class="panel upgrades">
+      <div class="stat-block assist">
+        <h2>Aide rapide</h2>
+        <ul id="quickHelpList" class="assist-list"></ul>
+      </div>
+
+      <div class="stat-block assist">
+        <h2>Jalons</h2>
+        <ul id="milestoneList" class="assist-list milestones"></ul>
+      </div>
+
+      <div class="stat-block collapsible">
+        <h2>Arbre de talents</h2>
+        <p class="muted">Synergies persistantes : dégâts, cadence, économie, défense.</p>
+        <div id="talents" class="talent-grid"></div>
+        <div class="talent-actions">
+          <p id="talentStatus" class="muted"></p>
+          <button id="resetTalents" class="ghost danger">🔄 Reset (1200 ✦)</button>
+        </div>
+      </div>
+      <div class="stat-block">
+        <h2>Améliorations</h2>
+        <div id="upgrades" class="list"></div>
+      </div>
+      <div class="stat-block">
+        <h2>Prestige</h2>
+        <p class="muted">Réduit ta vague à 1 mais boost le passif.</p>
+        <button id="softPrestige" class="secondary">⟳ Consolidation</button>
+        <button id="restartRun" class="ghost">↻ Relancer</button>
+      </div>
+
+      <div class="stat-block collapsible collapsed">
+        <h2>Comment jouer</h2>
+        <ul class="guide">
+          <li>Investis l'Essence (⚡) dans la production passive, puis les Fragments (✦) pour le combat.</li>
+          <li>Les vagues montent sans fin : lance une Consolidation pour booster le passif et repartir.</li>
+          <li>Chaque ennemi détruit lâche des Fragments que ta bille aspire automatiquement.</li>
+          <li>Ton tir tourne constamment et peut infliger des coups critiques.</li>
+          <li>Des élites surgissent : elles donnent plus mais frappent plus fort.</li>
+          <li>Mode perfo : effets réduits pour plus de fluidité.</li>
+        </ul>
+      </div>
+
+      <div class="stat-block collapsible collapsed debug">
+        <h2>Debug</h2>
+        <p class="muted">Boutons de test local.</p>
+        <div class="debug-grid">
+          <button id="debugGiveEssence" class="ghost">+1M ⚡</button>
+          <button id="debugGiveFragments" class="ghost">+1M ✦</button>
+          <button id="debugSkipWave" class="ghost">+10 vagues</button>
+          <button id="debugNuke" class="ghost">☄️ Clear</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Made for fun · Pas de serveur · Tout reste dans tes cookies</p>
+  </footer>
+
+  <div id="versionBadge" class="version-badge"></div>
+  <div id="assistBubbles" class="assist-bubbles"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
