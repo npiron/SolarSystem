@@ -421,6 +421,12 @@ button:disabled {
   height: 100%;
 }
 
+.hidden-layer {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #arena {
   position: relative;
   z-index: 2;
