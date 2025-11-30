@@ -11,11 +11,13 @@ import {
 const GRID_SPACING = 64;
 const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
 
-type CircleInstance = {
+type ShapeInstance = {
   x: number;
   y: number;
   radius: number;
   color: readonly [number, number, number, number];
+  sides?: number;
+  rotation?: number;
   halo?: {
     color: readonly [number, number, number, number];
     scale: number;
@@ -24,7 +26,7 @@ type CircleInstance = {
 
 export type { TextInstance };
 
-const FLOATS_PER_CIRCLE = 12;
+const FLOATS_PER_SHAPE = 14;
 
 /**
  * Unified WebGL2 renderer that combines grid and circles rendering
@@ -140,12 +142,14 @@ export class WebGL2Renderer {
     this.textRenderer.beginFrame();
   }
 
-  pushCircle(circle: CircleInstance) {
+  pushCircle(circle: ShapeInstance) {
     if (!this.enabled) return;
     this.ensureCirclesCapacity(this.circlesCount + 1);
-    const offset = this.circlesCount * FLOATS_PER_CIRCLE;
+    const offset = this.circlesCount * FLOATS_PER_SHAPE;
     const haloColor = circle.halo?.color ?? [0, 0, 0, 0];
     const haloScale = circle.halo?.scale ?? 1;
+    const sides = circle.sides ?? 0;
+    const rotation = circle.rotation ?? 0;
 
     this.circlesData[offset] = circle.x * this.dpr;
     this.circlesData[offset + 1] = circle.y * this.dpr;
@@ -159,6 +163,8 @@ export class WebGL2Renderer {
     this.circlesData[offset + 9] = haloColor[2];
     this.circlesData[offset + 10] = haloColor[3];
     this.circlesData[offset + 11] = haloScale;
+    this.circlesData[offset + 12] = sides;
+    this.circlesData[offset + 13] = rotation;
     this.circlesCount += 1;
   }
 
@@ -255,7 +261,7 @@ export class WebGL2Renderer {
     }
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.circlesInstanceBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.circlesData.subarray(0, this.circlesCount * FLOATS_PER_CIRCLE));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.circlesData.subarray(0, this.circlesCount * FLOATS_PER_SHAPE));
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.circlesCount);
   }
 
@@ -285,7 +291,7 @@ export class WebGL2Renderer {
     if (targetInstances <= this.circlesCapacity) return;
     const nextCapacity = Math.max(targetInstances, Math.max(64, this.circlesCapacity * 2));
     this.circlesCapacity = nextCapacity;
-    this.circlesData = new Float32Array(this.circlesCapacity * FLOATS_PER_CIRCLE);
+    this.circlesData = new Float32Array(this.circlesCapacity * FLOATS_PER_SHAPE);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.circlesInstanceBuffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, this.circlesData.byteLength, this.gl.DYNAMIC_DRAW);
   }
@@ -311,7 +317,7 @@ export class WebGL2Renderer {
 
   private configureCirclesInstanceAttributes() {
     const gl = this.gl;
-    const stride = FLOATS_PER_CIRCLE * 4;
+    const stride = FLOATS_PER_SHAPE * 4;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.circlesInstanceBuffer);
 
@@ -339,5 +345,15 @@ export class WebGL2Renderer {
     gl.enableVertexAttribArray(haloScaleLoc);
     gl.vertexAttribPointer(haloScaleLoc, 1, gl.FLOAT, false, stride, 44);
     gl.vertexAttribDivisor(haloScaleLoc, 1);
+
+    const sidesLoc = gl.getAttribLocation(this.circlesProgram, "a_sides");
+    gl.enableVertexAttribArray(sidesLoc);
+    gl.vertexAttribPointer(sidesLoc, 1, gl.FLOAT, false, stride, 48);
+    gl.vertexAttribDivisor(sidesLoc, 1);
+
+    const rotationLoc = gl.getAttribLocation(this.circlesProgram, "a_rotation");
+    gl.enableVertexAttribArray(rotationLoc);
+    gl.vertexAttribPointer(rotationLoc, 1, gl.FLOAT, false, stride, 52);
+    gl.vertexAttribDivisor(rotationLoc, 1);
   }
 }
