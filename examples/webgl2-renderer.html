@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebGL2 Renderer Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.08), transparent 25%),
+        #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 24px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    p.subtitle {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .demo {
+      max-width: 1200px;
+      margin: 0 auto 32px;
+      padding: 0 24px 32px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(15, 23, 42, 0.9);
+      box-shadow: 0 20px 60px -24px rgba(0, 0, 0, 0.65);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 640px;
+      background: transparent;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      color: #cbd5e1;
+      align-items: center;
+    }
+
+    .controls label {
+      font-size: 14px;
+    }
+
+    .controls input {
+      accent-color: #a855f7;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+      margin-top: 12px;
+      color: #cbd5e1;
+    }
+
+    .badge span {
+      color: #a78bfa;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WebGL2 Renderer Demo</h1>
+    <p class="subtitle">Instanced circles, quads et grilles WebGL2 avec fallback Canvas 2D.</p>
+  </header>
+
+  <div class="demo">
+    <div class="badge">Renderer actif : <span id="renderer-label">Initialisation...</span></div>
+    <div class="canvas-wrapper">
+      <canvas id="demo-canvas"></canvas>
+    </div>
+    <div class="controls">
+      <label>
+        Grille :
+        <input type="checkbox" id="grid-toggle" checked />
+      </label>
+      <label>
+        Particules :
+        <input type="range" id="particle-count" min="10" max="200" value="60" />
+      </label>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createRenderer } from "../src/renderer/index.ts";
+
+    const canvas = document.getElementById("demo-canvas");
+    const rendererLabel = document.getElementById("renderer-label");
+    const gridToggle = document.getElementById("grid-toggle");
+    const particleSlider = document.getElementById("particle-count");
+
+    const renderer = createRenderer(canvas);
+    rendererLabel.textContent = renderer?.constructor?.name ?? "CanvasFallbackRenderer";
+
+    const palette = {
+      grid: [255 / 255, 210 / 255, 102 / 255, 0.08],
+      hero: [99 / 255, 102 / 255, 241 / 255, 0.95],
+      enemy: [248 / 255, 113 / 255, 113 / 255, 0.85],
+      bullet: [16 / 255, 185 / 255, 129 / 255, 0.95],
+      bar: [79 / 255, 70 / 255, 229 / 255, 0.9]
+    };
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer?.resize(rect.width, rect.height);
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    function render() {
+      const rect = canvas.getBoundingClientRect();
+      renderer?.resize(rect.width, rect.height);
+      renderer?.beginFrame();
+
+      if (gridToggle.checked) {
+        renderer?.drawGrid(rect.width, rect.height, 64, palette.grid);
+      }
+
+      const particleCount = Number(particleSlider.value);
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      renderer?.pushCircle({
+        center: [cx, cy],
+        radius: 38,
+        color: palette.hero,
+        halo: { color: [99 / 255, 102 / 255, 241 / 255, 0.35], scale: 1.9 }
+      });
+
+      for (let i = 0; i < particleCount; i += 1) {
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 70 + (i % 12) * 4;
+        const x = cx + Math.cos(angle) * distance;
+        const y = cy + Math.sin(angle) * distance;
+        renderer?.pushCircle({ center: [x, y], radius: 8 + (i % 3), color: palette.enemy });
+      }
+
+      const barWidth = 280;
+      const barHeight = 10;
+      renderer?.pushQuad({ position: [cx - barWidth / 2, cy + 120], size: [barWidth, barHeight], color: [0.1, 0.1, 0.12, 0.35] });
+      renderer?.pushQuad({ position: [cx - barWidth / 2 + 2, cy + 120 + 2], size: [barWidth * 0.65, barHeight - 4], color: palette.bar });
+
+      renderer?.render();
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+</html>
