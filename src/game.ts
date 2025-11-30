@@ -8,7 +8,7 @@
  * - Resource generation
  */
 import type { GameState, Generator, TalentBonuses, AssistUi } from "./types/index.ts";
-import { updateSpawn } from "./systems/spawn.ts";
+import { updateSpawn, shouldSpawnBoss, spawnBoss } from "./systems/spawn.ts";
 import { updateCombat } from "./systems/combat.ts";
 import { updateFloatingText } from "./systems/hud.ts";
 import { calculatePlayerMovement, clampPlayerToBounds } from "./player.ts";
@@ -42,6 +42,11 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
 
   // Update enemy spawning
   updateSpawn(state, dt, canvas);
+
+  // Check for boss spawn
+  if (shouldSpawnBoss(state)) {
+    spawnBoss(state, canvas);
+  }
 
   // Get the desired movement direction using AI
   const movement = calculatePlayerMovement(state, canvas);

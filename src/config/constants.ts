@@ -28,3 +28,13 @@ export const icons: Icons = {
   crit: "🎯",
   magnet: "🧲"
 };
+
+// Boss configuration
+export const BOSS_WAVE_INTERVAL = 5;
+export const BOSS_RADIUS = 48;
+export const BOSS_HP_MULTIPLIER = 15;
+export const BOSS_SPEED = 30;
+export const BOSS_FIRE_DELAY = 1.2;
+export const BOSS_PROJECTILE_SPEED = 180;
+export const BOSS_PROJECTILE_DAMAGE = 15;
+export const BOSS_REWARD_MULTIPLIER = 10;

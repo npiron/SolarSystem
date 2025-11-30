@@ -81,7 +81,11 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       bloom: true,
       grain: false,
       hudPulse: true
-    }
+    },
+    bossActive: false,
+    currentBoss: null,
+    enemyProjectiles: [],
+    lastBossWave: 0
   };
 }
 
@@ -105,4 +109,8 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.spawnTimer = 0;
   state.dead = false;
   state.running = true;
+  state.bossActive = false;
+  state.currentBoss = null;
+  state.enemyProjectiles = [];
+  state.lastBossWave = 0;
 }

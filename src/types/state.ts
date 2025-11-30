@@ -5,6 +5,8 @@ import type {
   FloatingText,
   GainTicker,
   Player,
+  BossEnemy,
+  EnemyProjectile,
 } from './entities';
 
 export interface RunStats {
@@ -82,4 +84,8 @@ export interface GameState {
   audio: AudioState;
   performance: PerformanceState;
   addons: Addons;
+  bossActive: boolean;
+  currentBoss: BossEnemy | null;
+  enemyProjectiles: EnemyProjectile[];
+  lastBossWave: number;
 }

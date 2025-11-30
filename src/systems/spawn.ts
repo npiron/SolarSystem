@@ -1,4 +1,12 @@
-import type { Canvas, Enemy, GameState } from "../types/index.ts";
+import type { Canvas, Enemy, GameState, BossEnemy } from "../types/index.ts";
+import {
+  BOSS_WAVE_INTERVAL,
+  BOSS_RADIUS,
+  BOSS_HP_MULTIPLIER,
+  BOSS_SPEED,
+  BOSS_FIRE_DELAY,
+  BOSS_REWARD_MULTIPLIER
+} from "../config/constants.ts";
 
 const MAX_PACK_SIZE = 5;
 const SPAWN_MARGIN = 20;
@@ -184,6 +192,9 @@ export function spawnEnemy(
 }
 
 export function updateSpawn(state: GameState, dt: number, canvas: Canvas): void {
+  // Skip normal spawning during boss fight
+  if (state.bossActive) return;
+
   state.spawnTimer -= dt;
   if (state.spawnTimer > 0) return;
 
@@ -206,4 +217,51 @@ export function updateSpawn(state: GameState, dt: number, canvas: Canvas): void 
     spawnEnemy(state, canvas, chance, i, pack, side);
   }
   state.spawnTimer = 1 / rate;
+}
+
+/**
+ * Check if a boss should spawn based on current wave.
+ * Boss spawns every BOSS_WAVE_INTERVAL waves.
+ */
+export function shouldSpawnBoss(state: GameState): boolean {
+  const currentWaveFloor = Math.floor(state.wave);
+  return (
+    !state.bossActive &&
+    currentWaveFloor > 0 &&
+    currentWaveFloor % BOSS_WAVE_INTERVAL === 0 &&
+    currentWaveFloor > state.lastBossWave
+  );
+}
+
+/**
+ * Spawn a boss and clear all regular enemies.
+ */
+export function spawnBoss(state: GameState, canvas: Canvas): void {
+  // Clear all regular enemies
+  state.enemies = [];
+  state.enemyProjectiles = [];
+
+  const waveScale = 1 + state.wave * 0.02;
+  const baseHp = (25 + state.wave * 6) * waveScale;
+  const bossHp = baseHp * BOSS_HP_MULTIPLIER;
+
+  // Spawn boss from a random edge
+  const side = Math.floor(Math.random() * 4);
+  const { x, y } = calculateSpawnPosition(side, canvas, 0, 1);
+
+  const boss: BossEnemy = {
+    x,
+    y,
+    radius: BOSS_RADIUS,
+    hp: bossHp,
+    maxHp: bossHp,
+    speed: BOSS_SPEED,
+    reward: (2.5 + state.wave * 0.6) * BOSS_REWARD_MULTIPLIER,
+    fireTimer: BOSS_FIRE_DELAY * Math.random(),
+    fireDelay: BOSS_FIRE_DELAY
+  };
+
+  state.currentBoss = boss;
+  state.bossActive = true;
+  state.lastBossWave = Math.floor(state.wave);
 }

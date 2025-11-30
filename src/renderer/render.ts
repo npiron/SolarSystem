@@ -16,6 +16,8 @@ import { formatNumber } from "../systems/hud.ts";
 const PLAYER_SHAPE = { sides: 6, rotation: Math.PI / 6 };
 const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
+const BOSS_SHAPE = { sides: 8, rotation: 0 };
+const ENEMY_PROJECTILE_SHAPE = { sides: 3, rotation: Math.PI / 2 };
 
 /**
  * Get the shape definition for an enemy type
@@ -153,6 +155,43 @@ export function render(state: GameState, context: RenderContext): void {
           ratio: e.hp / e.maxHp
         });
       }
+    });
+
+    // Render boss if active
+    if (state.bossActive && state.currentBoss) {
+      const boss = state.currentBoss;
+      const bossHalo = allowFx ? { color: webglColors.bossHalo, scale: 1.5 } : undefined;
+      renderer.pushCircle({
+        x: boss.x,
+        y: boss.y,
+        radius: boss.radius,
+        color: webglColors.boss,
+        sides: BOSS_SHAPE.sides,
+        rotation: BOSS_SHAPE.rotation,
+        halo: bossHalo
+      });
+
+      // Render boss health bar
+      renderer.pushHealthBar({
+        x: boss.x,
+        y: boss.y - boss.radius,
+        width: boss.radius * 2,
+        ratio: boss.hp / boss.maxHp
+      });
+    }
+
+    // Render enemy projectiles
+    state.enemyProjectiles.forEach((p) => {
+      const projHalo = allowFx ? { color: webglColors.enemyProjectileGlow, scale: 1.6 } : undefined;
+      renderer.pushCircle({
+        x: p.x,
+        y: p.y,
+        radius: 6,
+        color: webglColors.enemyProjectile,
+        sides: ENEMY_PROJECTILE_SHAPE.sides,
+        rotation: ENEMY_PROJECTILE_SHAPE.rotation,
+        halo: projHalo
+      });
     });
 
     // Render floating text using native WebGL2 text renderer

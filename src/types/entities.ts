@@ -81,3 +81,24 @@ export interface GainTicker {
   essence: number;
   timer: number;
 }
+
+export interface BossEnemy {
+  x: number;
+  y: number;
+  radius: number;
+  hp: number;
+  maxHp: number;
+  speed: number;
+  reward: number;
+  fireTimer: number;
+  fireDelay: number;
+}
+
+export interface EnemyProjectile {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  life: number;
+  damage: number;
+}
