@@ -48,7 +48,7 @@ export function formatNumber(value: number): string {
   return exp;
 }
 
-export function addFloatingText(state: GameState, text: string | number, x: number, y: number, color = "#fef08a"): void {
+export function addFloatingText(state: GameState, text: string | number, x: number, y: number, color = "#fef08a", scale = 1.8): void {
   const rawLabel = typeof text === "string" || typeof text === "number" ? text : (text as { label?: string })?.label;
   if (rawLabel === undefined || rawLabel === null) return;
   const safeText = typeof rawLabel === "string" || typeof rawLabel === "number" ? String(rawLabel) : "";
@@ -59,7 +59,7 @@ export function addFloatingText(state: GameState, text: string | number, x: numb
   }
 
   const life = state.visualsLow ? 0.9 : 1.4;
-  state.floatingText.push({ text: safeText, x, y, life, color });
+  state.floatingText.push({ text: safeText, x, y, life, color, scale });
 }
 
 export function registerFragmentGain(state: GameState, value: number, x: number, y: number, silent = false): void {

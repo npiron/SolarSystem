@@ -44,6 +44,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       hp: INITIAL_HP,
       maxHp: INITIAL_MAX_HP,
       fireTimer: 0,
+      orbitTimer: 0,
       spin: 0
     },
     resources: {
@@ -88,6 +89,7 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.wave = 1;
   state.player.hp = state.player.maxHp;
   state.player.fireTimer = 0;
+  state.player.orbitTimer = 0;
   state.player.vx = 0;
   state.player.vy = 0;
   state.player.x = canvasWidth / 2;
