@@ -767,6 +767,10 @@ function nearestFragment() {
 /**
  * Calculate a danger repulsion vector from nearby enemies.
  * Returns normalized direction away from danger center of mass.
+ * @returns {{ dx: number, dy: number, threat: number }} Object containing:
+ *   - dx: Normalized x-direction away from threats (-1 to 1)
+ *   - dy: Normalized y-direction away from threats (-1 to 1)
+ *   - threat: Normalized threat level (0 to 1) indicating danger intensity
  */
 function calculateDangerVector() {
   if (state.enemies.length === 0) return { dx: 0, dy: 0, threat: 0 };
@@ -807,6 +811,8 @@ function calculateDangerVector() {
 
 /**
  * Find the safest fragment to collect, considering both distance and danger.
+ * Balances proximity to fragment with enemy threat at the fragment's location.
+ * @returns {Object|null} The best fragment orb to collect, or null if no fragments exist
  */
 function findBestFragment() {
   if (state.fragmentsOrbs.length === 0) return null;
@@ -850,6 +856,11 @@ function findBestFragment() {
 
 /**
  * Calculate intelligent player movement based on health, threats, and objectives.
+ * Implements survival mode when health is low, balances fragment collection with danger.
+ * @param {number} dt - Delta time in seconds since last frame
+ * @returns {{ moveX: number, moveY: number }} Object containing movement deltas:
+ *   - moveX: Horizontal movement distance for this frame
+ *   - moveY: Vertical movement distance for this frame
  */
 function calculatePlayerMovement(dt) {
   const healthRatio = state.player.hp / state.player.maxHp;
