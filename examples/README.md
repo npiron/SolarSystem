@@ -152,3 +152,194 @@ This code is licensed under the [Apache License 2.0](../LICENSE). You are free t
 - ✅ Use without attribution (though attribution is appreciated)
 
 See the full license text in the [LICENSE](../LICENSE) file at the repository root.
+
+## Plan d'action : Migration vers WebGL2
+
+Voici un plan étape par étape pour migrer Neo Survivors Idle vers WebGL2 natif (sans PixiJS) :
+
+### Phase 1 : Préparation (1-2 jours)
+
+1. **Créer un nouveau module de rendu WebGL2**
+   ```
+   src/
+   ├── renderer/
+   │   ├── webgl2Context.ts    # Initialisation du contexte WebGL2
+   │   ├── shaders.ts          # Vertex/Fragment shaders GLSL
+   │   ├── buffers.ts          # Gestion des VBOs et VAOs
+   │   └── renderer.ts         # Boucle de rendu principale
+   ```
+
+2. **Identifier les éléments à migrer**
+   - `PIXI.Graphics` → Shaders personnalisés pour formes géométriques
+   - `PIXI.Text` → Canvas 2D overlay ou bibliothèque de texte WebGL
+   - `PIXI.Container` → Matrices de transformation manuelles
+   - Filtres (Glow, Blur) → Fragment shaders personnalisés
+
+### Phase 2 : Infrastructure WebGL2 (2-3 jours)
+
+3. **Initialiser le contexte WebGL2**
+   ```typescript
+   // src/renderer/webgl2Context.ts
+   export function initWebGL2(canvas: HTMLCanvasElement) {
+     const gl = canvas.getContext('webgl2', {
+       alpha: true,
+       antialias: true,
+       depth: false,
+       stencil: false,
+     });
+     
+     if (!gl) {
+       console.error('WebGL2 non supporté');
+       return null;
+     }
+     
+     // Vérifier les extensions nécessaires
+     const ext = gl.getExtension('EXT_color_buffer_float');
+     
+     return { gl, extensions: { floatBuffer: ext } };
+   }
+   ```
+
+4. **Créer les shaders de base**
+   ```glsl
+   // Vertex shader pour les cercles (joueur, ennemis, projectiles)
+   #version 300 es
+   precision highp float;
+   
+   in vec2 a_position;
+   in vec2 a_center;
+   in float a_radius;
+   in vec4 a_color;
+   
+   uniform mat4 u_projection;
+   
+   out vec4 v_color;
+   out vec2 v_localPos;
+   
+   void main() {
+     vec2 worldPos = a_center + a_position * a_radius;
+     gl_Position = u_projection * vec4(worldPos, 0.0, 1.0);
+     v_color = a_color;
+     v_localPos = a_position;
+   }
+   ```
+
+### Phase 3 : Migration Progressive (3-5 jours)
+
+5. **Migrer par couche (ordre recommandé)**
+   
+   | Ordre | Élément | Complexité | Technique |
+   |-------|---------|------------|-----------|
+   | 1 | Grille de fond | Faible | Line drawing avec GL_LINES |
+   | 2 | Joueur (cercle) | Faible | Instanced circles |
+   | 3 | Projectiles | Faible | Instanced circles (batch) |
+   | 4 | Ennemis | Moyenne | Instanced circles + couleurs |
+   | 5 | Fragments | Moyenne | Intégrer GPUParticles.ts |
+   | 6 | Barres de vie | Moyenne | Quads instancés |
+   | 7 | Texte flottant | Haute | Canvas 2D overlay |
+   | 8 | Effets (glow) | Haute | Post-processing FBO |
+
+6. **Exemple de migration du joueur**
+   ```typescript
+   // Avant (PixiJS)
+   renderObjects.player.beginFill(colors.player, 1);
+   renderObjects.player.drawCircle(0, 0, state.player.radius);
+   renderObjects.player.endFill();
+   
+   // Après (WebGL2)
+   class CircleRenderer {
+     private gl: WebGL2RenderingContext;
+     private program: WebGLProgram;
+     private vao: WebGLVertexArrayObject;
+     
+     drawCircle(x: number, y: number, radius: number, color: number[]) {
+       // Utiliser instanced rendering pour dessiner un cercle
+       gl.useProgram(this.program);
+       gl.bindVertexArray(this.vao);
+       gl.uniform2f(this.uCenter, x, y);
+       gl.uniform1f(this.uRadius, radius);
+       gl.uniform4fv(this.uColor, color);
+       gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 32, 1);
+     }
+   }
+   ```
+
+### Phase 4 : Optimisations (2-3 jours)
+
+7. **Batch rendering pour les entités multiples**
+   ```typescript
+   // Regrouper tous les ennemis en un seul draw call
+   updateEnemyBuffer(enemies: Enemy[]) {
+     const data = new Float32Array(enemies.length * 6); // x, y, radius, r, g, b
+     enemies.forEach((e, i) => {
+       const offset = i * 6;
+       data[offset] = e.x;
+       data[offset + 1] = e.y;
+       data[offset + 2] = e.radius;
+       // ...couleurs
+     });
+     gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+   }
+   ```
+
+8. **Intégrer le système de particules GPU**
+   - Remplacer les fragments visuels par `GPUParticles`
+   - Utiliser pour les effets d'explosion et de collecte
+
+### Phase 5 : Texte et UI (2-3 jours)
+
+9. **Solution hybride pour le texte**
+   ```typescript
+   // Utiliser un canvas 2D superposé pour le texte
+   const textCanvas = document.createElement('canvas');
+   const textCtx = textCanvas.getContext('2d');
+   
+   // Dessiner le texte sur le canvas 2D
+   function drawFloatingText(text: string, x: number, y: number) {
+     textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
+     textCtx.font = '13px Fredoka';
+     textCtx.fillStyle = '#fff7ed';
+     textCtx.fillText(text, x, y);
+   }
+   ```
+
+### Phase 6 : Tests et Fallback (1-2 jours)
+
+10. **Ajouter la détection et le fallback**
+    ```typescript
+    export function createRenderer(canvas: HTMLCanvasElement) {
+      const webgl2 = initWebGL2(canvas);
+      
+      if (webgl2) {
+        return new WebGL2Renderer(webgl2.gl);
+      }
+      
+      // Fallback vers PixiJS ou Canvas 2D
+      console.warn('WebGL2 non disponible, utilisation du fallback');
+      return new CanvasFallbackRenderer(canvas);
+    }
+    ```
+
+### Checklist de migration
+
+- [ ] Phase 1 : Structure des fichiers créée
+- [ ] Phase 2 : Contexte WebGL2 initialisé
+- [ ] Phase 3.1 : Grille de fond migrée
+- [ ] Phase 3.2 : Joueur migré
+- [ ] Phase 3.3 : Projectiles migrés
+- [ ] Phase 3.4 : Ennemis migrés
+- [ ] Phase 3.5 : Fragments intégrés avec GPUParticles
+- [ ] Phase 3.6 : Barres de vie migrées
+- [ ] Phase 3.7 : Texte flottant (overlay Canvas 2D)
+- [ ] Phase 3.8 : Effets post-processing
+- [ ] Phase 4 : Optimisations batch rendering
+- [ ] Phase 5 : UI hybride fonctionnelle
+- [ ] Phase 6 : Fallback testé
+
+### Estimation totale : 10-15 jours
+
+**Note** : PixiJS 7.x utilise déjà WebGL2 par défaut. Cette migration est utile si vous voulez :
+- Plus de contrôle sur le rendu
+- Réduire la taille du bundle (PixiJS ≈ 500KB)
+- Apprendre WebGL2 en profondeur
+- Optimisations spécifiques impossibles avec PixiJS
