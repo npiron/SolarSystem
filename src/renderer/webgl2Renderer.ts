@@ -2,6 +2,7 @@ import { webglColors } from "./colors.ts";
 import { createProgram } from "./shaders.ts";
 import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
+import { WebGL2PostProcessing } from "./webgl2PostProcessing.ts";
 import {
   gridVertexShader,
   gridFragmentShader,
@@ -97,6 +98,9 @@ export class WebGL2Renderer {
   // Text rendering
   private textRenderer: WebGL2TextRenderer;
 
+  // Post-processing
+  private postProcessing: WebGL2PostProcessing;
+
   private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
     this.dpr = dpr;
@@ -162,6 +166,9 @@ export class WebGL2Renderer {
 
     // Initialize text renderer
     this.textRenderer = new WebGL2TextRenderer(gl, dpr);
+
+    // Initialize post-processing
+    this.postProcessing = new WebGL2PostProcessing(gl, dpr);
   }
 
   setEnabled(enabled: boolean) {
@@ -185,12 +192,14 @@ export class WebGL2Renderer {
 
     this.resolution = { width: pixelWidth, height: pixelHeight };
     this.gridNeedsRebuild = true;
+    this.postProcessing.resize(width, height);
   }
 
   beginFrame() {
     this.circlesCount = 0;
     this.healthCount = 0;
     this.textRenderer.beginFrame();
+    this.postProcessing.beginFrame();
   }
 
   pushCircle(circle: ShapeInstance) {
@@ -238,31 +247,23 @@ export class WebGL2Renderer {
     this.textRenderer.pushText(text);
   }
 
-  render() {
+  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number) {
     if (!this.enabled) return;
     const gl = this.gl;
 
     gl.viewport(0, 0, this.resolution.width, this.resolution.height);
-    // Clear the entire canvas each frame. Since circles are dynamic and share 
-    // the same canvas as the static grid, we must redraw everything each frame.
-    // The grid vertex buffer is cached via gridNeedsRebuild flag to avoid
-    // unnecessary geometry rebuilding.
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // Render grid first (background)
     if (this.gridEnabled) {
       this.renderGrid();
     }
 
-    // Render circles on top
     this.renderCircles();
-
-    // Render health bars
     this.renderHealthBars();
-
-    // Render text last (on top of everything)
     this.textRenderer.render(this.resolution);
+
+    this.postProcessing.endFrame(this.resolution, addons, time);
   }
 
   clear() {

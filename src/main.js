@@ -972,7 +972,7 @@ function render() {
       });
     });
 
-    renderer.render();
+    renderer.render(state.addons, state.time);
   }
 
   const hudTexts = [
@@ -1002,6 +1002,14 @@ function initUI() {
     if (!toggleSoundBtn) return;
     toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
   };
+
+  function toggleAddon(addon) {
+    if (state.addons[addon] === undefined) return;
+    state.addons[addon] = !state.addons[addon];
+    syncAddonToggles();
+    playUiToggle();
+    saveGame();
+  }
 
   const syncAddonToggles = () => {
     if (toggleGlowFxBtn) toggleGlowFxBtn.textContent = state.addons.glow ? "✨ Aura ON" : "✨ Aura OFF";
