@@ -1,52 +1,14 @@
-import { initWebGL2 } from "./webgl2Context.ts";
+import { createProgram } from "./shaders.ts";
+import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 
 const GRID_SPACING = 64;
 const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
-
-function compileShader(gl: WebGL2RenderingContext, type: GLenum, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) {
-    throw new Error("Impossible de créer le shader WebGL2");
-  }
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const log = gl.getShaderInfoLog(shader);
-    gl.deleteShader(shader);
-    throw new Error(`Erreur de compilation shader: ${log || "inconnue"}`);
-  }
-  return shader;
-}
-
-function createProgram(gl: WebGL2RenderingContext, vertexSrc: string, fragmentSrc: string) {
-  const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
-  const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-  const program = gl.createProgram();
-  if (!program) {
-    throw new Error("Impossible de créer le programme WebGL2");
-  }
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
-  gl.linkProgram(program);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const log = gl.getProgramInfoLog(program);
-    gl.deleteProgram(program);
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
-    throw new Error(`Echec du linkage du programme: ${log || "inconnu"}`);
-  }
-
-  gl.deleteShader(vertexShader);
-  gl.deleteShader(fragmentShader);
-  return program;
-}
 
 export class WebGL2Grid {
   static create(canvas: HTMLCanvasElement) {
     const context = initWebGL2(canvas);
     if (!context) return null;
-    return new WebGL2Grid(canvas, context.gl);
+    return new WebGL2Grid(canvas, context.gl, context.dpr);
   }
 
   private gl: WebGL2RenderingContext;
@@ -57,12 +19,13 @@ export class WebGL2Grid {
   private resolution = { width: 0, height: 0 };
   private needsRender = true;
   private enabled = true;
-  private readonly dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  private readonly dpr: number;
   private readonly cellSize = GRID_SPACING;
   private readonly uniforms: { resolution: WebGLUniformLocation | null; color: WebGLUniformLocation | null; };
 
-  private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext) {
+  private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
+    this.dpr = dpr;
     this.program = createProgram(gl, this.vertexShaderSource(), this.fragmentShaderSource());
     this.vao = gl.createVertexArray();
     this.buffer = gl.createBuffer();
@@ -94,20 +57,12 @@ export class WebGL2Grid {
 
   resize(width: number, height: number) {
     if (!this.enabled) return;
-    const pixelWidth = Math.max(1, Math.round(width * this.dpr));
-    const pixelHeight = Math.max(1, Math.round(height * this.dpr));
-
+    const { width: pixelWidth, height: pixelHeight } = resizeCanvas(this.gl, this.canvas, width, height, this.dpr);
     if (pixelWidth === this.resolution.width && pixelHeight === this.resolution.height) {
       return;
     }
 
-    this.canvas.width = pixelWidth;
-    this.canvas.height = pixelHeight;
-    this.canvas.style.width = `${width}px`;
-    this.canvas.style.height = `${height}px`;
-
     this.resolution = { width: pixelWidth, height: pixelHeight };
-    this.gl.viewport(0, 0, pixelWidth, pixelHeight);
     this.buildGrid();
     this.needsRender = true;
   }
