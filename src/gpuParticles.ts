@@ -66,7 +66,9 @@ void main() {
   
   // Only simulate active particles (position != 0,0 with some velocity)
   // Particles at origin with zero velocity are considered inactive
-  if (pos.x != 0.0 || pos.y != 0.0 || vel.x != 0.0 || vel.y != 0.0) {
+  // Use epsilon threshold for reliable floating-point comparison
+  const float EPSILON = 0.001;
+  if (length(pos) > EPSILON || length(vel) > EPSILON) {
     // Apply gravity
     vel.y += GRAVITY * uDt;
     
@@ -132,8 +134,9 @@ void main() {
   vec2 pos = state.xy;
   vec2 vel = state.zw;
   
-  // Check if particle is active
-  vActive = (pos.x != 0.0 || pos.y != 0.0 || vel.x != 0.0 || vel.y != 0.0) ? 1.0 : 0.0;
+  // Check if particle is active using epsilon threshold for reliable comparison
+  const float EPSILON = 0.001;
+  vActive = (length(pos) > EPSILON || length(vel) > EPSILON) ? 1.0 : 0.0;
   vVel = vel;
   
   // Calculate vertex position: particle center + quad offset * size
@@ -709,25 +712,30 @@ export class CPUParticles {
     for (const p of this.particles) {
       if (!p.active) continue;
       
-      // Color based on velocity
+      // Color based on velocity (matching GPU shader gradient)
       const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
       const t = Math.min(speed / 300, 1);
       
+      // Gradient: blue (slow) -> cyan -> white -> orange -> red (fast)
       let r: number, g: number, b: number;
       if (t < 0.25) {
-        r = Math.floor(51 + (51 - 51) * t * 4);
+        // Blue to cyan
+        r = 51;
         g = Math.floor(102 + (179 - 102) * t * 4);
         b = Math.floor(204 + (230 - 204) * t * 4);
       } else if (t < 0.5) {
+        // Cyan to white
         r = Math.floor(51 + (230 - 51) * (t - 0.25) * 4);
         g = Math.floor(179 + (230 - 179) * (t - 0.25) * 4);
-        b = Math.floor(230 + (230 - 230) * (t - 0.25) * 4);
+        b = 230;
       } else if (t < 0.75) {
+        // White to orange
         r = Math.floor(230 + (255 - 230) * (t - 0.5) * 4);
         g = Math.floor(230 + (153 - 230) * (t - 0.5) * 4);
         b = Math.floor(230 + (51 - 230) * (t - 0.5) * 4);
       } else {
-        r = Math.floor(255);
+        // Orange to red
+        r = 255;
         g = Math.floor(153 + (51 - 153) * (t - 0.75) * 4);
         b = Math.floor(51 + (26 - 51) * (t - 0.75) * 4);
       }

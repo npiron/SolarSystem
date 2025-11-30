@@ -22,6 +22,7 @@ const PARTICLE_SIZE = 4;            // Particle render size in pixels
 const BURST_SIZE = 200;             // Particles per click burst
 const BURST_SPEED = 250;            // Initial velocity magnitude for bursts
 const AUTO_SPAWN_RATE = 50;         // Particles spawned per second automatically
+const MAX_FRAME_TIME = 0.05;        // Maximum delta time per frame (seconds) to prevent large jumps
 
 /**
  * Detects WebGL2 availability
@@ -109,8 +110,6 @@ function main(): void {
         newCanvas.style.cssText = oldCanvas.style.cssText;
         parent?.replaceChild(newCanvas, oldCanvas);
         ctx2d = newCanvas.getContext('2d');
-        // Update canvas reference
-        (window as unknown as { demoCanvas: HTMLCanvasElement }).demoCanvas = newCanvas;
       }
       particles = new CPUParticles(null, Math.min(PARTICLE_COUNT, 4096), canvas);
       statusEl.textContent = `CPU Mode (Fallback) - ${particles.getCount()} particles`;
@@ -228,7 +227,7 @@ function main(): void {
   let autoSpawnAccum = 0;
   
   function animate(currentTime: number): void {
-    const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
+    const dt = Math.min((currentTime - lastTime) / 1000, MAX_FRAME_TIME);
     lastTime = currentTime;
     
     // FPS counter
