@@ -134,6 +134,8 @@ function buildBackground(width, height) {
     renderObjects.backgroundContainer.addChild(renderObjects.grid);
     backgroundReady = true;
   }
+}
+
 function setupScene() {
   arenaLayers.background.addChild(renderObjects.backgroundContainer);
 
