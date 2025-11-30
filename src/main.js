@@ -31,16 +31,8 @@ import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
 import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
 import { initCollapsibleSections } from "./systems/collapsible.ts";
 
-const canvas = document.getElementById("arena");
 const webgl2Canvas = document.getElementById("webgl2");
 const webgl2Renderer = webgl2Canvas ? renderer.init(webgl2Canvas) : null;
-
-function syncCanvasVisibility(usingWebgl2) {
-  canvas?.classList.toggle("hidden-layer", usingWebgl2);
-  webgl2Canvas?.classList.toggle("hidden-layer", !usingWebgl2);
-}
-
-syncCanvasVisibility(Boolean(webgl2Renderer));
 
 let backgroundReady = false;
 
@@ -165,8 +157,8 @@ const state = {
     essence: 0
   },
   player: {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+      x: webgl2Canvas.width / 2,
+      y: webgl2Canvas.height / 2,
     vx: 0,
     vy: 0,
     radius: 12,
@@ -222,15 +214,15 @@ let assistUi = {
 };
 
 function clampPlayerToBounds() {
-  const { width, height } = canvas.getBoundingClientRect();
+  const { width, height } = webgl2Canvas.getBoundingClientRect();
   state.player.x = Math.max(30, Math.min(width - 30, state.player.x));
   state.player.y = Math.max(30, Math.min(height - 30, state.player.y));
 }
 
 function resizeCanvas(center = false) {
-  const rect = canvas.parentElement?.getBoundingClientRect();
-  const width = rect?.width || canvas.width || 960;
-  const height = rect?.height || canvas.height || 600;
+  const rect = webgl2Canvas.parentElement?.getBoundingClientRect();
+  const width = rect?.width || webgl2Canvas.width || 960;
+  const height = rect?.height || webgl2Canvas.height || 600;
   buildBackground(width, height);
   webgl2Renderer?.resize(width, height);
   if (center) {
@@ -681,7 +673,7 @@ function findBestFragment() {
 function calculatePlayerMovement() {
   const healthRatio = state.player.hp / state.player.maxHp;
   const danger = calculateDangerVector();
-  const { width, height } = canvas.getBoundingClientRect();
+  const { width, height } = webgl2Canvas.getBoundingClientRect();
 
   // Survival mode: prioritize avoiding enemies when health is low
   const survivalThreshold = 0.35;
@@ -760,7 +752,7 @@ function update(dt) {
 
   state.time += dt;
 
-  updateSpawn(state, dt, canvas);
+  updateSpawn(state, dt, webgl2Canvas);
 
   // Space-like inertia movement system
   // Acceleration: how quickly the player reaches target velocity
@@ -799,7 +791,7 @@ function update(dt) {
   state.player.y += state.player.vy * dt;
   clampPlayerToBounds();
 
-  updateCombat(state, dt, canvas);
+  updateCombat(state, dt, webgl2Canvas);
 
   if (!state.assist.firstShot && state.bullets.length > 0) {
     assistUi.recordShot();
@@ -829,8 +821,8 @@ function softReset() {
   state.player.fireTimer = 0;
   state.player.vx = 0;
   state.player.vy = 0;
-  state.player.x = canvas.width / 2;
-  state.player.y = canvas.height / 2;
+  state.player.x = webgl2Canvas.width / 2;
+  state.player.y = webgl2Canvas.height / 2;
   state.player.vx = 0;
   state.player.vy = 0;
   state.enemies = [];
@@ -857,7 +849,7 @@ function prestige() {
 }
 
 function render() {
-  const { width, height } = canvas.getBoundingClientRect();
+  const { width, height } = webgl2Canvas.getBoundingClientRect();
   const usingWebgl2 = Boolean(webgl2Renderer);
   const allowFx = !state.visualsLow;
 
@@ -1078,7 +1070,7 @@ function initUI() {
   togglePerfBtn.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
-    buildBackground(canvas.width, canvas.height);
+    buildBackground(webgl2Canvas.width, webgl2Canvas.height);
     webgl2Renderer?.setEnabled(!state.visualsLow);
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
@@ -1128,7 +1120,7 @@ function initUI() {
 
 async function bootstrap() {
   resizeCanvas(true);
-  buildBackground(canvas.width, canvas.height);
+  buildBackground(webgl2Canvas.width, webgl2Canvas.height);
   loadSave();
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
@@ -1137,7 +1129,7 @@ async function bootstrap() {
     milestoneList,
     bubbleContainer: assistBubbles,
     anchors: {
-      arena: canvas,
+      arena: webgl2Canvas,
       generators: generatorsContainer,
       upgrades: upgradesContainer,
       prestige: softPrestigeBtn

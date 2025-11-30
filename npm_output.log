@@ -1,3 +1,9 @@
 
 > neo-survivors-idle@0.1.0 dev
-> vite --host
+> vite
+
+
+  VITE v7.2.4  ready in 341 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
