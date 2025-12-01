@@ -1,19 +1,19 @@
 :root {
-  /* Terminal color scheme */
-  --terminal-bg: #000a00;
-  --terminal-bg-light: #001a00;
-  --terminal-green: #00ff00;
-  --terminal-green-dim: #00aa00;
+  /* Terminal color scheme - Softer version */
+  --terminal-bg: #1a1a1a;
+  --terminal-bg-light: #2a2a2a;
+  --terminal-green: #00cc88;
+  --terminal-green-dim: #008855;
   --terminal-amber: #ffaa00;
-  --terminal-cyan: #00ffff;
-  --terminal-red: #ff0000;
-  --terminal-text: #00ff00;
-  --terminal-text-dim: #009900;
+  --terminal-cyan: #00aacc;
+  --terminal-red: #cc4444;
+  --terminal-text: #00cc88;
+  --terminal-text-dim: #00aa77;
 
-  /* Layout */
+  /* Layout - Wider right panel */
   --header-height: 60px;
   --footer-height: 32px;
-  --panel-width: 320px;
+  --panel-width: 420px;
 
   /* Terminal font */
   font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
@@ -36,19 +36,19 @@ body {
   position: relative;
 }
 
-/* CRT scanlines effect */
+/* CRT scanlines effect - Reduced intensity */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background: repeating-linear-gradient(0deg,
-      rgba(0, 0, 0, 0.15),
-      rgba(0, 0, 0, 0.15) 1px,
+      rgba(0, 0, 0, 0.05),
+      rgba(0, 0, 0, 0.05) 1px,
       transparent 1px,
-      transparent 2px);
+      transparent 3px);
   pointer-events: none;
   z-index: 1000;
-  animation: scanline 8s linear infinite;
+  animation: scanline 12s linear infinite;
 }
 
 @keyframes scanline {
@@ -57,16 +57,16 @@ body::before {
   }
 
   100% {
-    transform: translateY(10px);
+    transform: translateY(15px);
   }
 }
 
-/* CRT screen curvature effect */
+/* CRT screen curvature effect - Softer */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.5) 100%);
+  background: radial-gradient(circle, transparent 70%, rgba(0, 0, 0, 0.2) 100%);
   pointer-events: none;
   z-index: 999;
 }
@@ -131,18 +131,18 @@ p {
 }
 
 .topbar h1 {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   margin-bottom: 2px;
 }
 
 .topbar .eyebrow {
-  font-size: 9px;
+  font-size: 11px;
   margin-bottom: 2px;
   color: var(--terminal-green-dim);
 }
 
 .topbar .lede {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 2px;
   color: var(--terminal-green-dim);
 }
@@ -150,7 +150,7 @@ p {
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.2em;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--terminal-green-dim);
   margin-bottom: 4px;
 }
@@ -231,7 +231,7 @@ p {
 }
 
 .stat-block h2 {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   margin-bottom: 6px;
   letter-spacing: 0.1em;
   color: var(--terminal-green);
@@ -239,7 +239,7 @@ p {
 }
 
 .stat-block p.muted {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.3;
   color: var(--terminal-green-dim);
 }
@@ -251,7 +251,7 @@ p {
   margin-top: 4px;
   color: var(--terminal-text);
   text-shadow: 0 0 5px var(--terminal-green);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.3;
 }
 
@@ -348,19 +348,19 @@ p {
   text-align: left;
   border: 1px solid var(--terminal-green);
   border-radius: 0;
-  padding: 6px 8px;
-  background: rgba(0, 10, 0, 0.8);
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+  padding: 8px 10px;
+  background: rgba(42, 42, 42, 0.8);
+  box-shadow: 0 0 10px rgba(0, 204, 136, 0.2);
   cursor: pointer;
   width: 100%;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--terminal-text);
   text-shadow: 0 0 3px var(--terminal-green);
 }
 
 .talent-node .eyebrow {
   margin-bottom: 0;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .talent-node.active {
@@ -387,11 +387,11 @@ p {
 
 .talent-node h3 {
   margin: 1px 0;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
 }
 
 .talent-node p.muted {
-  font-size: 9px;
+  font-size: 11px;
   margin-top: 2px;
 }
 
@@ -426,24 +426,24 @@ p {
 .card {
   border: 1px solid var(--terminal-green);
   border-radius: 0;
-  padding: 6px 8px;
-  background: rgba(0, 10, 0, 0.8);
+  padding: 8px 10px;
+  background: rgba(42, 42, 42, 0.8);
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+  box-shadow: 0 0 10px rgba(0, 204, 136, 0.2);
 }
 
 .card h3 {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
 }
 
 .card p {
   margin: 2px 0;
   color: var(--terminal-green-dim);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .card .cost {
@@ -455,15 +455,15 @@ p {
 button {
   border: 1px solid var(--terminal-green);
   border-radius: 0;
-  padding: 6px 10px;
-  font-size: 11px;
-  background: rgba(0, 20, 0, 0.9);
+  padding: 8px 12px;
+  font-size: 13px;
+  background: rgba(42, 42, 42, 0.9);
   color: var(--terminal-green);
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 10px rgba(0, 204, 136, 0.3);
   text-shadow: 0 0 5px var(--terminal-green);
   font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
   text-transform: uppercase;
@@ -1003,4 +1003,116 @@ button:disabled {
   font-size: 9px;
   color: var(--terminal-green-dim);
   min-width: 24px;
+}
+
+/* Right panel optimization - Better layout for reduced scrolling */
+.ui-panel-right .panel-content {
+  gap: 8px;
+}
+
+/* Compact layout for help and milestones */
+.ui-panel-right .assist {
+  margin-bottom: 4px;
+}
+
+.ui-panel-right .assist .assist-list {
+  gap: 2px;
+}
+
+.ui-panel-right .assist .assist-list li {
+  padding: 3px 6px;
+  font-size: 11px;
+}
+
+/* Talents section - more compact */
+.talent-grid {
+  gap: 4px;
+}
+
+.talent-actions {
+  margin-top: 6px;
+  gap: 4px;
+}
+
+/* Upgrades and other sections - more compact */
+.ui-panel-right .list {
+  gap: 4px;
+}
+
+/* Prestige section - horizontal layout */
+.stat-block:has(#softPrestige) .panel-content,
+.stat-block:has(#softPrestige) {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-block:has(#softPrestige) button {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Debug sections - more compact grid */
+.debug .debug-grid {
+  gap: 4px;
+}
+
+.debug .debug-grid button {
+  padding: 4px 6px;
+  font-size: 10px;
+}
+
+/* Collapsible sections - reduce padding when collapsed */
+.stat-block.collapsible.collapsed {
+  padding: 6px 8px;
+}
+
+.stat-block.collapsible.collapsed h2 {
+  margin-bottom: 0;
+}
+
+/* Guide section - more compact */
+.guide {
+  gap: 2px;
+  font-size: 11px;
+}
+
+.guide li {
+  line-height: 1.2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  :root {
+    --panel-width: 360px;
+  }
+}
+
+@media (max-width: 1200px) {
+  :root {
+    --panel-width: 320px;
+  }
+  
+  .ui-panel-right .panel-content {
+    gap: 6px;
+  }
+  
+  .stat-block {
+    padding: 6px;
+  }
+}
+
+@media (max-height: 800px) {
+  .ui-panel {
+    font-size: 12px;
+  }
+  
+  .stat-block h2 {
+    font-size: 0.8rem;
+  }
+  
+  .stat-row {
+    font-size: 12px;
+  }
 }
