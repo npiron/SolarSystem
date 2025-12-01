@@ -90,8 +90,15 @@ export function loadSave(
     // Audio
     state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
     
-    // Addons
-    state.addons = { ...state.addons, ...save.addons };
+    // Addons (sanitize to known keys)
+    {
+      const addons = { ...state.addons, ...save.addons } as Partial<typeof state.addons>;
+      state.addons = {
+        glow: !!addons.glow,
+        bloom: !!addons.bloom,
+        grain: !!addons.grain
+      };
+    }
     
     // Player stats
     if (save.player) {
