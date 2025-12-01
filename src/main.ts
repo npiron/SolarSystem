@@ -76,6 +76,8 @@ const docTabs = document.getElementById("docTabs");
 const docContent = document.getElementById("docContent");
 const docBtn = document.getElementById("docBtn");
 const docCloseBtn = docDialog?.querySelector(".doc-close-btn") as HTMLButtonElement | null;
+const topbarEl = document.querySelector(".topbar") as HTMLElement | null;
+const upgradeBarEl = document.getElementById("upgradeBar") as HTMLElement | null;
 const debugBtns = {
   giveEssence: document.getElementById("debugGiveEssence"),
   giveFragments: document.getElementById("debugGiveFragments"),
@@ -93,7 +95,7 @@ const damageRow = document.getElementById("damageRow");
 const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators") as HTMLElement;
-const upgradesContainer = document.getElementById("upgrades") as HTMLElement;
+const upgradesContainer = (document.getElementById("upgradeBar") || document.getElementById("upgrades")) as HTMLElement;
 const talentsContainer = document.getElementById("talents") as HTMLElement | null;
 const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
 const talentStatusEl = document.getElementById("talentStatus");
@@ -142,7 +144,15 @@ const uiRefs = {
   talentButtons: new Map<string, HTMLButtonElement>()
 };
 
+function updateUiTopMargin(): void {
+  const headerH = topbarEl?.clientHeight || 60;
+  const barH = upgradeBarEl?.offsetHeight || 0;
+  UI_MARGINS.top = headerH + (barH > 0 ? barH + 8 : 0);
+}
+
+
 function resizeCanvas(center = false): void {
+  updateUiTopMargin();
   const width = window.innerWidth;
   const height = window.innerHeight;
   buildBackground(width, height);
@@ -395,6 +405,10 @@ function initUI(): void {
   renderGenerators();
   renderUpgrades();
   renderTalents();
+
+  // After layout, recompute UI top margin and clamp bounds
+  updateUiTopMargin();
+  resizeCanvas();
 
   // Initialize tuning panel
   loadTuning();
