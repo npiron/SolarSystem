@@ -1,29 +1,24 @@
 import type { Canvas, Enemy, GameState, BossEnemy } from "../types/index.ts";
-import {
-  BOSS_WAVE_INTERVAL,
-  BOSS_RADIUS,
-  BOSS_HP_MULTIPLIER,
-  BOSS_SPEED,
-  BOSS_FIRE_DELAY,
-  BOSS_REWARD_MULTIPLIER
-} from "../config/constants.ts";
+import { getTuning } from "../config/tuning.ts";
 
-const MAX_PACK_SIZE = 5;
 const SPAWN_MARGIN = 20;
 
 export function spawnRate(state: GameState): number {
-  return Math.min(8, 1.4 + state.wave * 0.08);
+  const { baseSpawnRate, spawnRateWaveScale, maxSpawnRate } = getTuning().spawn;
+  return Math.min(maxSpawnRate, baseSpawnRate + state.wave * spawnRateWaveScale);
 }
 
 export function packSize(state: GameState): number {
+  const maxPackSize = getTuning().spawn.maxPackSize;
   const growth = Math.pow(Math.max(0, state.wave - 1) / 15, 0.6);
-  return Math.min(MAX_PACK_SIZE, Math.max(1, Math.floor(1 + growth)));
+  return Math.min(maxPackSize, Math.max(1, Math.floor(1 + growth)));
 }
 
 function eliteChance(state: GameState, pack: number): number {
-  const packPressure = pack >= MAX_PACK_SIZE ? 0.04 : (pack / MAX_PACK_SIZE) * 0.02;
-  const chance = 0.10 + state.wave * 0.0015 + packPressure;
-  return Math.min(0.55, chance);
+  const { baseEliteChance, eliteChanceWaveScale, maxEliteChance, maxPackSize } = getTuning().spawn;
+  const packPressure = pack >= maxPackSize ? 0.04 : (pack / maxPackSize) * 0.02;
+  const chance = baseEliteChance + state.wave * eliteChanceWaveScale + packPressure;
+  return Math.min(maxEliteChance, chance);
 }
 
 /**
@@ -119,10 +114,11 @@ import type { EnemyType } from "../types/index.ts";
  */
 function determineEnemyType(hp: number, wave: number, isElite: boolean): EnemyType {
   if (isElite) return 'elite';
-  
-  const baselineHp = (25 + wave * 6) * (1 + wave * 0.015);
+
+  const enemyConfig = getTuning().enemy;
+  const baselineHp = (enemyConfig.baseHp + wave * enemyConfig.hpWaveScale) * (1 + wave * 0.015);
   const ratio = hp / baselineHp;
-  
+
   if (ratio < 0.7) return 'weak';
   if (ratio > 1.3) return 'strong';
   return 'normal';
@@ -130,17 +126,14 @@ function determineEnemyType(hp: number, wave: number, isElite: boolean): EnemyTy
 
 /**
  * Calculate enemy radius based on type for visual differentiation.
- * - weak: smaller (8)
- * - normal: base size (10)
- * - strong: larger (12)
- * - elite: largest (14)
  */
 function getEnemyRadius(type: EnemyType): number {
+  const graphics = getTuning().graphics;
   switch (type) {
-    case 'weak': return 6;
-    case 'normal': return 12;
-    case 'strong': return 18;
-    case 'elite': return 24;
+    case 'weak': return graphics.enemyRadiusWeak;
+    case 'normal': return graphics.enemyRadiusNormal;
+    case 'strong': return graphics.enemyRadiusStrong;
+    case 'elite': return graphics.enemyRadiusElite;
   }
 }
 
@@ -163,18 +156,24 @@ export function spawnEnemy(
 
   const elite = Math.random() < chance;
   const waveScale = 1 + state.wave * 0.015;
-  
-  // Add variance to HP for more diversity (±30%)
-  const hpVariance = 0.7 + Math.random() * 0.6;
-  const baseHp = (25 + state.wave * 6) * waveScale;
-  const hp = baseHp * hpVariance * (elite ? 2.5 : 1);
-  
-  const speed = (45 + state.wave * 1.5) * (elite ? 0.85 : 1);
-  const fireDelay = Math.max(1.4, (elite ? 3.2 : 4.2) - state.wave * 0.05);
-  
+
+  const enemyConfig = getTuning().enemy;
+  const spawnConfig = getTuning().spawn;
+
+  // Add variance to HP for more diversity
+  const hpVariance = 1 - enemyConfig.hpVariance + Math.random() * (enemyConfig.hpVariance * 2);
+  const baseHp = (enemyConfig.baseHp + state.wave * enemyConfig.hpWaveScale) * waveScale;
+  const hp = baseHp * hpVariance * (elite ? spawnConfig.eliteHpMultiplier : 1);
+
+  const speed = (enemyConfig.baseSpeed + state.wave * enemyConfig.speedWaveScale) * (elite ? spawnConfig.eliteSpeedMultiplier : 1);
+  const fireDelay = Math.max(
+    enemyConfig.minFireDelay,
+    (elite ? enemyConfig.eliteFireDelay : enemyConfig.baseFireDelay) - state.wave * enemyConfig.fireDelayWaveScale
+  );
+
   const type = determineEnemyType(hp, state.wave, elite);
   const radius = getEnemyRadius(type);
-  
+
   const enemy: Enemy = {
     x,
     y,
@@ -182,7 +181,7 @@ export function spawnEnemy(
     hp,
     maxHp: hp,
     speed,
-    reward: (2.5 + state.wave * 0.6) * (elite ? 2.5 : 1),
+    reward: (enemyConfig.baseReward + state.wave * enemyConfig.rewardWaveScale) * (elite ? spawnConfig.eliteRewardMultiplier : 1),
     fireTimer: fireDelay * Math.random(),
     fireDelay,
     elite,
@@ -221,14 +220,15 @@ export function updateSpawn(state: GameState, dt: number, canvas: Canvas): void 
 
 /**
  * Check if a boss should spawn based on current wave.
- * Boss spawns every BOSS_WAVE_INTERVAL waves.
+ * Boss spawns every waveInterval waves.
  */
 export function shouldSpawnBoss(state: GameState): boolean {
+  const bossWaveInterval = getTuning().boss.waveInterval;
   const currentWaveFloor = Math.floor(state.wave);
   return (
     !state.bossActive &&
     currentWaveFloor > 0 &&
-    currentWaveFloor % BOSS_WAVE_INTERVAL === 0 &&
+    currentWaveFloor % bossWaveInterval === 0 &&
     currentWaveFloor > state.lastBossWave
   );
 }
@@ -242,8 +242,12 @@ export function spawnBoss(state: GameState, canvas: Canvas): void {
   state.enemyProjectiles = [];
 
   const waveScale = 1 + state.wave * 0.02;
-  const baseHp = (25 + state.wave * 6) * waveScale;
-  const bossHp = baseHp * BOSS_HP_MULTIPLIER;
+  const enemyConfig = getTuning().enemy;
+  const bossConfig = getTuning().boss;
+  const graphicsConfig = getTuning().graphics;
+
+  const baseHp = (enemyConfig.baseHp + state.wave * enemyConfig.hpWaveScale) * waveScale;
+  const bossHp = baseHp * bossConfig.hpMultiplier;
 
   // Spawn boss from a random edge
   const side = Math.floor(Math.random() * 4);
@@ -252,13 +256,13 @@ export function spawnBoss(state: GameState, canvas: Canvas): void {
   const boss: BossEnemy = {
     x,
     y,
-    radius: BOSS_RADIUS,
+    radius: graphicsConfig.bossRadius,
     hp: bossHp,
     maxHp: bossHp,
-    speed: BOSS_SPEED,
-    reward: (2.5 + state.wave * 0.6) * BOSS_REWARD_MULTIPLIER,
-    fireTimer: BOSS_FIRE_DELAY * Math.random(),
-    fireDelay: BOSS_FIRE_DELAY
+    speed: bossConfig.speed,
+    reward: (enemyConfig.baseReward + state.wave * enemyConfig.rewardWaveScale) * bossConfig.rewardMultiplier,
+    fireTimer: bossConfig.fireDelay * Math.random(),
+    fireDelay: bossConfig.fireDelay
   };
 
   state.currentBoss = boss;

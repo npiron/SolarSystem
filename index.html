@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600&display=swap"
-    rel="stylesheet"
-  />
+    rel="stylesheet" />
 </head>
+
 <body>
   <header class="topbar">
     <div class="topbar-left">
@@ -32,7 +33,7 @@
 
   <main class="layout">
     <section class="panel stats">
-      <div class="stat-block">
+      <div class="stat-block collapsible">
         <h2>Ressources</h2>
         <div class="stat-row">
           <span><span class="icon">⚡</span> Essence</span>
@@ -48,11 +49,12 @@
         </div>
       </div>
 
-      <div class="stat-block">
+      <div class="stat-block collapsible">
         <h2>Run en cours</h2>
         <div class="stat-row"><span><span class="icon">🌊</span> Vague</span><span id="wave">1</span></div>
         <div class="stat-row"><span><span class="icon">❤️</span> Vie</span><span id="hp">100</span></div>
-        <div class="stat-row tooltip" id="damageRow"><span><span class="icon">🔥</span> Dégâts</span><span id="dps">0</span></div>
+        <div class="stat-row tooltip" id="damageRow"><span><span class="icon">🔥</span> Dégâts</span><span
+            id="dps">0</span></div>
         <div class="stat-row"><span><span class="icon">🎯</span> Critiques</span><span id="crit">0%</span></div>
         <div class="stat-row"><span><span class="icon">🧿</span> Bouclier</span><span id="shield">0%</span></div>
         <div class="stat-row"><span><span class="icon">🧲</span> Collecte</span><span id="collect">0</span></div>
@@ -86,19 +88,20 @@
     <section class="arena-wrapper">
       <canvas id="webgl2" class="arena-layer" width="960" height="600"></canvas>
       <div class="overlay">
-        <p>Le personnage se déplace et tire automatiquement. Les ennemis arrivent par vagues sans fin. Achetez des améliorations pour accélérer l'inflation de dégâts.</p>
+        <p>Le personnage se déplace et tire automatiquement. Les ennemis arrivent par vagues sans fin. Achetez des
+          améliorations pour accélérer l'inflation de dégâts.</p>
         <p class="muted">Sauvegardé dans le navigateur : cookies/localStorage, aucun serveur requis.</p>
         <p class="status" id="statusMessage"></p>
       </div>
     </section>
 
     <section class="panel upgrades">
-      <div class="stat-block assist">
+      <div class="stat-block assist collapsible">
         <h2>Aide rapide</h2>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
 
-      <div class="stat-block assist">
+      <div class="stat-block assist collapsible">
         <h2>Jalons</h2>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>
@@ -116,7 +119,7 @@
         <h2>Améliorations</h2>
         <div id="upgrades" class="list"></div>
       </div>
-      <div class="stat-block">
+      <div class="stat-block collapsible">
         <h2>Prestige</h2>
         <p class="muted">Réduit ta vague à 1 mais boost le passif.</p>
         <button id="softPrestige" class="secondary">⟳ Consolidation</button>
@@ -170,14 +173,19 @@
       <button class="doc-close-btn" aria-label="Fermer">✕</button>
     </div>
     <div class="doc-tabs" id="docTabs">
-      <button class="doc-tab" data-tab="code"><span class="tab-icon">📝</span><span class="tab-label">Code</span></button>
-      <button class="doc-tab" data-tab="wiki"><span class="tab-icon">📖</span><span class="tab-label">Wiki</span></button>
-      <button class="doc-tab" data-tab="changelog"><span class="tab-icon">📋</span><span class="tab-label">Versions</span></button>
-      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon">🗺️</span><span class="tab-label">Roadmap</span></button>
+      <button class="doc-tab" data-tab="code"><span class="tab-icon">📝</span><span
+          class="tab-label">Code</span></button>
+      <button class="doc-tab" data-tab="wiki"><span class="tab-icon">📖</span><span
+          class="tab-label">Wiki</span></button>
+      <button class="doc-tab" data-tab="changelog"><span class="tab-icon">📋</span><span
+          class="tab-label">Versions</span></button>
+      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon">🗺️</span><span
+          class="tab-label">Roadmap</span></button>
     </div>
     <div class="doc-content" id="docContent" role="region" aria-live="polite"></div>
   </dialog>
 
   <script type="module" src="./src/main.ts"></script>
 </body>
+
 </html>

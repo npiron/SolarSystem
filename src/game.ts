@@ -13,10 +13,7 @@ import { updateCombat } from "./systems/combat.ts";
 import { updateFloatingText } from "./systems/hud.ts";
 import { calculatePlayerMovement, clampPlayerToBounds } from "./player.ts";
 import { computeIdleRate, computePassiveGains } from "./systems/economy.ts";
-
-// Physics constants for inertial movement
-const ACCELERATION = 8.0; // How fast the player accelerates toward target direction
-const FRICTION = 4.5; // Drag coefficient for smooth deceleration
+import { getTuning } from "./config/tuning.ts";
 
 interface UpdateContext {
   canvasWidth: number;
@@ -53,22 +50,25 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   const targetVx = movement.dirX * state.player.speed;
   const targetVy = movement.dirY * state.player.speed;
 
+  // Get physics constants from tuning
+  const { playerAcceleration, playerFriction, maxSpeedMultiplier } = getTuning().physics;
+
   // Calculate acceleration toward target velocity with smooth interpolation
-  const ax = (targetVx - state.player.vx) * ACCELERATION;
-  const ay = (targetVy - state.player.vy) * ACCELERATION;
+  const ax = (targetVx - state.player.vx) * playerAcceleration;
+  const ay = (targetVy - state.player.vy) * playerAcceleration;
 
   // Apply acceleration to velocity
   state.player.vx += ax * dt;
   state.player.vy += ay * dt;
 
   // Apply friction to velocity (damping effect for space-like feel)
-  const frictionFactor = 1 - FRICTION * dt;
+  const frictionFactor = 1 - playerFriction * dt;
   state.player.vx *= Math.max(0, frictionFactor);
   state.player.vy *= Math.max(0, frictionFactor);
 
   // Clamp velocity to max speed
   const currentSpeed = Math.hypot(state.player.vx, state.player.vy);
-  const maxSpeed = state.player.speed * 1.2;
+  const maxSpeed = state.player.speed * maxSpeedMultiplier;
   if (currentSpeed > maxSpeed) {
     state.player.vx = (state.player.vx / currentSpeed) * maxSpeed;
     state.player.vy = (state.player.vy / currentSpeed) * maxSpeed;
@@ -87,8 +87,8 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
     assistUi.recordShot();
   }
 
-  // Progress wave
-  state.wave += dt * 0.15;
+  // Progress wave using tuning value
+  state.wave += dt * getTuning().wave.progressionSpeed;
   assistUi.trackWave(state.wave);
 
   // Update prestige cooldown

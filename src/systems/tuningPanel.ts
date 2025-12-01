@@ -15,10 +15,22 @@ import {
   TuningConfig,
   TuningParamMeta
 } from "../config/tuning.ts";
+import type { GameState } from "../types/index.ts";
+import { spawnRate } from "./spawn.ts";
 
 interface TuningPanelContext {
   container: HTMLElement | null;
   onUpdate?: () => void;
+  state?: GameState;
+  onTuningChange?: () => void;
+}
+
+interface LiveValues {
+  playerDps: number;
+  currentSpawnRate: number;
+  currentEnemyHp: number;
+  currentEnemySpeed: number;
+  currentEliteChance: number;
 }
 
 let panelContext: TuningPanelContext = {
@@ -63,6 +75,12 @@ export function renderTuningPanel(): void {
     const meta = tuningMeta[category];
     const section = createCategorySection(category, meta.label, tuning[category], meta.params);
     container.appendChild(section);
+  }
+
+  // Live values section (if state is available)
+  if (panelContext.state) {
+    const liveSection = createLiveValuesSection(panelContext.state);
+    container.appendChild(liveSection);
   }
 
   // Hidden file input for import
@@ -282,6 +300,109 @@ function updateTuningParam(category: keyof TuningConfig, param: string, value: n
   setTuning({ [category]: categoryValues } as Partial<TuningConfig>);
   saveTuning();
   panelContext.onUpdate?.();
+
+  // Trigger tuning change callback (will reset game)
+  if (panelContext.onTuningChange) {
+    panelContext.onTuningChange();
+  }
+}
+
+/**
+ * Calculate live values from game state
+ */
+function calculateLiveValues(state: GameState): LiveValues {
+  const tuning = getTuning();
+  const enemyConfig = tuning.enemy;
+  const spawnConfig = tuning.spawn;
+
+  // Calculate current enemy HP for this wave
+  const waveScale = 1 + state.wave * 0.015;
+  const baseHp = (enemyConfig.baseHp + state.wave * enemyConfig.hpWaveScale) * waveScale;
+
+  // Calculate current enemy speed
+  const baseSpeed = enemyConfig.baseSpeed + state.wave * enemyConfig.speedWaveScale;
+
+  // Calculate current elite chance
+  const pack = Math.min(spawnConfig.maxPackSize, Math.max(1, Math.floor(1 + Math.pow(Math.max(0, state.wave - 1) / 15, 0.6))));
+  const packPressure = pack >= spawnConfig.maxPackSize ? 0.04 : (pack / spawnConfig.maxPackSize) * 0.02;
+  const eliteChance = Math.min(spawnConfig.maxEliteChance, spawnConfig.baseEliteChance + state.wave * spawnConfig.eliteChanceWaveScale + packPressure);
+
+  // Estimate DPS (damage * projectiles / fireDelay)
+  const playerDps = (state.player.damage * state.player.projectiles) / state.player.fireDelay;
+
+  return {
+    playerDps,
+    currentSpawnRate: spawnRate(state),
+    currentEnemyHp: baseHp,
+    currentEnemySpeed: baseSpeed,
+    currentEliteChance: eliteChance
+  };
+}
+
+/**
+ * Create the live values section
+ */
+function createLiveValuesSection(state: GameState): HTMLElement {
+  const section = document.createElement("div");
+  section.className = "tuning-section live-values";
+  section.id = "tuningLiveValues";
+
+  const header = document.createElement("h3");
+  header.className = "tuning-section-title";
+  header.textContent = "⚡ Valeurs calculées (temps réel)";
+  section.appendChild(header);
+
+  const content = document.createElement("div");
+  content.className = "tuning-section-content";
+
+  const liveValues = calculateLiveValues(state);
+
+  content.innerHTML = `
+    <div class="tuning-row">
+      <span class="tuning-label">DPS joueur estimé</span>
+      <span id="liveDps" class="tuning-live-value">${liveValues.playerDps.toFixed(1)}</span>
+    </div>
+    <div class="tuning-row">
+      <span class="tuning-label">Taux de spawn actuel</span>
+      <span id="liveSpawnRate" class="tuning-live-value">${liveValues.currentSpawnRate.toFixed(2)} /s</span>
+    </div>
+    <div class="tuning-row">
+      <span class="tuning-label">HP ennemis (vague ${Math.floor(state.wave)})</span>
+      <span id="liveEnemyHp" class="tuning-live-value">${Math.round(liveValues.currentEnemyHp)}</span>
+    </div>
+    <div class="tuning-row">
+      <span class="tuning-label">Vitesse ennemis (vague ${Math.floor(state.wave)})</span>
+      <span id="liveEnemySpeed" class="tuning-live-value">${Math.round(liveValues.currentEnemySpeed)}</span>
+    </div>
+    <div class="tuning-row">
+      <span class="tuning-label">Chance élite actuelle</span>
+      <span id="liveEliteChance" class="tuning-live-value">${(liveValues.currentEliteChance * 100).toFixed(1)}%</span>
+    </div>
+  `;
+
+  section.appendChild(content);
+  return section;
+}
+
+/**
+ * Update live values display (called from game loop)
+ */
+export function updateLiveValues(state: GameState): void {
+  if (!panelContext.state) return;
+
+  const liveValues = calculateLiveValues(state);
+
+  const dpsEl = document.getElementById("liveDps");
+  const spawnRateEl = document.getElementById("liveSpawnRate");
+  const enemyHpEl = document.getElementById("liveEnemyHp");
+  const enemySpeedEl = document.getElementById("liveEnemySpeed");
+  const eliteChanceEl = document.getElementById("liveEliteChance");
+
+  if (dpsEl) dpsEl.textContent = liveValues.playerDps.toFixed(1);
+  if (spawnRateEl) spawnRateEl.textContent = `${liveValues.currentSpawnRate.toFixed(2)} /s`;
+  if (enemyHpEl) enemyHpEl.textContent = Math.round(liveValues.currentEnemyHp).toString();
+  if (enemySpeedEl) enemySpeedEl.textContent = Math.round(liveValues.currentEnemySpeed).toString();
+  if (eliteChanceEl) eliteChanceEl.textContent = `${(liveValues.currentEliteChance * 100).toFixed(1)}%`;
 }
 
 /**

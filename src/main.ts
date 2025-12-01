@@ -30,7 +30,7 @@ import {
   renderUpgrades as renderUpgradesUI,
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
-import { initTuningPanel } from "./systems/tuningPanel.ts";
+import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
@@ -124,11 +124,11 @@ const state: GameState = createInitialState(webgl2Canvas.width, webgl2Canvas.hei
 state.talents.bonuses = talentBonuses;
 
 let assistUi: AssistUi = {
-  recordShot: () => {},
-  recordPurchase: () => {},
-  recordPrestige: () => {},
-  trackWave: () => {},
-  refreshMilestones: () => {}
+  recordShot: () => { },
+  recordPurchase: () => { },
+  recordPrestige: () => { },
+  trackWave: () => { },
+  refreshMilestones: () => { }
 };
 
 // UI reference maps
@@ -411,9 +411,15 @@ function initUI(): void {
   loadTuning();
   initTuningPanel({
     container: tuningPanelContainer,
+    state,
     onUpdate: () => {
       // Refresh UI when tuning changes
       updateHud(state, hudContext);
+    },
+    onTuningChange: () => {
+      // Reset game when tuning values change (to avoid inconsistencies)
+      softResetLocal();
+      saveGameLocal();
     }
   });
 
@@ -424,7 +430,7 @@ function initUI(): void {
 async function bootstrap(): Promise<void> {
   resizeCanvas(true);
   buildBackground(webgl2Canvas.width, webgl2Canvas.height);
-  
+
   // Load saved game state
   talents = loadSave(state, {
     generators,
@@ -438,7 +444,7 @@ async function bootstrap(): Promise<void> {
   hudContext.talents = talents;
   talentBonuses = computeTalentBonuses(talents);
   state.talents.bonuses = talentBonuses;
-  
+
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
@@ -478,6 +484,7 @@ async function bootstrap(): Promise<void> {
     });
     updateHud(state, hudContext);
     updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
+    updateLiveValues(state);
     gameRender(state, {
       canvasWidth: width,
       canvasHeight: height,

@@ -7,6 +7,8 @@ export function init(canvas: HTMLCanvasElement) {
   return renderer;
 }
 
+export const createRenderer = init;
+
 export function getRenderer() {
   return renderer;
 }

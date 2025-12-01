@@ -2,7 +2,7 @@
  * Game state factory and initialization
  */
 import type { GameState, TalentBonuses } from "../types/index.ts";
-import { BASE_PLAYER_STATS, INITIAL_HP, INITIAL_MAX_HP, PLAYER_RADIUS } from "../config/player.ts";
+import { getPlayerStatsFromTuning, getInitialHP, getPlayerRadius } from "../config/player.ts";
 
 export function createInitialTalentBonuses(): TalentBonuses {
   return {
@@ -39,10 +39,10 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       y: canvasHeight / 2,
       vx: 0,
       vy: 0,
-      radius: PLAYER_RADIUS,
-      ...BASE_PLAYER_STATS,
-      hp: INITIAL_HP,
-      maxHp: INITIAL_MAX_HP,
+      radius: getPlayerRadius(),
+      ...getPlayerStatsFromTuning(),
+      hp: getInitialHP(),
+      maxHp: getInitialHP(),
       fireTimer: 0,
       orbitTimer: 0,
       spin: 0
