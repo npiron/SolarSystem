@@ -1,0 +1,5 @@
+127.0.0.1 - - [01/Dec/2025 18:05:06] "HEAD / HTTP/1.1" 200 -
+10.2.2.140 - - [01/Dec/2025 18:05:11] "GET / HTTP/1.1" 200 -
+10.2.2.140 - - [01/Dec/2025 18:05:11] "GET /src/main.ts HTTP/1.1" 200 -
+10.2.2.140 - - [01/Dec/2025 18:05:11] "GET /public/assets/styles/main.css HTTP/1.1" 200 -
+10.2.2.140 - - [01/Dec/2025 18:05:11] "GET /public/assets/logo.svg HTTP/1.1" 200 -

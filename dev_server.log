@@ -1,0 +1,17 @@
+
+> neo-survivors-idle@0.1.0 dev
+> vite --host 0.0.0.0 --port 12000
+
+You are using Node.js 18.20.8. Vite requires Node.js version 20.19+ or 22.12+. Please upgrade your Node.js version.
+error when starting dev server:
+TypeError: crypto.hash is not a function
+    at getHash (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:2680:21)
+    at getLockfileHash (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:33031:9)
+    at getDepHash (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:33034:23)
+    at initDepsOptimizerMetadata (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:32493:53)
+    at createDepsOptimizer (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:34681:17)
+    at new DevEnvironment (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:35455:109)
+    at Object.defaultCreateClientDevEnvironment [as createEnvironment] (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:35867:9)
+    at file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:26036:52
+    at Array.map (<anonymous>)
+    at _createServer (file:///workspace/project/SolarSystem/node_modules/vite/dist/node/chunks/config.js:26035:58)
