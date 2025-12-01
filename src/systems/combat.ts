@@ -1,5 +1,6 @@
 import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
-import { BULLET_LIMITS, CELL_SIZE, FX_BUDGET, TAU, BOSS_PROJECTILE_SPEED, BOSS_PROJECTILE_DAMAGE } from "../config/constants.ts";
+import { getTuning } from "../config/tuning.ts";
+import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
 
 function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
@@ -38,14 +39,17 @@ function fire(state: GameState): void {
     ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
     : state.time * 0.9;
 
-  const bulletSpeed = Math.min(state.player.bulletSpeed, BULLET_LIMITS.maxSpeed);
-  const lifetime = Math.min(1.2 * state.player.range, BULLET_LIMITS.maxLifetime);
+  const { maxSpeed, maxLifetime } = getTuning().bullet;
+  const { maxBullets } = getTuning().fx;
+
+  const bulletSpeed = Math.min(state.player.bulletSpeed, maxSpeed);
+  const lifetime = Math.min(1.2 * state.player.range, maxLifetime);
 
   // Shotgun spread: all projectiles fire in a cone toward the target
   const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
 
   for (let i = 0; i < count; i++) {
-    if (state.bullets.length >= FX_BUDGET.bullets) break;
+    if (state.bullets.length >= maxBullets) break;
     // Spread projectiles evenly within the cone, centered on baseAngle
     const offset = count > 1 ? (i / (count - 1) - 0.5) * spreadAngle : 0;
     const angle = baseAngle + offset;
@@ -65,12 +69,15 @@ function fire(state: GameState): void {
  * Orbit weapon: fires projectiles in a circular pattern around the player
  */
 function fireOrbit(state: GameState): void {
+  const { maxSpeed, maxLifetime } = getTuning().bullet;
+  const { maxBullets } = getTuning().fx;
+
   const count = Math.max(1, state.player.orbitProjectiles);
-  const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, BULLET_LIMITS.maxSpeed);
-  const lifetime = Math.min(1.5 * state.player.range, BULLET_LIMITS.maxLifetime);
+  const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
+  const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
 
   for (let i = 0; i < count; i++) {
-    if (state.bullets.length >= FX_BUDGET.bullets) break;
+    if (state.bullets.length >= maxBullets) break;
     // Evenly distribute projectiles around the player
     const angle = (TAU * i) / count + state.player.spin;
     const bullet: Bullet = {
@@ -104,24 +111,30 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
 
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.player.regen * dt);
 
+  const { offscreenPadding } = getTuning().bullet;
+  const { maxBullets } = getTuning().fx;
+
   state.bullets.forEach((b) => {
     b.x += b.dx * dt;
     b.y += b.dy * dt;
     b.life -= dt;
 
     if (
-      b.x < -BULLET_LIMITS.offscreenPadding ||
-      b.x > canvas.width + BULLET_LIMITS.offscreenPadding ||
-      b.y < -BULLET_LIMITS.offscreenPadding ||
-      b.y > canvas.height + BULLET_LIMITS.offscreenPadding
+      b.x < -offscreenPadding ||
+      b.x > canvas.width + offscreenPadding ||
+      b.y < -offscreenPadding ||
+      b.y > canvas.height + offscreenPadding
     ) {
       b.life = -1;
     }
   });
-  if (state.bullets.length > FX_BUDGET.bullets) {
-    state.bullets.splice(0, state.bullets.length - FX_BUDGET.bullets);
+  if (state.bullets.length > maxBullets) {
+    state.bullets.splice(0, state.bullets.length - maxBullets);
   }
   state.bullets = state.bullets.filter((b) => b.life > 0);
+
+  const { attractionSpeed, collectDistanceMultiplier } = getTuning().fragments;
+  const { maxFragments } = getTuning().fx;
 
   state.fragmentsOrbs.forEach((f) => {
     f.life -= dt;
@@ -129,12 +142,12 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const dy = state.player.y - f.y;
     const dist = Math.hypot(dx, dy) || 1;
     if (dist < state.player.collectRadius) {
-      f.vx += (dx / dist) * 120 * dt;
-      f.vy += (dy / dist) * 120 * dt;
+      f.vx += (dx / dist) * attractionSpeed * dt;
+      f.vy += (dy / dist) * attractionSpeed * dt;
     }
     f.x += f.vx * dt;
     f.y += f.vy * dt;
-    const collectDist = state.player.radius + 6 + state.player.collectRadius * 0.15;
+    const collectDist = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
     if (dist < collectDist) {
       registerFragmentGain(state, f.value, f.x, f.y - 6);
       f.life = -1;
@@ -142,8 +155,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   });
   state.fragmentsOrbs = state.fragmentsOrbs.filter((f) => f.life > 0);
 
-  if (state.fragmentsOrbs.length > FX_BUDGET.fragments) {
-    const overflow = state.fragmentsOrbs.splice(0, state.fragmentsOrbs.length - FX_BUDGET.fragments);
+  if (state.fragmentsOrbs.length > maxFragments) {
+    const overflow = state.fragmentsOrbs.splice(0, state.fragmentsOrbs.length - maxFragments);
     const merged = overflow.reduce((sum, f) => sum + f.value, 0);
     registerFragmentGain(state, merged, state.player.x, state.player.y - 10, true);
   }
@@ -210,7 +223,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       state.resources.essence += e.reward;
       state.runStats.kills += 1;
       state.runStats.essence += e.reward;
-      if (state.fragmentsOrbs.length < FX_BUDGET.fragments) {
+      const { maxFragments } = getTuning().fx;
+      if (state.fragmentsOrbs.length < maxFragments) {
         state.fragmentsOrbs.push({
           x: e.x,
           y: e.y,
@@ -233,7 +247,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const distSq = dx * dx + dy * dy;
     const radius = e.radius + state.player.radius;
     if (distSq < radius * radius) {
-      const dmg = 18 * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
+      const { contactDamageBase, contactDamageWaveScale } = getTuning().combat;
+      const dmg = contactDamageBase * dt * (1 + state.wave * contactDamageWaveScale) * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
     }
   });
@@ -251,13 +266,14 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     boss.fireTimer -= dt;
     if (boss.fireTimer <= 0) {
       const projAngle = Math.atan2(state.player.y - boss.y, state.player.x - boss.x);
+      const { bossProjectileSpeed, bossProjectileDamage } = getTuning().combat;
       const projectile: EnemyProjectile = {
         x: boss.x,
         y: boss.y,
-        dx: Math.cos(projAngle) * BOSS_PROJECTILE_SPEED,
-        dy: Math.sin(projAngle) * BOSS_PROJECTILE_SPEED,
+        dx: Math.cos(projAngle) * bossProjectileSpeed,
+        dy: Math.sin(projAngle) * bossProjectileSpeed,
         life: 3.0,
-        damage: BOSS_PROJECTILE_DAMAGE * (1 + state.wave * 0.05)
+        damage: bossProjectileDamage * (1 + state.wave * 0.05)
       };
       state.enemyProjectiles.push(projectile);
       boss.fireTimer = boss.fireDelay;
@@ -289,7 +305,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const bDistSq = bx * bx + by * by;
     const bRadius = boss.radius + state.player.radius;
     if (bDistSq < bRadius * bRadius) {
-      const dmg = 25 * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
+      const { bossContactDamageBase } = getTuning().combat;
+      const dmg = bossContactDamageBase * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
     }
 
@@ -299,7 +316,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       state.resources.essence += boss.reward;
       state.runStats.kills += 1;
       state.runStats.essence += boss.reward;
-      if (state.fragmentsOrbs.length < FX_BUDGET.fragments) {
+      const { maxFragments } = getTuning().fx;
+      if (state.fragmentsOrbs.length < maxFragments) {
         state.fragmentsOrbs.push({
           x: boss.x,
           y: boss.y,
@@ -325,11 +343,12 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     p.life -= dt;
 
     // Check if projectile is off-screen
+    const { offscreenPadding } = getTuning().bullet;
     if (
-      p.x < -BULLET_LIMITS.offscreenPadding ||
-      p.x > canvas.width + BULLET_LIMITS.offscreenPadding ||
-      p.y < -BULLET_LIMITS.offscreenPadding ||
-      p.y > canvas.height + BULLET_LIMITS.offscreenPadding
+      p.x < -offscreenPadding ||
+      p.x > canvas.width + offscreenPadding ||
+      p.y < -offscreenPadding ||
+      p.y > canvas.height + offscreenPadding
     ) {
       p.life = -1;
     }
