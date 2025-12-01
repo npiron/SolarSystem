@@ -102,3 +102,8 @@ export interface EnemyProjectile {
   life: number;
   damage: number;
 }
+
+export interface OrbitalOrb {
+  angle: number;
+  distance: number;
+}

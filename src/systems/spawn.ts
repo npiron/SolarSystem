@@ -66,26 +66,32 @@ export function calculateSpawnPosition(
   packTotal: number
 ): { x: number; y: number } {
   const margin = SPAWN_MARGIN;
+  const uiMargins = canvas.uiMargins || { left: 0, right: 0, top: 0, bottom: 0 };
+
+  // Calculate playable area dimensions
+  const playableWidth = canvas.width - uiMargins.left - uiMargins.right;
+  const playableHeight = canvas.height - uiMargins.top - uiMargins.bottom;
+
   let x = 0;
   let y = 0;
 
-  // Base spawn position along the edge
+  // Base spawn position along the edge of playable area
   if (side === 0) {
-    // Top edge
-    x = Math.random() * canvas.width;
-    y = margin;
+    // Top edge (within playable area)
+    x = uiMargins.left + Math.random() * playableWidth;
+    y = uiMargins.top + margin;
   } else if (side === 1) {
-    // Bottom edge
-    x = Math.random() * canvas.width;
-    y = canvas.height - margin;
+    // Bottom edge (within playable area)
+    x = uiMargins.left + Math.random() * playableWidth;
+    y = canvas.height - uiMargins.bottom - margin;
   } else if (side === 2) {
-    // Left edge
-    x = margin;
-    y = Math.random() * canvas.height;
+    // Left edge (within playable area)
+    x = uiMargins.left + margin;
+    y = uiMargins.top + Math.random() * playableHeight;
   } else {
-    // Right edge
-    x = canvas.width - margin;
-    y = Math.random() * canvas.height;
+    // Right edge (within playable area)
+    x = canvas.width - uiMargins.right - margin;
+    y = uiMargins.top + Math.random() * playableHeight;
   }
 
   // Add spread for pack spawning - enemies in same pack spawn in formation
@@ -95,9 +101,14 @@ export function calculateSpawnPosition(
     const offsetX = Math.cos(angle) * spread * 0.4;
     const offsetY = Math.sin(angle) * spread * 0.4;
 
-    // Apply offset but keep within bounds
-    x = Math.max(margin, Math.min(canvas.width - margin, x + offsetX));
-    y = Math.max(margin, Math.min(canvas.height - margin, y + offsetY));
+    // Apply offset but keep within playable bounds
+    const minX = uiMargins.left + margin;
+    const maxX = canvas.width - uiMargins.right - margin;
+    const minY = uiMargins.top + margin;
+    const maxY = canvas.height - uiMargins.bottom - margin;
+
+    x = Math.max(minX, Math.min(maxX, x + offsetX));
+    y = Math.max(minY, Math.min(maxY, y + offsetY));
   }
 
   return { x, y };

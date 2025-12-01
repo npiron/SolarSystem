@@ -86,7 +86,7 @@ function fireOrbit(state: GameState): void {
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
-      pierce: Math.max(0, state.player.pierce - 1)
+      pierce: state.player.pierce
     };
     state.bullets.push(bullet);
   }
@@ -95,7 +95,24 @@ function fireOrbit(state: GameState): void {
 export function updateCombat(state: GameState, dt: number, canvas: Canvas): void {
   state.player.fireTimer -= dt;
   state.player.orbitTimer -= dt;
-  state.player.spin = (state.player.spin + dt * 1.2) % TAU;
+
+  // Spin speed linked to bullet speed (base 260)
+  const baseSpinSpeed = 1.2;
+  const spinSpeed = baseSpinSpeed * (state.player.bulletSpeed / 260);
+  state.player.spin = (state.player.spin + dt * spinSpeed) % TAU;
+
+  // Update orbital orbs visual positions
+  // Orbit distance linked to player range (base 35)
+  const orbitCount = Math.max(0, state.player.orbitProjectiles);
+  const orbitDistance = 35 * state.player.range;
+  state.orbitalOrbs = [];
+  for (let i = 0; i < orbitCount; i++) {
+    const angle = (TAU * i) / orbitCount + state.player.spin;
+    state.orbitalOrbs.push({
+      angle,
+      distance: orbitDistance
+    });
+  }
 
   // Primary weapon: shotgun
   if (state.player.fireTimer <= 0) {

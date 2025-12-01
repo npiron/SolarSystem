@@ -131,7 +131,9 @@ interface MovementResult {
  *   - dirY: Desired vertical direction (unitless, centered around -1 to 1)
  */
 export function calculatePlayerMovement(state: GameState, canvas: Canvas): MovementResult {
-  const { width: canvasWidth, height: canvasHeight } = canvas;
+  const { width: canvasWidth, height: canvasHeight, uiMargins } = canvas;
+  const margins = uiMargins || { left: 0, right: 0, top: 0, bottom: 0 };
+
   const healthRatio = state.player.hp / state.player.maxHp;
   const danger = calculateDangerVector(state);
 
@@ -180,9 +182,9 @@ export function calculatePlayerMovement(state: GameState, canvas: Canvas): Movem
         dirX = danger.dx * 0.9;
         dirY = danger.dy * 0.9;
       } else {
-        // Patrol in smooth orbit pattern toward center
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
+        // Patrol in smooth orbit pattern toward center (accounting for UI margins)
+        const centerX = margins.left + (canvasWidth - margins.left - margins.right) / 2;
+        const centerY = margins.top + (canvasHeight - margins.top - margins.bottom) / 2;
         const toCenterX = centerX - state.player.x;
         const toCenterY = centerY - state.player.y;
         const distToCenter = Math.hypot(toCenterX, toCenterY) || 1;
@@ -205,9 +207,18 @@ export function calculatePlayerMovement(state: GameState, canvas: Canvas): Movem
 
 /**
  * Clamp the player position to stay within canvas bounds
+ * Respects UI panel margins to keep player in safe playable area
  */
 export function clampPlayerToBounds(state: GameState, canvas: Canvas): void {
-  const { width, height } = canvas;
-  state.player.x = Math.max(30, Math.min(width - 30, state.player.x));
-  state.player.y = Math.max(30, Math.min(height - 30, state.player.y));
+  const { width, height, uiMargins } = canvas;
+  const margins = uiMargins || { left: 0, right: 0, top: 0, bottom: 0 };
+
+  const minX = 30 + margins.left;
+  const maxX = width - 30 - margins.right;
+  const minY = 30 + margins.top;
+  const maxY = height - 30 - margins.bottom;
+
+  state.player.x = Math.max(minX, Math.min(maxX, state.player.x));
+  state.player.y = Math.max(minY, Math.min(maxY, state.player.y));
 }
+

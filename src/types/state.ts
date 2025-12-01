@@ -7,6 +7,7 @@ import type {
   Player,
   BossEnemy,
   EnemyProjectile,
+  OrbitalOrb,
 } from './entities';
 
 export interface RunStats {
@@ -88,4 +89,5 @@ export interface GameState {
   currentBoss: BossEnemy | null;
   enemyProjectiles: EnemyProjectile[];
   lastBossWave: number;
+  orbitalOrbs: OrbitalOrb[];
 }

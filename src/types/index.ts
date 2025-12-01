@@ -113,6 +113,12 @@ export interface Icons {
 export interface Canvas {
   width: number;
   height: number;
+  uiMargins?: {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  };
 }
 
 export interface AssistUi {

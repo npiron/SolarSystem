@@ -85,7 +85,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     bossActive: false,
     currentBoss: null,
     enemyProjectiles: [],
-    lastBossWave: 0
+    lastBossWave: 0,
+    orbitalOrbs: []
   };
 }
 
@@ -113,4 +114,5 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.currentBoss = null;
   state.enemyProjectiles = [];
   state.lastBossWave = 0;
+  state.orbitalOrbs = [];
 }

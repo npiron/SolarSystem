@@ -39,6 +39,14 @@ import { render as gameRender } from "./renderer/render.ts";
 import { clampPlayerToBounds } from "./player.ts";
 import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
 
+// UI boundaries - margins for left/right panels and header/footer
+const UI_MARGINS = {
+  left: 320,
+  right: 320,
+  top: 60,
+  bottom: 32
+};
+
 // Canvas and renderer setup
 const webgl2Canvas = document.getElementById("webgl2") as HTMLCanvasElement;
 const webgl2Renderer = webgl2Canvas ? renderer.init(webgl2Canvas) : null;
@@ -139,16 +147,20 @@ const uiRefs = {
 };
 
 function resizeCanvas(center = false): void {
-  const rect = webgl2Canvas.parentElement?.getBoundingClientRect();
-  const width = rect?.width || webgl2Canvas.width || 960;
-  const height = rect?.height || webgl2Canvas.height || 600;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   buildBackground(width, height);
   webgl2Renderer?.resize(width, height);
+  webgl2Canvas.width = width;
+  webgl2Canvas.height = height;
+
   if (center) {
-    state.player.x = width / 2;
-    state.player.y = height / 2;
+    // Center in playable area (accounting for UI margins)
+    state.player.x = UI_MARGINS.left + (width - UI_MARGINS.left - UI_MARGINS.right) / 2;
+    state.player.y = UI_MARGINS.top + (height - UI_MARGINS.top - UI_MARGINS.bottom) / 2;
   }
-  clampPlayerToBounds(state, { width, height });
+  // Add UI margins to canvas for proper player clamping
+  clampPlayerToBounds(state, { width, height, uiMargins: UI_MARGINS });
   if (state.performance.graphVisible && fpsCanvas) {
     drawFpsGraph(fpsCanvas, state.performance);
   }
@@ -266,7 +278,8 @@ function renderTalents(): void {
 }
 
 function softResetLocal(): void {
-  const { width, height } = webgl2Canvas.getBoundingClientRect();
+  const width = window.innerWidth;
+  const height = window.innerHeight;
   softReset(state, width, height);
 }
 
@@ -473,7 +486,8 @@ async function bootstrap(): Promise<void> {
     recordFpsSample(state.performance, frameMs);
     const dt = Math.min(0.05, frameMs / 1000);
 
-    const { width, height } = webgl2Canvas.getBoundingClientRect();
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
     gameUpdate(state, dt, {
       canvasWidth: width,

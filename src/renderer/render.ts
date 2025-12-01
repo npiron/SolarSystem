@@ -94,6 +94,23 @@ export function render(state: GameState, context: RenderContext): void {
       halo: collectRing
     });
 
+    // Render orbital orbs
+    const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
+    const orbitalHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.6 } : undefined;
+    state.orbitalOrbs.forEach((orb) => {
+      const orbX = state.player.x + Math.cos(orb.angle) * orb.distance;
+      const orbY = state.player.y + Math.sin(orb.angle) * orb.distance;
+      renderer.pushCircle({
+        x: orbX,
+        y: orbY,
+        radius: 5,
+        color: orbitalOrbColor,
+        sides: 6,
+        rotation: orb.angle,
+        halo: orbitalHalo
+      });
+    });
+
     // Render player
     renderer.pushCircle({
       x: state.player.x,
