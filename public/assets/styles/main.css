@@ -1115,4 +1115,47 @@ button:disabled {
   .stat-row {
     font-size: 12px;
   }
+
 }
+
+/* Upgrade bar - horizontal fragment upgrades above canvas */
+.upgrade-bar {
+  position: fixed;
+  top: calc(var(--header-height) + 4px);
+  left: var(--panel-width);
+  right: var(--panel-width);
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(0, 20, 0, 0.75);
+  border: 1px solid var(--terminal-green);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.35), inset 0 0 10px rgba(0, 255, 0, 0.08);
+  z-index: 80; /* Above canvas and side panels, below topbar (100) */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--terminal-green) transparent;
+}
+
+.upgrade-bar::-webkit-scrollbar { height: 8px; }
+.upgrade-bar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+.upgrade-bar::-webkit-scrollbar-thumb { background: var(--terminal-green); box-shadow: 0 0 10px var(--terminal-green); }
+
+/* Compact cards inside the upgrade bar */
+.upgrade-bar .card {
+  min-width: 240px;
+  max-width: 280px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.upgrade-bar .card h3 { font-size: 0.8rem; }
+.upgrade-bar .card p { font-size: 11px; margin: 0; }
+.upgrade-bar .card p.muted { font-size: 10px; }
+
+/* Optional wrapper inside upgrade cards when in the horizontal bar */
+.upgrade-item { display: grid; grid-template-columns: 1fr; gap: 4px; }
+
+.upgrade-bar .card button { width: 100%; padding: 6px 8px; font-size: 12px; }

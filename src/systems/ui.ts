@@ -85,8 +85,10 @@ export function renderUpgrades(
   upgrades.forEach((up) => {
     const card = document.createElement("div");
     card.className = "card";
+
     const info = document.createElement("div");
     info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${up.max}</p>`;
+
     const btn = document.createElement("button");
     btn.textContent = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
     btn.className = "primary";
@@ -96,8 +98,20 @@ export function renderUpgrades(
       renderUpgrades(container, upgrades, uiRefs, resources, buyUpgrade, saveGame);
       saveGame();
     });
-    card.appendChild(info);
-    card.appendChild(btn);
+
+    // If rendering inside the horizontal upgrade bar, layout as description + button stacked
+    if (container.id === "upgradeBar") {
+      const wrap = document.createElement("div");
+      wrap.className = "upgrade-item";
+      wrap.appendChild(info);
+      wrap.appendChild(btn);
+      card.innerHTML = "";
+      card.appendChild(wrap);
+    } else {
+      card.appendChild(info);
+      card.appendChild(btn);
+    }
+
     container.appendChild(card);
     uiRefs.upgradeButtons.set(up.id, btn);
   });
