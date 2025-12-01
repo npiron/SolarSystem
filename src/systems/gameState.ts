@@ -76,12 +76,6 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       maxSamples: 240,
       graphVisible: false
     },
-    addons: {
-      glow: true,
-      bloom: true,
-      grain: false,
-      hudPulse: true
-    },
     bossActive: false,
     currentBoss: null,
     enemyProjectiles: [],

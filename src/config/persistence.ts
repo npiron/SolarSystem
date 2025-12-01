@@ -15,12 +15,6 @@ interface SaveData {
   };
   wave?: number;
   audio?: { enabled?: boolean };
-  addons?: {
-    glow?: boolean;
-    bloom?: boolean;
-    grain?: boolean;
-    hudPulse?: boolean;
-  };
   player?: Partial<typeof BASE_PLAYER_STATS>;
   generators?: Array<{ level: number; cost: number }>;
   upgrades?: Array<{ level: number; cost: number } | number>;
@@ -90,9 +84,6 @@ export function loadSave(
     
     // Audio
     state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
-    
-    // Addons
-    state.addons = { ...state.addons, ...save.addons };
     
     // Player stats
     if (save.player) {
@@ -193,7 +184,6 @@ export function saveGame(state: GameState, generators: Generator[], upgrades: Up
       bestWave: state.assist.bestWave,
       completed: state.assist.completed
     },
-    addons: state.addons,
     lastSeen: Date.now()
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
