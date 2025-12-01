@@ -8,6 +8,10 @@
 
 Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : progression sauvegardée dans le navigateur via `localStorage`.
 
+![Screenshot du jeu Neo Survivors Idle](public/assets/screenshot-game.png)
+
+*Interface du jeu avec les panneaux de ressources (gauche), l'arène de combat (centre) et les améliorations (droite)*
+
 ## 📖 Documentation
 
 Une documentation complète du jeu est disponible dans le [**Wiki GitHub**](../../wiki) :
