@@ -19,7 +19,6 @@ interface SaveData {
     glow?: boolean;
     bloom?: boolean;
     grain?: boolean;
-    hudPulse?: boolean;
   };
   player?: Partial<typeof BASE_PLAYER_STATS>;
   generators?: Array<{ level: number; cost: number }>;

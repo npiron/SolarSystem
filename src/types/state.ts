@@ -47,7 +47,6 @@ export interface Addons {
   glow: boolean;
   bloom: boolean;
   grain: boolean;
-  hudPulse: boolean;
 }
 
 export interface AudioState {

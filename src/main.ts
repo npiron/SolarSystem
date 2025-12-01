@@ -70,10 +70,6 @@ const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
 const toggleFpsBtn = document.getElementById("toggleFps");
-const toggleGlowFxBtn = document.getElementById("toggleGlowFx");
-const toggleBloomFxBtn = document.getElementById("toggleBloomFx");
-const toggleGrainFxBtn = document.getElementById("toggleGrainFx");
-const toggleHudPulseBtn = document.getElementById("toggleHudPulse");
 const versionBadge = document.getElementById("versionBadge");
 const docDialog = document.getElementById("docDialog");
 const docTabs = document.getElementById("docTabs");
@@ -301,21 +297,6 @@ function initUI(): void {
     toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
   };
 
-  function toggleAddon(addon: keyof typeof state.addons): void {
-    if (state.addons[addon] === undefined) return;
-    state.addons[addon] = !state.addons[addon];
-    syncAddonToggles();
-    playUiToggle();
-    saveGameLocal();
-  }
-
-  const syncAddonToggles = (): void => {
-    if (toggleGlowFxBtn) toggleGlowFxBtn.textContent = state.addons.glow ? "✨ Aura ON" : "✨ Aura OFF";
-    if (toggleBloomFxBtn) toggleBloomFxBtn.textContent = state.addons.bloom ? "🌟 Bloom ON" : "🌟 Bloom OFF";
-    if (toggleGrainFxBtn) toggleGrainFxBtn.textContent = state.addons.grain ? "🎞️ Grain ON" : "🎞️ Grain OFF";
-    if (toggleHudPulseBtn) toggleHudPulseBtn.textContent = state.addons.hudPulse ? "💫 Pulse ON" : "💫 Pulse OFF";
-  };
-
   const armAudioUnlock = (): void => {
     const unlock = () => resumeAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -324,7 +305,6 @@ function initUI(): void {
 
   armAudioUnlock();
   syncSoundToggle();
-  syncAddonToggles();
 
   pauseBtn?.addEventListener("click", () => {
     state.running = !state.running;
@@ -341,10 +321,6 @@ function initUI(): void {
     saveGameLocal();
   });
 
-  toggleGlowFxBtn?.addEventListener("click", () => toggleAddon("glow"));
-  toggleBloomFxBtn?.addEventListener("click", () => toggleAddon("bloom"));
-  toggleGrainFxBtn?.addEventListener("click", () => toggleAddon("grain"));
-  toggleHudPulseBtn?.addEventListener("click", () => toggleAddon("hudPulse"));
 
   resetProgressBtn?.addEventListener("click", () => {
     if (confirm("Effacer la sauvegarde et recommencer ?")) {
