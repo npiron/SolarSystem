@@ -19,6 +19,9 @@ const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
 const BOSS_SHAPE = { sides: 8, rotation: 0 };
 const ENEMY_PROJECTILE_SHAPE = { sides: 3, rotation: Math.PI / 2 };
 
+// Default VFX settings
+const DEFAULT_VFX_SETTINGS = { glow: true, bloom: true, grain: false };
+
 /**
  * Get the shape definition for an enemy type
  */
@@ -226,7 +229,7 @@ export function render(state: GameState, context: RenderContext): void {
       });
     });
 
-    renderer.render(state.addons, state.time);
+    renderer.render(DEFAULT_VFX_SETTINGS, state.time);
   }
 
   // Render HUD text overlay

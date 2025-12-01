@@ -43,13 +43,6 @@ export interface Assist {
   completed: string[];
 }
 
-export interface Addons {
-  glow: boolean;
-  bloom: boolean;
-  grain: boolean;
-  hudPulse: boolean;
-}
-
 export interface AudioState {
   enabled: boolean;
 }
@@ -84,7 +77,6 @@ export interface GameState {
   visualsLow: boolean;
   audio: AudioState;
   performance: PerformanceState;
-  addons: Addons;
   bossActive: boolean;
   currentBoss: BossEnemy | null;
   enemyProjectiles: EnemyProjectile[];
