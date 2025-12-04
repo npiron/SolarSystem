@@ -24,6 +24,9 @@
   --header-height: 64px;
   --footer-height: 40px;
   --panel-width: 360px;
+  --hud-gap: 1rem;
+  --hud-safe-left: calc(var(--panel-width) + var(--hud-gap));
+  --hud-safe-right: calc(var(--panel-width) + var(--hud-gap));
 }
 
 /* ===== BASE STYLES ===== */
@@ -52,8 +55,9 @@ body {
 .live-values-hud {
   position: fixed;
   bottom: calc(var(--footer-height) + 1rem);
-  left: 1rem;
+  left: var(--hud-safe-left);
   z-index: 20;
+  max-width: clamp(200px, calc(100vw - var(--hud-safe-left) - var(--hud-safe-right)), 360px);
   min-width: 200px;
   background: oklch(var(--b1, 0.2 0 0) / 60%);
   backdrop-filter: blur(12px);
@@ -117,8 +121,8 @@ body {
 
 .run-status-hud {
   top: calc(var(--header-height) + 0.75rem);
-  left: 1rem;
-  width: min(320px, calc(100vw - 2rem));
+  left: var(--hud-safe-left);
+  width: clamp(260px, calc(100vw - var(--hud-safe-left) - var(--hud-safe-right)), 340px);
 }
 
 .live-values-header {
@@ -759,8 +763,8 @@ button.small {
 /* ===== VERSION & DOC BUTTON ===== */
 .version-container {
   position: fixed;
-  right: 0.75rem;
-  bottom: 3rem;
+  right: var(--hud-safe-right);
+  bottom: calc(var(--footer-height) + 1rem);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -994,7 +998,7 @@ button.small {
 .performance-hud {
   position: fixed;
   bottom: calc(var(--footer-height) + 1rem);
-  right: 1rem;
+  right: var(--hud-safe-right);
   z-index: 20;
   min-width: 180px;
   background: oklch(var(--b1, 0.2 0 0) / 85%);
