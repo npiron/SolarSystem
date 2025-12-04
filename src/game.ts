@@ -35,7 +35,7 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   const { canvasWidth, canvasHeight, generators, talentBonuses, assistUi } = context;
 
   // Define UI margins for panels
-  const UI_MARGINS = { left: 320, right: 320, top: 60, bottom: 32 };
+  const UI_MARGINS = { left: 16, right: 16, top: 60, bottom: 32 };
   const canvas = { width: canvasWidth, height: canvasHeight, uiMargins: UI_MARGINS };
 
   state.time += dt;

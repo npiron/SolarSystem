@@ -42,8 +42,8 @@ import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, Hu
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
-  left: 320,
-  right: 320,
+  left: 16,
+  right: 16,
   top: 60,
   bottom: 32
 };
