@@ -68,7 +68,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     dead: false,
     visualsLow: false,
     audio: {
-      enabled: true,
+      enabled: false,
     },
     performance: {
       fps: 0,
