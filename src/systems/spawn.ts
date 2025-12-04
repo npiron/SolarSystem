@@ -1,5 +1,6 @@
 import type { Canvas, Enemy, GameState, BossEnemy } from "../types/index.ts";
 import { getTuning } from "../config/tuning.ts";
+import { chooseEnemyVariant } from "../config/enemyVariants.ts";
 
 const SPAWN_MARGIN = 20;
 
@@ -167,6 +168,7 @@ export function spawnEnemy(
 
   const elite = Math.random() < chance;
   const waveScale = 1 + state.wave * 0.015;
+  const variantDef = chooseEnemyVariant(state.wave);
 
   const enemyConfig = getTuning().enemy;
   const spawnConfig = getTuning().spawn;
@@ -174,13 +176,15 @@ export function spawnEnemy(
   // Add variance to HP for more diversity
   const hpVariance = 1 - enemyConfig.hpVariance + Math.random() * (enemyConfig.hpVariance * 2);
   const baseHp = (enemyConfig.baseHp + state.wave * enemyConfig.hpWaveScale) * waveScale;
-  const hp = baseHp * hpVariance * (elite ? spawnConfig.eliteHpMultiplier : 1);
+  const hp = baseHp * hpVariance * (elite ? spawnConfig.eliteHpMultiplier : 1) * variantDef.hpMultiplier;
 
-  const speed = (enemyConfig.baseSpeed + state.wave * enemyConfig.speedWaveScale) * (elite ? spawnConfig.eliteSpeedMultiplier : 1);
+  const speed = (enemyConfig.baseSpeed + state.wave * enemyConfig.speedWaveScale)
+    * (elite ? spawnConfig.eliteSpeedMultiplier : 1)
+    * variantDef.speedMultiplier;
   const fireDelay = Math.max(
     enemyConfig.minFireDelay,
     (elite ? enemyConfig.eliteFireDelay : enemyConfig.baseFireDelay) - state.wave * enemyConfig.fireDelayWaveScale
-  );
+  ) * (variantDef.fireDelayMultiplier ?? 1);
 
   const type = determineEnemyType(hp, state.wave, elite);
   const radius = getEnemyRadius(type);
@@ -192,11 +196,15 @@ export function spawnEnemy(
     hp,
     maxHp: hp,
     speed,
-    reward: (enemyConfig.baseReward + state.wave * enemyConfig.rewardWaveScale) * (elite ? spawnConfig.eliteRewardMultiplier : 1),
+    reward: (enemyConfig.baseReward + state.wave * enemyConfig.rewardWaveScale)
+      * (elite ? spawnConfig.eliteRewardMultiplier : 1)
+      * variantDef.rewardMultiplier,
     fireTimer: fireDelay * Math.random(),
     fireDelay,
     elite,
-    type
+    type,
+    variant: variantDef.variant,
+    generation: 0
   };
   state.enemies.push(enemy);
 }
