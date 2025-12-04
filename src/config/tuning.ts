@@ -24,6 +24,17 @@ export interface TuningConfig {
     radius: number;
   };
 
+  // Orbit visuals & behavior
+  orbit: {
+    baseDistance: number;
+    maxDistance: number;
+    ringSpacing: number;
+    maxOrbsPerRing: number;
+    ringAngleOffset: number;
+    spinSpeedBase: number;
+    spinSpeedBulletBaseline: number;
+  };
+
   // Graphics sizes
   graphics: {
     enemyRadiusWeak: number;
@@ -151,6 +162,15 @@ export function getDefaultTuning(): TuningConfig {
       bossRadius: 48,
       bulletRadius: 4,
       fragmentOrbRadius: 6
+    },
+    orbit: {
+      baseDistance: 35,
+      maxDistance: 120,
+      ringSpacing: 16,
+      maxOrbsPerRing: 6,
+      ringAngleOffset: 0.35,
+      spinSpeedBase: 1.2,
+      spinSpeedBulletBaseline: 260
     },
     combat: {
       contactDamageBase: 18,
@@ -375,6 +395,18 @@ export const tuningMeta: TuningMetaMap = {
       bossRadius: { label: "Rayon du boss", min: 20, max: 100, step: 2 },
       bulletRadius: { label: "Rayon des projectiles", min: 1, max: 15, step: 1 },
       fragmentOrbRadius: { label: "Rayon des fragments", min: 2, max: 20, step: 1 }
+    }
+  },
+  orbit: {
+    label: "Orbite",
+    params: {
+      baseDistance: { label: "Distance de base", min: 10, max: 80, step: 1 },
+      maxDistance: { label: "Distance maximale", min: 40, max: 200, step: 5 },
+      ringSpacing: { label: "Espacement des anneaux", min: 4, max: 40, step: 1 },
+      maxOrbsPerRing: { label: "Orbes par anneau", min: 1, max: 12, step: 1 },
+      ringAngleOffset: { label: "Décalage angulaire", min: 0, max: 1.5, step: 0.05, unit: "rad" },
+      spinSpeedBase: { label: "Vitesse de rotation", min: 0.2, max: 4, step: 0.1 },
+      spinSpeedBulletBaseline: { label: "Référence vitesse tir", min: 50, max: 400, step: 10 }
     }
   },
   combat: {

@@ -96,22 +96,40 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   state.player.fireTimer -= dt;
   state.player.orbitTimer -= dt;
 
-  // Spin speed linked to bullet speed (base 260)
-  const baseSpinSpeed = 1.2;
-  const spinSpeed = baseSpinSpeed * (state.player.bulletSpeed / 260);
+  const bulletTuning = getTuning().bullet;
+  const orbitTuning = getTuning().orbit;
+
+  // Spin speed linked to bullet speed with tuning baseline
+  const effectiveBulletSpeed = Math.min(state.player.bulletSpeed, bulletTuning.maxSpeed);
+  const bulletSpeedFactor = effectiveBulletSpeed / orbitTuning.spinSpeedBulletBaseline;
+  const spinSpeed = orbitTuning.spinSpeedBase * bulletSpeedFactor;
   state.player.spin = (state.player.spin + dt * spinSpeed) % TAU;
 
   // Update orbital orbs visual positions
-  // Orbit distance linked to player range (base 35)
-  const orbitCount = Math.max(0, state.player.orbitProjectiles);
-  const orbitDistance = 35 * state.player.range;
   state.orbitalOrbs = [];
-  for (let i = 0; i < orbitCount; i++) {
-    const angle = (TAU * i) / orbitCount + state.player.spin;
-    state.orbitalOrbs.push({
-      angle,
-      distance: orbitDistance
-    });
+  const orbitCount = Math.max(0, state.player.orbitProjectiles);
+  if (orbitCount > 0) {
+    const orbitBaseDistance = Math.min(orbitTuning.baseDistance * state.player.range, orbitTuning.maxDistance);
+    const orbsPerRing = Math.max(1, Math.floor(orbitTuning.maxOrbsPerRing));
+    const ringCount = Math.ceil(orbitCount / orbsPerRing);
+
+    for (let ringIndex = 0; ringIndex < ringCount; ringIndex++) {
+      const ringOrbs = ringIndex === ringCount - 1 ? orbitCount - orbsPerRing * (ringCount - 1) : orbsPerRing;
+      const ringDistance = Math.min(
+        orbitBaseDistance + ringIndex * orbitTuning.ringSpacing,
+        orbitTuning.maxDistance
+      );
+      const spinDirection = ringIndex % 2 === 0 ? 1 : -1;
+      const angleOffset = ringIndex * orbitTuning.ringAngleOffset;
+
+      for (let i = 0; i < ringOrbs; i++) {
+        const angle = (TAU * i) / ringOrbs + state.player.spin * spinDirection + angleOffset;
+        state.orbitalOrbs.push({
+          angle,
+          distance: ringDistance
+        });
+      }
+    }
   }
 
   // Primary weapon: shotgun
