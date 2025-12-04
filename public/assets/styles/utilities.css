@@ -1,0 +1,6 @@
+/* ===== UTILITY CLASSES ===== */
+
+/* ===== MUTED ===== */
+.muted {
+  color: oklch(var(--bc, 0.9 0 0) / 50%);
+}

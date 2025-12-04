@@ -1,0 +1,11 @@
+/* ===== BASE STYLES ===== */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: oklch(var(--b3, 0.2 0 0));
+  color: oklch(var(--bc, 0.9 0 0));
+}

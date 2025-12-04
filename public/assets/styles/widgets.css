@@ -1,53 +1,3 @@
-/* ===== MAIN STYLESHEET ===== */
-/* This file imports all the modular CSS files for better maintainability */
-
-/* Tailwind CSS must be imported first */
-@import "tailwindcss";
-
-/* Import modular CSS files before the plugin */
-@import "variables.css";
-@import "base.css";
-@import "animations.css";
-@import "layout.css";
-@import "components.css";
-@import "widgets.css";
-@import "utilities.css";
-@import "responsive.css";
-
-/* DaisyUI plugin configuration must come after imports */
-@plugin "daisyui" {
-  themes: night, dark, synthwave, cyberpunk;
-}
-
-/* ===== LAYOUT VARIABLES ===== */
-:root {
-  --header-height: 64px;
-  --footer-height: 40px;
-  --panel-width: 380px;
-}
-
-/* ===== BASE STYLES ===== */
-html,
-body {
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  background: oklch(var(--b3, 0.2 0 0));
-  color: oklch(var(--bc, 0.9 0 0));
-}
-
-/* ===== FULLSCREEN CANVAS ===== */
-.fullscreen-canvas {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  background: oklch(var(--b3, 0.15 0 0));
-}
-
 /* ===== LIVE VALUES HUD OVERLAY ===== */
 .live-values-hud {
   position: fixed;
@@ -107,143 +57,6 @@ body {
   text-shadow: 0 1px 3px oklch(0 0 0 / 60%);
 }
 
-/* ===== TOPBAR ===== */
-.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: oklch(var(--b1, 0.2 0 0) / 90%);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
-  min-height: var(--header-height);
-}
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.game-logo {
-  width: 2.5rem;
-  height: 2.5rem;
-  filter: drop-shadow(0 4px 6px oklch(var(--p, 0.6 0.2 260) / 30%));
-  animation: logo-float 3s ease-in-out infinite;
-}
-
-@keyframes logo-float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-.topbar h1 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: oklch(var(--p, 0.6 0.2 260));
-  margin: 0;
-}
-
-.eyebrow {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: oklch(var(--bc, 0.9 0 0) / 50%);
-  margin: 0;
-}
-
-.lede {
-  font-size: 0.8rem;
-  color: oklch(var(--bc, 0.9 0 0) / 60%);
-  margin: 0;
-}
-
-.cta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* ===== UI PANELS ===== */
-.ui-panel {
-  position: fixed;
-  z-index: 40;
-  background: oklch(var(--b1, 0.2 0 0) / 85%);
-  backdrop-filter: blur(20px);
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  overflow-y: auto;
-  overflow-x: hidden;
-  top: calc(var(--header-height) + 8px);
-  bottom: calc(var(--footer-height) + 8px);
-  width: var(--panel-width);
-  scrollbar-width: thin;
-  border-radius: 1rem;
-}
-
-.ui-panel-left {
-  left: 0.5rem;
-}
-
-.ui-panel-right {
-  right: 0.5rem;
-}
-
-.panel-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* ===== STAT BLOCKS (Cards) ===== */
-.stat-block {
-  background: oklch(var(--b2, 0.18 0 0) / 50%);
-  border-radius: 0.75rem;
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 5%);
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px oklch(0 0 0 / 10%), 0 2px 4px -2px oklch(0 0 0 / 10%);
-}
-
-.stat-block h2 {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: oklch(var(--p, 0.6 0.2 260));
-  padding: 0.75rem 1rem 0.5rem;
-  margin: 0;
-  border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-}
-
-.stat-block .stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 1rem;
-  font-size: 0.85rem;
-  transition: background 0.15s ease;
-}
-
-.stat-block .stat-row:hover {
-  background: oklch(var(--bc, 0.9 0 0) / 5%);
-}
-
-.stat-row.muted {
-  color: oklch(var(--bc, 0.9 0 0) / 50%);
-}
-
 /* ===== RESOURCE ICONS ===== */
 .resource-icon {
   font-size: 1.1rem;
@@ -281,150 +94,6 @@ body {
 
 .resource-row:hover .resource-icon {
   animation: resource-pulse 0.6s ease-in-out;
-}
-
-@keyframes resource-pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.2);
-  }
-}
-
-/* ===== COLLAPSIBLE SECTIONS ===== */
-.stat-block.collapsible>h2 {
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: color 0.15s ease;
-}
-
-.stat-block.collapsible>h2:hover {
-  color: oklch(var(--p, 0.6 0.2 260) / 80%);
-}
-
-.stat-block.collapsible>h2::before {
-  content: "▼";
-  font-size: 0.6rem;
-  transition: transform 0.2s ease;
-}
-
-.stat-block.collapsible.collapsed>h2::before {
-  transform: rotate(-90deg);
-}
-
-.stat-block.collapsible.collapsed>*:not(h2) {
-  display: none;
-}
-
-/* ===== BUTTONS ===== */
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: oklch(var(--b2, 0.2 0 0));
-  color: oklch(var(--bc, 0.9 0 0));
-}
-
-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px oklch(0 0 0 / 20%);
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-button.primary {
-  background: linear-gradient(135deg, oklch(var(--p, 0.6 0.2 260)), oklch(var(--s, 0.6 0.2 300)));
-  color: oklch(var(--pc, 0.95 0 0));
-  border: none;
-  box-shadow: 0 4px 15px oklch(var(--p, 0.6 0.2 260) / 30%);
-}
-
-button.primary:hover {
-  box-shadow: 0 6px 20px oklch(var(--p, 0.6 0.2 260) / 40%);
-}
-
-button.secondary {
-  background: oklch(var(--s, 0.6 0.2 300) / 15%);
-  border-color: oklch(var(--s, 0.6 0.2 300) / 50%);
-  color: oklch(var(--s, 0.6 0.2 300));
-}
-
-button.ghost {
-  background: transparent;
-  border-color: oklch(var(--bc, 0.9 0 0) / 20%);
-  color: oklch(var(--bc, 0.9 0 0) / 70%);
-}
-
-button.ghost:hover {
-  background: oklch(var(--bc, 0.9 0 0) / 10%);
-}
-
-button.danger {
-  border-color: oklch(var(--er, 0.6 0.2 25));
-  color: oklch(var(--er, 0.6 0.2 25));
-}
-
-button.small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
-}
-
-/* ===== CARDS (Upgrades, Generators) ===== */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-}
-
-.card {
-  background: oklch(var(--b2, 0.18 0 0) / 60%);
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  background: oklch(var(--b2, 0.18 0 0));
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px oklch(0 0 0 / 15%);
-}
-
-.card h3 {
-  font-weight: 600;
-  font-size: 0.85rem;
-  margin: 0 0 0.25rem;
-}
-
-.card p {
-  font-size: 0.75rem;
-  color: oklch(var(--bc, 0.9 0 0) / 60%);
-  margin: 0;
-}
-
-.card .cost {
-  color: oklch(var(--wa, 0.75 0.15 85));
-  font-weight: 700;
 }
 
 /* ===== TALENTS ===== */
@@ -634,8 +303,7 @@ button.small {
   top: calc(var(--header-height) + 4px);
   left: calc(var(--panel-width) + 16px);
   right: calc(var(--panel-width) + 16px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
   z-index: 30;
@@ -643,19 +311,14 @@ button.small {
   backdrop-filter: blur(16px);
   border-radius: 0.75rem;
   border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .upgrade-bar .card {
-  width: 100%;
+  min-width: 200px;
+  max-width: 240px;
   padding: 0.75rem;
-}
-
-.upgrade-bar .upgrade-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  height: 100%;
 }
 
 /* ===== STATUS OVERLAY ===== */
@@ -684,23 +347,6 @@ button.small {
 
 .status-overlay .status.visible {
   opacity: 1;
-}
-
-/* ===== FOOTER ===== */
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  text-align: center;
-  padding: 0.5rem;
-  font-size: 0.7rem;
-  color: oklch(var(--bc, 0.9 0 0) / 40%);
-  background: oklch(var(--b1, 0.2 0 0) / 90%);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  height: var(--footer-height);
 }
 
 /* ===== VERSION & DOC BUTTON ===== */
@@ -882,16 +528,6 @@ button.small {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .doc-error {
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
@@ -930,110 +566,4 @@ button.small {
 
 .tooltip:hover::after {
   opacity: 1;
-}
-
-/* ===== MUTED ===== */
-.muted {
-  color: oklch(var(--bc, 0.9 0 0) / 50%);
-}
-
-/* ===== PERFORMANCE HUD (Bottom Right) ===== */
-.performance-hud {
-  position: fixed;
-  bottom: calc(var(--footer-height) + 1rem);
-  right: calc(var(--panel-width) + 1rem);
-  z-index: 20;
-  min-width: 180px;
-  background: oklch(var(--b1, 0.2 0 0) / 85%);
-  backdrop-filter: blur(16px);
-  border: 1px solid oklch(var(--su, 0.7 0.2 160) / 30%);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  box-shadow: 0 4px 20px oklch(0 0 0 / 40%);
-  font-family: 'Courier New', monospace;
-}
-
-.performance-header {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: oklch(var(--su, 0.7 0.2 160));
-  margin-bottom: 0.5rem;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid oklch(var(--su, 0.7 0.2 160) / 20%);
-  padding-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.performance-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.perf-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.3rem 0.5rem;
-  background: oklch(var(--b2, 0.18 0 0) / 50%);
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-}
-
-.perf-label {
-  color: oklch(var(--bc, 0.9 0 0) / 70%);
-  font-weight: 500;
-}
-
-.perf-value {
-  color: oklch(var(--su, 0.7 0.2 160));
-  font-weight: 700;
-  text-align: right;
-  min-width: 3rem;
-}
-
-.fps-chart-hud {
-  display: none;
-  width: 100%;
-  height: 3.5rem;
-  margin-top: 0.5rem;
-  border-radius: 0.5rem;
-  background: oklch(var(--b3, 0.15 0 0) / 50%);
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-}
-
-.fps-chart-hud.visible {
-  display: block;
-}
-
-/* ===== STAT ICONS ===== */
-.stat-icon {
-  font-size: 0.85rem;
-  margin-right: 0.4rem;
-  opacity: 0.7;
-  vertical-align: middle;
-  color: oklch(var(--p, 0.6 0.2 260) / 80%);
-}
-
-.stat-row:hover .stat-icon {
-  opacity: 1;
-  color: oklch(var(--p, 0.6 0.2 260));
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1400px) {
-  :root {
-    --panel-width: 340px;
-  }
-}
-
-@media (max-width: 1200px) {
-  :root {
-    --panel-width: 300px;
-  }
 }

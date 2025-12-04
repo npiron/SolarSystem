@@ -1,0 +1,12 @@
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1400px) {
+  :root {
+    --panel-width: 340px;
+  }
+}
+
+@media (max-width: 1200px) {
+  :root {
+    --panel-width: 300px;
+  }
+}

@@ -1,0 +1,6 @@
+/* ===== LAYOUT VARIABLES ===== */
+:root {
+  --header-height: 64px;
+  --footer-height: 40px;
+  --panel-width: 380px;
+}
