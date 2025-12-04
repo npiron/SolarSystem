@@ -5,14 +5,14 @@
 @import "tailwindcss";
 
 /* Import modular CSS files before the plugin */
-@import "./variables.css";
-@import "./base.css";
-@import "./animations.css";
-@import "./layout.css";
-@import "./components.css";
-@import "./widgets.css";
-@import "./utilities.css";
-@import "./responsive.css";
+@import "variables.css";
+@import "base.css";
+@import "animations.css";
+@import "layout.css";
+@import "components.css";
+@import "widgets.css";
+@import "utilities.css";
+@import "responsive.css";
 
 /* DaisyUI plugin configuration must come after imports */
 @plugin "daisyui" {
