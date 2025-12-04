@@ -619,7 +619,8 @@ button.small {
   top: calc(var(--header-height) + 4px);
   left: calc(var(--panel-width) + 16px);
   right: calc(var(--panel-width) + 16px);
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.5rem;
   padding: 0.5rem;
   z-index: 30;
@@ -627,14 +628,19 @@ button.small {
   backdrop-filter: blur(16px);
   border-radius: 0.75rem;
   border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  overflow-x: auto;
-  scrollbar-width: thin;
+  align-items: stretch;
 }
 
 .upgrade-bar .card {
-  min-width: 200px;
-  max-width: 240px;
+  width: 100%;
   padding: 0.75rem;
+}
+
+.upgrade-bar .upgrade-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
 }
 
 /* ===== STATUS OVERLAY ===== */
