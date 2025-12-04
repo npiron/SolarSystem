@@ -48,7 +48,7 @@ export function renderGenerators(
     const production = gen.rate * gen.level;
     info.innerHTML = `<h3>${gen.name}</h3><p class="muted">Niveau ${gen.level} · Produit ${formatNumber(production)} ${icons.essence}/s</p>`;
     const btn = document.createElement("button");
-    btn.textContent = `${icons.essence} Acheter ${formatNumber(gen.cost)}`;
+    btn.innerHTML = `${icons.essence} Acheter ${formatNumber(gen.cost)}`;
     btn.className = "secondary";
     btn.disabled = resources.essence < gen.cost;
     btn.addEventListener("click", () => {
@@ -90,7 +90,7 @@ export function renderUpgrades(
     info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${up.max}</p>`;
 
     const btn = document.createElement("button");
-    btn.textContent = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
+    btn.innerHTML = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
     btn.className = "primary";
     btn.disabled = up.level >= up.max || resources.fragments < up.cost;
     btn.addEventListener("click", () => {
@@ -185,7 +185,7 @@ export function renderTalents(
     talentStatusEl.textContent = `${unlockedCount}/${talents.length} talents actifs`;
   }
   if (resetTalentsBtn) {
-    resetTalentsBtn.textContent = `🔄 Reset (${formatNumber(TALENT_RESET_COST)} ${icons.fragments})`;
+    resetTalentsBtn.innerHTML = `<i class="ti ti-refresh"></i> Reset (${formatNumber(TALENT_RESET_COST)} ${icons.fragments})`;
     resetTalentsBtn.disabled = unlockedCount === 0 || resources.fragments < TALENT_RESET_COST;
   }
 }

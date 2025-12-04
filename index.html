@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Neo Survivors Idle</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
   <link rel="stylesheet" href="./public/assets/styles/main.css" />
 </head>
 
@@ -19,10 +20,10 @@
       </div>
     </div>
     <div class="cta">
-      <button id="resetProgress" class="ghost">Réinitialiser la progression</button>
-      <button id="toggleSound" class="ghost">🔊 Son ON</button>
-      <button id="togglePerf" class="ghost">⚙️ Mode perfo</button>
-      <button id="pause" class="primary">⏸ Pause</button>
+      <button id="resetProgress" class="ghost"><i class="ti ti-refresh"></i> Reset</button>
+      <button id="toggleSound" class="ghost"><i class="ti ti-volume"></i> Son</button>
+      <button id="togglePerf" class="ghost"><i class="ti ti-gauge"></i> Perfo</button>
+      <button id="pause" class="primary"><i class="ti ti-player-pause"></i> Pause</button>
     </div>
   </header>
 
@@ -63,23 +64,23 @@
   <aside class="ui-panel ui-panel-left">
     <div class="panel-content">
       <div class="stat-block collapsible">
-        <h2>Ressources</h2>
-        <div class="stat-row">
-          <span>> Essence</span>
-          <span id="essence">0</span>
+        <h2><i class="ti ti-diamonds"></i> Ressources</h2>
+        <div class="stat-row resource-row">
+          <span><i class="ti ti-droplet-filled resource-icon essence"></i> Essence</span>
+          <span id="essence" class="resource-value essence">0</span>
         </div>
-        <div class="stat-row">
-          <span>> Fragments</span>
-          <span id="fragments">0</span>
+        <div class="stat-row resource-row">
+          <span><i class="ti ti-diamond-filled resource-icon fragments"></i> Fragments</span>
+          <span id="fragments" class="resource-value fragments">0</span>
         </div>
         <div class="stat-row muted">
-          <span>> Gain passif</span>
+          <span><i class="ti ti-clock-hour-4"></i> Gain passif</span>
           <span id="idleRate">0 /s</span>
         </div>
       </div>
 
       <div class="stat-block collapsible">
-        <h2>Run en cours</h2>
+        <h2><i class="ti ti-sword"></i> Run en cours</h2>
         <div class="stat-row"><span>> Vague</span><span id="wave">1</span></div>
         <div class="stat-row"><span>> Vie</span><span id="hp">100</span></div>
         <div class="stat-row tooltip" id="damageRow"><span>> Dégâts</span><span id="dps">0</span></div>
@@ -90,15 +91,15 @@
       </div>
 
       <div class="stat-block collapsible collapsed">
-        <h2>Performance</h2>
+        <h2><i class="ti ti-chart-line"></i> Performance</h2>
         <div class="stat-row"><span>> FPS</span><span id="fpsValue">--</span></div>
-        <button id="toggleFps" class="ghost small">[ GRAPH ]</button>
+        <button id="toggleFps" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
         <canvas id="fpsGraph" class="fps-chart" width="260" height="80"></canvas>
       </div>
 
 
       <div class="stat-block">
-        <h2>Production</h2>
+        <h2><i class="ti ti-building-factory"></i> Production</h2>
         <div id="generators" class="list"></div>
       </div>
     </div>
@@ -108,37 +109,37 @@
   <aside class="ui-panel ui-panel-right">
     <div class="panel-content">
       <div class="stat-block assist collapsible">
-        <h2>💡 Aide rapide</h2>
+        <h2><i class="ti ti-bulb"></i> Aide rapide</h2>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
 
       <div class="stat-block assist collapsible">
-        <h2>🎯 Jalons</h2>
+        <h2><i class="ti ti-target"></i> Jalons</h2>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>
 
       <div class="stat-block collapsible">
-        <h2>⚡ Talents</h2>
+        <h2><i class="ti ti-bolt"></i> Talents</h2>
         <div id="talents" class="talent-grid"></div>
         <div class="talent-actions">
           <p id="talentStatus" class="muted"></p>
-          <button id="resetTalents" class="ghost danger">[ RESET: 1200 ]</button>
+          <button id="resetTalents" class="ghost danger"><i class="ti ti-trash"></i> Reset: 1200</button>
         </div>
       </div>
 
       <div class="stat-block">
-        <h2>🔧 Améliorations</h2>
+        <h2><i class="ti ti-arrow-big-up-lines"></i> Améliorations</h2>
         <div id="upgrades" class="list"></div>
       </div>
 
       <div class="stat-block collapsible">
-        <h2>✨ Prestige</h2>
-        <button id="softPrestige" class="secondary">[ CONSOLIDATION ]</button>
-        <button id="restartRun" class="ghost">[ RELANCER ]</button>
+        <h2><i class="ti ti-sparkles"></i> Prestige</h2>
+        <button id="softPrestige" class="secondary"><i class="ti ti-stack-2"></i> Consolidation</button>
+        <button id="restartRun" class="ghost"><i class="ti ti-rotate"></i> Relancer</button>
       </div>
 
       <div class="stat-block collapsible collapsed">
-        <h2>📖 Guide</h2>
+        <h2><i class="ti ti-book"></i> Guide</h2>
         <ul class="guide">
           <li>> Investis Essence dans production passive</li>
           <li>> Fragments pour upgrades de combat</li>
@@ -149,7 +150,7 @@
       </div>
 
       <div class="stat-block collapsible collapsed debug">
-        <h2>🐛 Debug</h2>
+        <h2><i class="ti ti-bug"></i> Debug</h2>
         <div class="debug-grid">
           <button id="debugGiveEssence" class="ghost">+1M ESS</button>
           <button id="debugGiveFragments" class="ghost">+1M FRG</button>
@@ -159,7 +160,7 @@
       </div>
 
       <div class="stat-block collapsible collapsed debug">
-        <h2>⚙️ Tuning</h2>
+        <h2><i class="ti ti-adjustments"></i> Tuning</h2>
         <div id="tuningPanel" class="tuning-panel"></div>
       </div>
     </div>
@@ -175,24 +176,24 @@
   </footer>
 
   <div class="version-container">
-    <button id="docBtn" class="doc-btn" aria-label="Ouvrir la documentation">📚</button>
+    <button id="docBtn" class="doc-btn" aria-label="Ouvrir la documentation"><i class="ti ti-book-2"></i></button>
     <div id="versionBadge" class="version-badge"></div>
   </div>
   <div id="assistBubbles" class="assist-bubbles"></div>
 
   <dialog id="docDialog" class="doc-dialog" aria-labelledby="docDialogTitle">
     <div class="doc-dialog-header">
-      <h2 id="docDialogTitle">📚 Documentation</h2>
-      <button class="doc-close-btn" aria-label="Fermer">✕</button>
+      <h2 id="docDialogTitle"><i class="ti ti-book-2"></i> Documentation</h2>
+      <button class="doc-close-btn" aria-label="Fermer"><i class="ti ti-x"></i></button>
     </div>
     <div class="doc-tabs" id="docTabs">
-      <button class="doc-tab" data-tab="code"><span class="tab-icon">📝</span><span
+      <button class="doc-tab" data-tab="code"><span class="tab-icon"><i class="ti ti-code"></i></span><span
           class="tab-label">Code</span></button>
-      <button class="doc-tab" data-tab="wiki"><span class="tab-icon">📖</span><span
+      <button class="doc-tab" data-tab="wiki"><span class="tab-icon"><i class="ti ti-file-text"></i></span><span
           class="tab-label">Wiki</span></button>
-      <button class="doc-tab" data-tab="changelog"><span class="tab-icon">📋</span><span
+      <button class="doc-tab" data-tab="changelog"><span class="tab-icon"><i class="ti ti-list-check"></i></span><span
           class="tab-label">Versions</span></button>
-      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon">🗺️</span><span
+      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon"><i class="ti ti-map"></i></span><span
           class="tab-label">Roadmap</span></button>
     </div>
     <div class="doc-content" id="docContent" role="region" aria-live="polite"></div>

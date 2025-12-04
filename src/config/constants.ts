@@ -19,14 +19,14 @@ export const BULLET_LIMITS: BulletLimits = {
 };
 
 export const icons: Icons = {
-  essence: "⚡",
-  fragments: "✦",
-  wave: "🌊",
-  reach: "📡",
-  speed: "💨",
-  shield: "🧿",
-  crit: "🎯",
-  magnet: "🧲"
+  essence: '<i class="ti ti-droplet-filled resource-icon essence"></i>',
+  fragments: '<i class="ti ti-diamond-filled resource-icon fragments"></i>',
+  wave: '<i class="ti ti-wave-square"></i>',
+  reach: '<i class="ti ti-antenna"></i>',
+  speed: '<i class="ti ti-bolt"></i>',
+  shield: '<i class="ti ti-shield-filled"></i>',
+  crit: '<i class="ti ti-target"></i>',
+  magnet: '<i class="ti ti-magnet"></i>'
 };
 
 // Boss configuration
