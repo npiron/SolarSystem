@@ -20,6 +20,10 @@ const ORBIT_SHAPE = { sides: 7, rotation: Math.PI / 7 };
 const BOSS_SHAPE = { sides: 8, rotation: 0 };
 const ENEMY_PROJECTILE_SHAPE = { sides: 3, rotation: Math.PI / 2 };
 
+function oscillate(time: number, speed: number, amplitude: number): number {
+  return Math.sin(time * speed) * amplitude;
+}
+
 /**
  * Get the shape definition for an enemy type
  */
@@ -50,6 +54,7 @@ interface RenderContext {
 export function render(state: GameState, context: RenderContext): void {
   const { canvasWidth, canvasHeight, webgl2Renderer } = context;
   const allowFx = !state.visualsLow;
+  const time = state.time;
 
   if (webgl2Renderer) {
     renderer.resize(canvasWidth, canvasHeight);
@@ -65,9 +70,13 @@ export function render(state: GameState, context: RenderContext): void {
       sides: 6
     });
 
-    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 } : undefined;
+    const playerMotion = Math.min(1, Math.hypot(state.player.vx, state.player.vy) / Math.max(1, state.player.speed));
+    const playerScale = 1 + oscillate(time, 2.4, 0.06) + playerMotion * 0.04;
+    const playerRotation = PLAYER_SHAPE.rotation + oscillate(time, 1.8, 0.25 * (0.4 + playerMotion * 0.6));
+
+    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 + oscillate(time, 1.2, 0.08) } : undefined;
     const collectRing = { color: webglColors.collectRing, scale: 1.04 };
-    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 } : undefined;
+    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 + oscillate(time, 2.2, 0.1) } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
     const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
 
@@ -77,10 +86,10 @@ export function render(state: GameState, context: RenderContext): void {
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: state.player.radius + 16,
+      radius: (state.player.radius + 16) * (1 + oscillate(time, 1.1, 0.04)),
       color: webglColors.playerAura,
       sides: PLAYER_SHAPE.sides,
-      rotation: PLAYER_SHAPE.rotation,
+      rotation: playerRotation,
       halo: auraHalo
     });
 
@@ -91,7 +100,7 @@ export function render(state: GameState, context: RenderContext): void {
       radius: state.player.collectRadius * 0.45,
       color: webglColors.transparent,
       sides: PLAYER_SHAPE.sides,
-      rotation: PLAYER_SHAPE.rotation,
+      rotation: playerRotation,
       halo: collectRing
     });
 
@@ -107,19 +116,31 @@ export function render(state: GameState, context: RenderContext): void {
         radius: 6,
         color: orbitalOrbColor,
         sides: ORBIT_SHAPE.sides,
-        rotation: orb.angle + ORBIT_SHAPE.rotation,
+        rotation: orb.angle + ORBIT_SHAPE.rotation + oscillate(time + orb.angle, 2.5, 0.2),
         halo: orbitalHalo
       });
     });
+
+    if (allowFx && playerMotion > 0.15) {
+      renderer.pushCircle({
+        x: state.player.x - state.player.vx * 0.08,
+        y: state.player.y - state.player.vy * 0.08,
+        radius: state.player.radius * (0.9 + playerMotion * 0.4),
+        color: webglColors.playerAura,
+        sides: PLAYER_SHAPE.sides,
+        rotation: playerRotation,
+        halo: playerHalo
+      });
+    }
 
     // Render player
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: state.player.radius,
+      radius: state.player.radius * playerScale,
       color: webglColors.player,
       sides: PLAYER_SHAPE.sides,
-      rotation: PLAYER_SHAPE.rotation,
+      rotation: playerRotation,
       halo: playerHalo
     });
 
@@ -155,13 +176,25 @@ export function render(state: GameState, context: RenderContext): void {
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColorWebGL(e.type);
       const enemyShape = getEnemyShape(e.type);
+      const wobblePhase = time + (e.x + e.y) * 0.01;
+      const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
+      const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
+      const enemyHalo = allowFx ? { color: enemyColor, scale: 1.15 + enemyPulse * 0.3 } : undefined;
+      const flash = e.hitThisFrame ? 0.3 : 0;
+      const tintedEnemyColor = [
+        Math.min(1, enemyColor[0] + flash),
+        Math.min(1, enemyColor[1] + flash * 0.6),
+        Math.min(1, enemyColor[2] + flash * 0.4),
+        enemyColor[3]
+      ] as const;
       renderer.pushCircle({
         x: e.x,
         y: e.y,
-        radius: e.radius,
-        color: enemyColor,
+        radius: e.radius * enemyPulse,
+        color: tintedEnemyColor,
         sides: enemyShape.sides,
-        rotation: enemyShape.rotation
+        rotation: enemyRotation,
+        halo: enemyHalo
       });
 
       // Render health bars
