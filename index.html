@@ -60,6 +60,26 @@
     </div>
   </div>
 
+  <!-- Run summary overlay (top-left) -->
+  <div class="hud-card run-status-hud">
+    <h2><i class="ti ti-sword"></i> Run en cours</h2>
+    <div class="hud-card-content">
+      <div class="stat-row"><span><i class="ti ti-wave-square stat-icon"></i> Vague</span><span id="wave">1</span>
+      </div>
+      <div class="stat-row"><span><i class="ti ti-heart stat-icon"></i> Vie</span><span id="hp">100</span></div>
+      <div class="stat-row tooltip" id="damageRow"><span><i class="ti ti-sword stat-icon"></i> Dégâts</span><span
+          id="dps">0</span></div>
+      <div class="stat-row"><span><i class="ti ti-flame stat-icon"></i> Critiques</span><span id="crit">0%</span>
+      </div>
+      <div class="stat-row"><span><i class="ti ti-shield stat-icon"></i> Bouclier</span><span id="shield">0%</span>
+      </div>
+      <div class="stat-row"><span><i class="ti ti-magnet stat-icon"></i> Collecte</span><span id="collect">0</span>
+      </div>
+      <div class="stat-row muted"><span><i class="ti ti-clock stat-icon"></i> Spawn</span><span
+          id="spawnRate">0/s</span></div>
+    </div>
+  </div>
+
   <!-- Performance HUD (bottom right) -->
   <div id="performanceHud" class="performance-hud">
     <div class="performance-header"><i class="ti ti-chart-line"></i> Performance</div>
@@ -94,19 +114,7 @@
 
       <div class="stat-block collapsible">
         <h2><i class="ti ti-sword"></i> Run en cours</h2>
-        <div class="stat-row"><span><i class="ti ti-wave-square stat-icon"></i> Vague</span><span id="wave">1</span>
-        </div>
-        <div class="stat-row"><span><i class="ti ti-heart stat-icon"></i> Vie</span><span id="hp">100</span></div>
-        <div class="stat-row tooltip" id="damageRow"><span><i class="ti ti-sword stat-icon"></i> Dégâts</span><span
-            id="dps">0</span></div>
-        <div class="stat-row"><span><i class="ti ti-flame stat-icon"></i> Critiques</span><span id="crit">0%</span>
-        </div>
-        <div class="stat-row"><span><i class="ti ti-shield stat-icon"></i> Bouclier</span><span id="shield">0%</span>
-        </div>
-        <div class="stat-row"><span><i class="ti ti-magnet stat-icon"></i> Collecte</span><span id="collect">0</span>
-        </div>
-        <div class="stat-row muted"><span><i class="ti ti-clock stat-icon"></i> Spawn</span><span
-            id="spawnRate">0/s</span></div>
+        <div class="stat-row muted">Déplacé dans l'overlay de HUD.</div>
       </div>
 
 
