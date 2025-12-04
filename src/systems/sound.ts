@@ -8,7 +8,7 @@ interface SoundState {
 const soundState: SoundState = {
   context: null,
   masterGain: null,
-  enabled: true,
+  enabled: false,
   lastPlay: new Map(),
 };
 
@@ -96,7 +96,7 @@ function playSweep({ from, to, duration = 0.5, type = "sawtooth", volume = 0.08 
   osc.stop(now + duration);
 }
 
-export function initSound(enabled = true): void {
+export function initSound(enabled = false): void {
   soundState.enabled = enabled;
   ensureAudioContext();
 }
@@ -125,22 +125,25 @@ export function isAudioEnabled(): boolean {
 
 export function playCollect(): void {
   if (!canPlay() || shouldThrottle("collect", 0.08)) return;
-  playTone({ frequency: 860, duration: 0.12, type: "triangle", volume: 0.085 });
+  playTone({ frequency: 720, duration: 0.1, type: "triangle", volume: 0.07 });
+  playTone({ frequency: 1040, duration: 0.08, type: "sine", volume: 0.05 });
 }
 
 export function playPurchase(): void {
   if (!canPlay()) return;
-  playTone({ frequency: 440, duration: 0.16, type: "square", volume: 0.08 });
-  playTone({ frequency: 760, duration: 0.2, type: "triangle", volume: 0.06, detune: 12 });
+  playTone({ frequency: 520, duration: 0.14, type: "triangle", volume: 0.07 });
+  playTone({ frequency: 940, duration: 0.2, type: "sine", volume: 0.055, detune: 14 });
 }
 
 export function playPrestige(): void {
   if (!canPlay()) return;
-  playSweep({ from: 720, to: 210, duration: 0.7, type: "sawtooth", volume: 0.09 });
-  playTone({ frequency: 220, duration: 0.35, type: "sine", volume: 0.05 });
+  playSweep({ from: 580, to: 150, duration: 0.8, type: "triangle", volume: 0.07 });
+  playTone({ frequency: 320, duration: 0.36, type: "sine", volume: 0.045 });
+  playTone({ frequency: 880, duration: 0.4, type: "triangle", volume: 0.04, detune: -6 });
 }
 
 export function playUiToggle(): void {
   if (!canPlay() || shouldThrottle("ui-toggle", 0.1)) return;
-  playTone({ frequency: 360, duration: 0.12, type: "sine", volume: 0.06 });
+  playTone({ frequency: 340, duration: 0.1, type: "sine", volume: 0.05 });
+  playTone({ frequency: 520, duration: 0.08, type: "triangle", volume: 0.04 });
 }

@@ -102,7 +102,7 @@ export const codeDocumentation: CodeDocSection[] = [
       {
         name: "initSound",
         signature: "initSound(enabled): void",
-        description: "Active ou coupe l'audio procédural du jeu (achats, prestige, toggles)."
+        description: "Active ou coupe l'audio procédural du jeu (achats, prestige, toggles). Désactivé par défaut."
       }
     ]
   }
