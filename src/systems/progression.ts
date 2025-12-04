@@ -32,9 +32,8 @@ export function applyProgressionEffects(
 
   // Apply upgrades
   upgrades.forEach((upgrade) => {
-    for (let i = 0; i < upgrade.level; i++) {
-      upgrade.apply(state);
-    }
+    if (upgrade.level === 0) return;
+    upgrade.apply(state, upgrade.level);
   });
 
   // Apply talent bonuses

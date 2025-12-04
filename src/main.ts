@@ -240,12 +240,23 @@ function renderGenerators(): void {
   );
 }
 
+function isUpgradeCapped(upgrade: Upgrade): boolean {
+  return Number.isFinite(upgrade.max) && upgrade.level >= upgrade.max;
+}
+
+function computeNextUpgradeCost(upgrade: Upgrade): number {
+  const baseGrowth = Math.max(1.05, upgrade.growth ?? 1.4);
+  const ramp = 1 + Math.max(0, upgrade.level - 25) * 0.012;
+  const scaling = baseGrowth * ramp;
+  return Math.ceil(upgrade.baseCost * Math.pow(scaling, upgrade.level + 1));
+}
+
 function buyUpgrade(upgrade: Upgrade): void {
-  if (upgrade.level >= upgrade.max) return;
+  if (isUpgradeCapped(upgrade)) return;
   if (state.resources.fragments < upgrade.cost) return;
   state.resources.fragments -= upgrade.cost;
   upgrade.level += 1;
-  upgrade.cost = Math.ceil(upgrade.cost * 1.40 + upgrade.level * 2.5);
+  upgrade.cost = computeNextUpgradeCost(upgrade);
   applyProgressionEffectsLocal();
   playPurchase();
   assistUi.recordPurchase();

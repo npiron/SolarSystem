@@ -93,10 +93,11 @@ describe("progression", () => {
         description: "Test",
         cost: 10,
         baseCost: 10,
+        growth: 1.2,
         level: 2, // Level 2 = apply twice
         max: 10,
-        apply: (s) => {
-          s.player.damage *= 1.15;
+        apply: (s, level) => {
+          s.player.damage *= Math.pow(1.15, level);
         }
       }];
       

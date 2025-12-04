@@ -130,7 +130,8 @@ export function updateHud(state: GameState, { elements, uiRefs, generators, upgr
   uiRefs.upgradeButtons.forEach((btn, id) => {
     const up = upgrades.find((u) => u.id === id);
     if (!up) return;
-    btn.disabled = up.level >= up.max || state.resources.fragments < up.cost;
+    const reachedCap = Number.isFinite(up.max) && up.level >= up.max;
+    btn.disabled = reachedCap || state.resources.fragments < up.cost;
   });
 
   uiRefs.talentButtons?.forEach((btn, id) => {
