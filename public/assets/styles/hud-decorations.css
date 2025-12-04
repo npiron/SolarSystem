@@ -23,43 +23,51 @@
  * - The body.performance-mode class is managed by src/main.ts
  */
 
-/* ===== CORNER ORNAMENTS FOR HUD CARDS ===== */
-.hud-card::before,
-.hud-card::after {
-  content: '';
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
-  pointer-events: none;
-  z-index: 1;
-  transition: opacity 0.3s ease;
-}
-
-.hud-card::before {
-  top: 0;
-  left: 0;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: 0.75rem;
-}
-
-.hud-card::after {
-  bottom: 0;
-  right: 0;
-  border-left: none;
-  border-top: none;
-  border-bottom-right-radius: 0.75rem;
-}
-
-/* Add inner glow effect */
+/* ===== HUD CARD BASE STYLES ===== */
 .hud-card {
   box-shadow: 
     0 8px 30px oklch(0 0 0 / 35%),
     inset 0 0 20px oklch(var(--p, 0.6 0.2 260) / 8%);
 }
 
-/* ===== DECORATIVE ACCENTS FOR HEADERS ===== */
+/* ===== HUD CARD CORNER ORNAMENTS ===== */
+.hud-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 0.75rem;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.hud-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 0.75rem;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* ===== HUD CARD HEADER DECORATIONS ===== */
+.hud-card h2 {
+  position: relative;
+}
+
 .hud-card h2::before {
   content: '◆';
   color: oklch(var(--p, 0.6 0.2 260) / 60%);
@@ -82,34 +90,52 @@
     inset 0 0 30px oklch(var(--in, 0.7 0.15 220) / 10%);
 }
 
-.live-values-hud::before,
-.live-values-hud::after {
+.live-values-hud::before {
   content: '';
   position: absolute;
+  top: 0;
+  left: 0;
   width: 30px;
   height: 30px;
   border: 2px solid oklch(var(--in, 0.7 0.15 220) / 35%);
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 0.75rem;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
-.live-values-hud::before {
-  top: 0;
-  left: 0;
-  border-right: none;
-  border-bottom: none;
-  border-top-left-radius: 0.75rem;
-}
-
 .live-values-hud::after {
+  content: '';
+  position: absolute;
   bottom: 0;
   right: 0;
+  width: 30px;
+  height: 30px;
+  border: 2px solid oklch(var(--in, 0.7 0.15 220) / 35%);
   border-left: none;
   border-top: none;
   border-bottom-right-radius: 0.75rem;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
-/* Decorative line under header */
+/* Live values header */
+.live-values-header {
+  position: relative;
+}
+
+.live-values-header::before {
+  content: '⬢';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: oklch(var(--in, 0.7 0.15 220) / 50%);
+  font-size: 0.7em;
+  animation: rotate-slow 8s linear infinite;
+}
+
 .live-values-header::after {
   content: '';
   position: absolute;
@@ -126,11 +152,7 @@
   );
 }
 
-.live-values-header {
-  position: relative;
-}
-
-/* Add subtle pulse to values */
+/* ===== LIVE VALUE NUMBER ANIMATION ===== */
 .live-value-number {
   animation: subtle-pulse 3s ease-in-out infinite;
 }
@@ -152,34 +174,52 @@
     inset 0 0 30px oklch(var(--su, 0.7 0.2 160) / 12%);
 }
 
-.performance-hud::before,
-.performance-hud::after {
+.performance-hud::before {
   content: '';
   position: absolute;
+  top: 0;
+  right: 0;
   width: 25px;
   height: 25px;
   border: 2px solid oklch(var(--su, 0.7 0.2 160) / 40%);
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 0.5rem;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
-.performance-hud::before {
-  top: 0;
-  right: 0;
-  border-left: none;
-  border-bottom: none;
-  border-top-right-radius: 0.5rem;
-}
-
 .performance-hud::after {
+  content: '';
+  position: absolute;
   bottom: 0;
   left: 0;
+  width: 25px;
+  height: 25px;
+  border: 2px solid oklch(var(--su, 0.7 0.2 160) / 40%);
   border-right: none;
   border-top: none;
   border-bottom-left-radius: 0.5rem;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
-/* Decorative accent line */
+/* Performance header */
+.performance-header {
+  position: relative;
+}
+
+.performance-header::before {
+  content: '⬡';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: oklch(var(--su, 0.7 0.2 160) / 50%);
+  font-size: 0.7em;
+  animation: rotate-slow 6s linear infinite;
+}
+
 .performance-header::after {
   content: '';
   position: absolute;
@@ -196,11 +236,17 @@
   );
 }
 
-.performance-header {
-  position: relative;
+/* ===== ANIMATIONS ===== */
+@keyframes rotate-slow {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 
-/* ===== VISUAL ENHANCEMENT FOR STAT ROWS ===== */
+/* ===== STAT ROW ENHANCEMENTS ===== */
 .hud-card .stat-row {
   position: relative;
   transition: all 0.2s ease;
@@ -227,162 +273,6 @@
   opacity: 1;
 }
 
-/* ===== ICON ENHANCEMENTS ===== */
-.stat-icon {
-  filter: drop-shadow(0 0 3px currentColor);
-  transition: filter 0.3s ease;
-}
-
-.hud-card .stat-row:hover .stat-icon {
-  filter: drop-shadow(0 0 6px currentColor);
-}
-
-/* ===== PERFORMANCE MODE: HIDE DECORATIONS ===== */
-/* These rules will hide decorations when performance mode is active */
-body.performance-mode .hud-card::before,
-body.performance-mode .hud-card::after,
-body.performance-mode .live-values-hud::before,
-body.performance-mode .live-values-hud::after,
-body.performance-mode .performance-hud::before,
-body.performance-mode .performance-hud::after {
-  opacity: 0;
-}
-
-body.performance-mode .live-value-number {
-  animation: none;
-}
-
-body.performance-mode .hud-card .stat-row::before {
-  display: none;
-}
-
-body.performance-mode .hud-card,
-body.performance-mode .live-values-hud,
-body.performance-mode .performance-hud {
-  box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
-}
-
-/* ===== SUBTLE GRID PATTERN BACKGROUND ===== */
-.hud-card::before,
-.live-values-hud::before,
-.performance-hud::before {
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      oklch(var(--bc, 0.9 0 0) / 2%) 0px,
-      transparent 1px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      oklch(var(--bc, 0.9 0 0) / 2%) 0px,
-      transparent 1px,
-      transparent 8px
-    );
-  background-size: 8px 8px;
-  opacity: 0.3;
-}
-
-body.performance-mode .hud-card::before,
-body.performance-mode .live-values-hud::before,
-body.performance-mode .performance-hud::before {
-  background-image: none;
-}
-
-/* ===== ADDITIONAL DECORATIVE ELEMENTS ===== */
-/* Add subtle animated border glow on hover */
-.hud-card:hover {
-  border-color: oklch(var(--p, 0.6 0.2 260) / 20%);
-  transition: border-color 0.3s ease;
-}
-
-.live-values-hud:hover {
-  border-color: oklch(var(--in, 0.7 0.15 220) / 35%);
-  transition: border-color 0.3s ease;
-}
-
-.performance-hud:hover {
-  border-color: oklch(var(--su, 0.7 0.2 160) / 45%);
-  transition: border-color 0.3s ease;
-}
-
-/* Disable hover effects in performance mode */
-body.performance-mode .hud-card:hover,
-body.performance-mode .live-values-hud:hover,
-body.performance-mode .performance-hud:hover {
-  border-color: inherit;
-}
-
-/* ===== ADDITIONAL DECORATIVE SVG PATTERNS ===== */
-/* Add subtle diagonal lines pattern to HUD backgrounds */
-.hud-card::after,
-.live-values-hud::after,
-.performance-hud::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      oklch(var(--bc, 0.9 0 0) / 2%) 10px,
-      oklch(var(--bc, 0.9 0 0) / 2%) 11px
-    );
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.3;
-  z-index: -1;
-}
-
-body.performance-mode .hud-card::after,
-body.performance-mode .live-values-hud::after,
-body.performance-mode .performance-hud::after {
-  opacity: 0;
-}
-
-/* ===== ANIMATED CORNER ACCENTS ===== */
-/* Add small animated dots in corners */
-.live-values-header::before {
-  content: '⬢';
-  position: absolute;
-  left: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: oklch(var(--in, 0.7 0.15 220) / 50%);
-  font-size: 0.7em;
-  animation: rotate-slow 8s linear infinite;
-}
-
-.performance-header::before {
-  content: '⬡';
-  position: absolute;
-  left: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: oklch(var(--su, 0.7 0.2 160) / 50%);
-  font-size: 0.7em;
-  animation: rotate-slow 6s linear infinite;
-}
-
-@keyframes rotate-slow {
-  from {
-    transform: translateY(-50%) rotate(0deg);
-  }
-  to {
-    transform: translateY(-50%) rotate(360deg);
-  }
-}
-
-body.performance-mode .live-values-header::before,
-body.performance-mode .performance-header::before {
-  animation: none;
-}
-
-/* ===== STAT ROW HIGHLIGHT EFFECT ===== */
 .hud-card .stat-row::after {
   content: '';
   position: absolute;
@@ -404,55 +294,69 @@ body.performance-mode .performance-header::before {
   opacity: 1;
 }
 
-body.performance-mode .hud-card .stat-row::after {
-  display: none;
+/* ===== ICON ENHANCEMENTS ===== */
+.stat-icon {
+  filter: drop-shadow(0 0 3px currentColor);
+  transition: filter 0.3s ease;
 }
 
-/* ===== GLOWING DIVIDER LINES ===== */
-.hud-card h2::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    oklch(var(--p, 0.6 0.2 260) / 20%),
-    transparent
-  );
+.hud-card .stat-row:hover .stat-icon {
+  filter: drop-shadow(0 0 6px currentColor);
 }
 
-/* ===== RESOURCE ICON GLOW ON HOVER ===== */
+/* ===== HOVER EFFECTS ON HUD CONTAINERS ===== */
+.hud-card:hover {
+  border-color: oklch(var(--p, 0.6 0.2 260) / 20%);
+  transition: border-color 0.3s ease;
+}
+
+.live-values-hud:hover {
+  border-color: oklch(var(--in, 0.7 0.15 220) / 35%);
+  transition: border-color 0.3s ease;
+}
+
+.performance-hud:hover {
+  border-color: oklch(var(--su, 0.7 0.2 160) / 45%);
+  transition: border-color 0.3s ease;
+}
+
+/* ===== RESOURCE ICON GLOW ===== */
 .resource-row:hover .resource-icon {
   text-shadow: 0 0 8px currentColor;
 }
 
-/* ===== SUBTLE SHIMMER EFFECT ON HUD CARDS ===== */
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
+/* ===== PERFORMANCE MODE: DISABLE DECORATIONS ===== */
+body.performance-mode .hud-card::before,
+body.performance-mode .hud-card::after,
+body.performance-mode .live-values-hud::before,
+body.performance-mode .live-values-hud::after,
+body.performance-mode .performance-hud::before,
+body.performance-mode .performance-hud::after {
+  opacity: 0;
 }
 
-.hud-card:hover::before {
-  background-image: 
-    linear-gradient(
-      90deg,
-      transparent,
-      oklch(var(--p, 0.6 0.2 260) / 5%),
-      transparent
-    );
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out;
-}
-
-body.performance-mode .hud-card:hover::before {
+body.performance-mode .live-value-number {
   animation: none;
-  background-image: none;
+}
+
+body.performance-mode .live-values-header::before,
+body.performance-mode .performance-header::before {
+  animation: none;
+}
+
+body.performance-mode .hud-card .stat-row::before,
+body.performance-mode .hud-card .stat-row::after {
+  display: none;
+}
+
+body.performance-mode .hud-card,
+body.performance-mode .live-values-hud,
+body.performance-mode .performance-hud {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
+}
+
+body.performance-mode .hud-card:hover,
+body.performance-mode .live-values-hud:hover,
+body.performance-mode .performance-hud:hover {
+  border-color: inherit;
 }
