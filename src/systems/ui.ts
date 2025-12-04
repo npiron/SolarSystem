@@ -83,16 +83,18 @@ export function renderUpgrades(
   container.innerHTML = "";
   uiRefs.upgradeButtons.clear();
   upgrades.forEach((up) => {
+    const maxLabel = Number.isFinite(up.max) ? up.max : "∞";
+    const reachedCap = Number.isFinite(up.max) && up.level >= up.max;
     const card = document.createElement("div");
     card.className = "card";
 
     const info = document.createElement("div");
-    info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${up.max}</p>`;
+    info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${maxLabel}</p>`;
 
     const btn = document.createElement("button");
     btn.innerHTML = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
     btn.className = "primary";
-    btn.disabled = up.level >= up.max || resources.fragments < up.cost;
+    btn.disabled = reachedCap || resources.fragments < up.cost;
     btn.addEventListener("click", () => {
       buyUpgrade(up);
       renderUpgrades(container, upgrades, uiRefs, resources, buyUpgrade, saveGame);

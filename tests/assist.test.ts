@@ -148,9 +148,10 @@ describe("assist", () => {
                     description: "+1 projectile",
                     cost: 100,
                     baseCost: 100,
+                    growth: 1.2,
                     max: 10,
                     level: 0,
-                    apply: () => { }
+                    apply: (_state, _level) => { }
                 }
             ];
 
@@ -169,9 +170,10 @@ describe("assist", () => {
                     description: "Collecte plus rapide",
                     cost: 50,
                     baseCost: 50,
+                    growth: 1.15,
                     max: 10,
                     level: 2,
-                    apply: () => { }
+                    apply: (_state, _level) => { }
                 }
             ];
 
@@ -190,9 +192,10 @@ describe("assist", () => {
                     description: "Vitesse de déplacement",
                     cost: 50,
                     baseCost: 50,
+                    growth: 1.1,
                     max: 10,
                     level: 2,
-                    apply: () => { }
+                    apply: (_state, _level) => { }
                 }
             ];
 

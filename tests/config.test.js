@@ -65,7 +65,7 @@ describe("config factories", () => {
     const upgrades = createUpgrades();
     const state = cloneState();
 
-    upgrades.forEach((upgrade) => upgrade.apply(state));
+    upgrades.forEach((upgrade) => upgrade.apply(state, 1));
 
     expect(state.player.damage).toBeCloseTo(115);
     expect(state.player.fireDelay).toBeCloseTo(1.8);
@@ -73,9 +73,9 @@ describe("config factories", () => {
     expect(state.player.projectiles).toBe(2);
     expect(state.player.range).toBeCloseTo(115);
     expect(state.player.bulletSpeed).toBeCloseTo(112);
-    expect(state.player.critChance).toBeCloseTo(0.9);
+    expect(state.player.critChance).toBeCloseTo(0.91);
     expect(state.player.critMultiplier).toBeCloseTo(2.2);
-    expect(state.player.damageReduction).toBeCloseTo(0.7);
+    expect(state.player.damageReduction).toBeCloseTo(0.72);
     expect(state.player.pierce).toBe(1);
     expect(state.player.collectRadius).toBeCloseTo(55);
     expect(state.player.speed).toBeCloseTo(106);

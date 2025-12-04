@@ -21,9 +21,10 @@ export interface Upgrade {
   description: string;
   cost: number;
   baseCost: number;
+  growth: number;
   level: number;
   max: number;
-  apply: (state: { player: import('./entities').PlayerStats }) => void;
+  apply: (state: { player: import('./entities').PlayerStats }, level: number) => void;
 }
 
 export interface TalentEffect {
