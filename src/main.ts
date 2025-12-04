@@ -374,6 +374,10 @@ function initUI(): void {
   togglePerfBtn?.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     if (togglePerfBtn) togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
+    
+    // Toggle CSS class for performance mode decorations
+    document.body.classList.toggle("performance-mode", state.visualsLow);
+    
     buildBackground(webgl2Canvas.width, webgl2Canvas.height);
     webgl2Renderer?.setEnabled(!state.visualsLow);
     playUiToggle();
@@ -461,6 +465,9 @@ async function bootstrap(): Promise<void> {
   hudContext.talents = talents;
   talentBonuses = computeTalentBonuses(talents);
   state.talents.bonuses = talentBonuses;
+
+  // Initialize performance mode CSS class
+  document.body.classList.toggle("performance-mode", state.visualsLow);
 
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
