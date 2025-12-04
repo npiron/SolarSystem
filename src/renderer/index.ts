@@ -22,7 +22,7 @@ export function beginFrame() {
 }
 
 export function render(addons?: { glow: boolean; bloom: boolean; grain: boolean }, time?: number) {
-  renderer?.render(addons ?? { glow: true, bloom: true, grain: false }, time ?? 0);
+  renderer?.render(addons ?? { glow: false, bloom: false, grain: false }, time ?? 0);
 }
 
 export function pushCircle(options: ShapeInstance) {

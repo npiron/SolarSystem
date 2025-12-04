@@ -77,8 +77,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
       graphVisible: false
     },
     addons: {
-      glow: true,
-      bloom: true,
+      glow: false,
+      bloom: false,
       grain: false
     },
     bossActive: false,
