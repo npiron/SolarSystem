@@ -1,0 +1,20 @@
+# Code Owners
+# These owners will be automatically requested for review when someone opens a pull request.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @npiron
+
+# Specific ownership for critical files
+/package.json @npiron
+/package-lock.json @npiron
+/.github/ @npiron
+/SECURITY.md @npiron
+
+# Source code
+/src/ @npiron
+/tests/ @npiron
+
+# Documentation
+*.md @npiron
+/wiki/ @npiron

@@ -1,115 +1,224 @@
 # Neo Survivors Idle
 
-[![Tests](https://github.com/OWNER/SolarSystem/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/test.yml)
-[![Pages](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://github.com/OWNER/SolarSystem/actions/workflows/deploy-pages.yml)
-[![Release](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/SolarSystem/actions/workflows/release.yml)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://github.com/npiron/SolarSystem/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/npiron/SolarSystem/actions/workflows/test.yml)
+[![Pages](https://github.com/npiron/SolarSystem/actions/workflows/deploy-pages.yml/badge.svg?branch=main)](https://github.com/npiron/SolarSystem/actions/workflows/deploy-pages.yml)
+[![Release](https://github.com/npiron/SolarSystem/actions/workflows/release.yml/badge.svg)](https://github.com/npiron/SolarSystem/actions/workflows/release.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Wiki](https://img.shields.io/badge/📖_Wiki-Documentation-blue)](../../wiki)
 
-Jeu incremental/auto-battler 100% client-side (HTML/JS/CSS). Aucun serveur : progression sauvegardée dans le navigateur via `localStorage`.
+> A 100% client-side incremental auto-battler game. No server required – all progress is saved in your browser via `localStorage`.
 
 ![Screenshot du jeu Neo Survivors Idle](public/assets/screenshot-game.png)
 
-*Interface du jeu avec les panneaux de ressources (gauche), l'arène de combat (centre) et les améliorations (droite)*
+*Game interface showing resource panels (left), combat arena (center), and upgrades (right)*
+
+## ✨ Features
+
+- 🎮 **Full auto-battler** - Character moves and shoots automatically
+- 💾 **Client-side only** - No server, runs entirely in your browser
+- ⚡ **Infinite waves** - Endless enemy waves with increasing difficulty
+- 🔄 **Prestige system** - Soft reset with permanent bonuses (Consolidation)
+- 🌳 **Talent tree** - Persistent synergies and upgrades
+- 🏭 **Idle production** - Passive resource generation continues offline
+- 🎯 **Performance mode** - Optimized for hundreds of active entities
+- 📱 **Responsive UI** - Works on desktop and mobile browsers
+
+## 🚀 Quick Start
+
+### Play Online
+
+Visit the [live demo on GitHub Pages](https://npiron.github.io/SolarSystem/) (if deployed)
+
+### Run Locally
+
+```bash
+# Option 1: Open index.html directly
+open index.html
+
+# Option 2: Use a local server
+python -m http.server 8000
+# Then visit http://localhost:8000
+
+# Option 3: Development mode with hot reload
+npm install
+npm run dev
+```
 
 ## 📖 Documentation
 
-Une documentation complète du jeu est disponible dans le [**Wiki GitHub**](../../wiki) :
+Comprehensive game documentation is available in the [**GitHub Wiki**](../../wiki):
 
-- 🚀 [Démarrage rapide](../../wiki/D%C3%A9marrage-Rapide) - Comment lancer et jouer
-- ⚔️ [Système de combat](../../wiki/Syst%C3%A8me-de-Combat) - Mécaniques de combat
-- 💰 [Ressources et économie](../../wiki/Ressources-et-%C3%89conomie) - Gestion des ressources
-- 🏭 [Générateurs](../../wiki/G%C3%A9n%C3%A9rateurs) - Production passive
-- ⬆️ [Améliorations](../../wiki/Am%C3%A9liorations) - Upgrades de combat
-- 🌳 [Arbre de talents](../../wiki/Arbre-de-Talents) - Synergies persistantes
-- ⟳ [Prestige](../../wiki/Prestige-Consolidation) - Système de Consolidation
-- ❓ [FAQ](../../wiki/FAQ) - Questions fréquentes
+- 🚀 [Quick Start Guide](../../wiki/D%C3%A9marrage-Rapide) - How to launch and play
+- ⚔️ [Combat System](../../wiki/Syst%C3%A8me-de-Combat) - Combat mechanics
+- 💰 [Resources & Economy](../../wiki/Ressources-et-%C3%89conomie) - Resource management
+- 🏭 [Generators](../../wiki/G%C3%A9n%C3%A9rateurs) - Passive production
+- ⬆️ [Upgrades](../../wiki/Am%C3%A9liorations) - Combat upgrades
+- 🌳 [Talent Tree](../../wiki/Arbre-de-Talents) - Persistent synergies
+- ⟳ [Prestige](../../wiki/Prestige-Consolidation) - Consolidation system
+- ❓ [FAQ](../../wiki/FAQ) - Frequently asked questions
 
-## Lancer
+## 🎮 How to Play
 
-- Ouvrir `index.html` à la racine du dépôt ou démarrer un petit serveur statique (`python -m http.server 8000`) puis visiter [http://localhost:8000](http://localhost:8000).
-- Le personnage se déplace/tire automatiquement, les ennemis arrivent en vagues infinies, et les gains passifs continuent hors ligne.
+- ⚡ **Essence**: Generated passively by buildings (Drones, Forge, Spires). Invest to increase production rate
+- ✦ **Fragments**: Dropped in combat, materialized as collectible orbs in the arena. Use for offensive upgrades
+- 🌊 **Infinite Waves**: Arena HUD shows current wave, kills, and resources gained
+- ⟳ **Consolidation**: Soft prestige with cooldown that resets waves but grants permanent multipliers
+- ☠️ **Death & Restart**: When HP reaches zero, run pauses with "Restart Run" button
+- 🎯 **Criticals & Rotating Fire**: Projectiles rotate around hero and can deal massive critical hits
+- 🧿 **Defense & Control**: Upgrades add shields, piercing, range, and collection magnet
+- 🚀 **Performance Mode**: Reduces visual effects and groups floating gains for better performance
 
-## Déployer sur GitHub Pages
+All progress auto-saves every few seconds to `localStorage`. No backend required.
 
-Le dépôt contient un workflow GitHub Actions (`Deploy Pages`) qui publie automatiquement le site statique depuis la racine.
+## 🛠️ Development
 
-1. Dans l'onglet **Settings > Pages** du dépôt, choisir **Source: GitHub Actions**.
-2. Pousser sur `main` (ou `work`) : le workflow génère l'artefact et déploie sur GitHub Pages.
-3. L'URL finale est de la forme `https://<utilisateur>.github.io/<nom-du-depot>/` et sert directement `index.html` à la racine.
+### Prerequisites
 
-## Automatisation CI/CD
+- Node.js 18+ (v20 recommended - see `.nvmrc`)
+- npm 9+
 
-- **Tests** : le workflow `Test` (branches `main` et `work`, PR) installe les dépendances via `npm ci` et exécute `npm test`.
-- **Pages** : `Deploy Pages` publie automatiquement la version statique dès qu'un commit arrive sur `main` ou `work`.
-- **Release** : pousser un tag `v*.*.*` déclenche `Release` qui archive le dépôt et génère une Release GitHub avec notes automatiques.
-- **Wiki sync** : le workflow `Sync Wiki` synchronise automatiquement le contenu du dossier `wiki/` vers le Wiki GitHub. Voir les instructions dans le fichier de workflow pour l'activation.
-- **Maintenance** : Dependabot (`.github/dependabot.yml`) peut être activé pour tenir `npm` et les actions GitHub à jour de manière hebdomadaire.
+### Installation
 
-## Releases, tags et patch notes
+```bash
+# Clone the repository
+git clone https://github.com/npiron/SolarSystem.git
+cd SolarSystem
 
-- Le versionnement suit SemVer (`vMAJOR.MINOR.PATCH`).
-- Pousser un tag `v*.*.*` déclenche le workflow `.github/workflows/release.yml` : il archive l'état du dépôt (`release.zip`), crée la Release GitHub et génère les notes automatiquement.
-- Le fichier `CHANGELOG.md` peut être complété avant de taguer : déplacez les entrées de la section « Unreleased » vers la version en cours avec la date du jour.
-- Le détail complet du flux est décrit dans `RELEASE_PROCESS.md`.
+# Install dependencies
+npm install
+```
+
+### Available Scripts
+
+```bash
+npm run dev         # Start development server with hot reload
+npm run build       # Build for production
+npm run preview     # Preview production build
+npm test            # Run tests with coverage
+npm run test:watch  # Run tests in watch mode
+npm run typecheck   # Type check TypeScript files
+```
+
+### Project Structure
 
 ```
 .
-├── index.html           # Point d'entrée statique servi à la racine
-├── public/              # Assets livrables (HTML + CSS)
-│   ├── assets/styles/   # Styles globaux
-│   └── index.html       # Redirection vers la racine (compatibilité)
-└── src/                 # Code source JS (modules et configuration)
-    ├── config/          # Constantes, générateurs et upgrades déclarés
-    └── main.js          # Boucle de jeu, état et logique UI
+├── index.html           # Main entry point
+├── src/                 # Source code
+│   ├── config/         # Game configuration and data tables
+│   ├── systems/        # Game systems (combat, economy, progression)
+│   ├── renderer/       # Rendering utilities
+│   └── types/          # TypeScript type definitions
+├── tests/              # Test files (Vitest)
+├── public/             # Static assets
+│   └── assets/         # Images, styles
+└── examples/           # Demo and example files
 ```
 
-Le canvas de l'arène tourne sur [PixiJS](https://pixijs.com/), une bibliothèque WebGL/Canvas open source qui gère la boucle de rendu 2D côté client sans dépendances serveur.
+### Technology Stack
 
-### Alternatives au Canvas pour le développement de jeux
+- **TypeScript** - Type-safe JavaScript
+- **Vite** - Fast build tool and dev server
+- **PixiJS** - WebGL/Canvas 2D rendering
+- **Tailwind CSS** + **DaisyUI** - Styling
+- **Vitest** - Unit testing
+- **localStorage** - Client-side persistence
 
-Il existe plusieurs technologies alternatives au Canvas HTML5 pour créer des jeux vidéo dans le navigateur :
+## 🚀 Deployment
 
-| Technologie | Description | Cas d'usage |
-|-------------|-------------|-------------|
-| **WebGL** | API bas-niveau pour le rendu 3D/2D accéléré par GPU. PixiJS l'utilise en interne. | Jeux 2D/3D haute performance |
-| **WebGPU** | Successeur de WebGL, plus moderne et performant (support navigateur en cours). | Jeux 3D avancés, calcul GPU |
-| **SVG** | Graphiques vectoriels animables via CSS/JS. Léger pour les éléments UI. | Jeux simples, interfaces |
-| **CSS 3D** | Transformations et animations CSS pures. | Jeux de cartes, puzzles légers |
-| **DOM animé** | Manipulation du DOM avec JS/CSS. Plus lent mais simple. | Prototypes, jeux casual |
+### GitHub Pages
 
-#### Frameworks et moteurs populaires
+The repository includes GitHub Actions workflows for automatic deployment:
 
-- **[Three.js](https://threejs.org/)** : Moteur 3D WebGL puissant pour les jeux 3D.
-- **[Babylon.js](https://www.babylonjs.com/)** : Moteur 3D complet avec physique intégrée.
-- **[Phaser](https://phaser.io/)** : Framework 2D très populaire, basé sur Canvas/WebGL.
-- **[Godot (export HTML5)](https://godotengine.org/)** : Moteur de jeu complet exportant vers WebAssembly.
-- **[Unity WebGL](https://unity.com/)** : Export de jeux Unity vers le navigateur via WebAssembly.
+1. Go to **Settings > Pages** in your repository
+2. Set **Source** to **GitHub Actions**
+3. Push to `main` or `work` branch
+4. The site will be available at `https://<username>.github.io/<repo-name>/`
 
-Ce projet utilise PixiJS car il offre un excellent compromis entre performance (WebGL) et simplicité d'utilisation pour les jeux 2D, tout en restant 100% client-side sans dépendances serveur.
+### Manual Deployment
 
-Un bouton « Mode perfo » dans le header coupe certains effets visuels, regroupe les gains flottants et maintient la lisibilité même quand des centaines d'entités sont actives.
+```bash
+# Build the project
+npm run build
 
-## Aperçu rapide
+# Deploy the dist/ folder to your hosting service
+# Or serve index.html + assets directly (no build needed)
+```
 
-L'interface affiche trois colonnes pleine hauteur : statistiques et production passive à gauche, l'arène centrale plein écran où le personnage auto-mouvant survit en boucle, puis les améliorations et le bouton de prestige doux à droite. Tout tourne en local (HTML/CSS/JS) et se sauvegarde dans `localStorage` sans serveur.
+## 🤝 Contributing
 
-## Aide contextuelle et jalons
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request.
 
-- Un panneau « Aide rapide » coche automatiquement tes premières étapes (tir auto, premier achat, première consolidation) grâce à des bulles qui s'affichent sur l'arène, les boutons d'achat et la Consolidation.
-- Un tracker de jalons dans la colonne de droite rappelle les vagues franchies et les upgrades clés (Pulsar chaotique, rayon de collecte niveau 3) pour garder l'économie et le prestige alignés.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Comment jouer
+Please ensure:
+- ✅ Tests pass (`npm test`)
+- ✅ Types are valid (`npm run typecheck`)
+- ✅ Build succeeds (`npm run build`)
+- ✅ Code follows existing style conventions
 
-- ⚡ **Essence** : générée passivement par les bâtiments (Drones, Forge, Spires). Investis-la pour augmenter la production par seconde.
-- ✦ **Fragments** : drop en combat, matérialisés par de petits orbes aspirés automatiquement dans l'arène grâce au rayon de collecte. Servez-vous-en pour acheter des upgrades offensives (dégâts, cadence, régén, projectiles, portée, critiques).
-- 🌊 **Vagues infinies** : le HUD de l'arène affiche la vague courante, les kills et les ressources gagnées pendant le run.
-- ⟳ **Consolidation** : un prestige doux avec un petit temps de recharge qui remet la vague à 1 et augmente le multiplicateur passif permanent.
-- ☠️ **Mort & reprise** : quand les PV tombent à zéro, la run se met en pause et un bouton « Relancer la run » permet de repartir.
-- 🎯 **Critiques & tirs rotatifs** : les projectiles tournent en continu autour du héros et peuvent infliger des coups critiques massifs grâce aux upgrades dédiées.
-- 🧿 **Défense & contrôle** : des améliorations ajoutent un bouclier (réduction de dégâts), de la perforation, de la portée et un aimant de collecte. Le HUD affiche aussi la vitesse de spawn effective.
-- 🌀 **Tirs circulaires** : chaque niveau de projectiles génère un éventail circulaire autour du héros pour nettoyer toutes les directions, avec une rotation progressive.
-- 🧪 **Debug local** : quelques boutons permettent de tester rapidement (ajout de ressources, avance de vagues, nettoyage d'ennemis) sans impacter la sauvegarde.
-- 🚀 **Performance** : un spatial hash réduit les collisions à tester et des budgets limitent projectiles/particules. Active le mode perfo pour des effets allégés et des gains regroupés en ticker.
+## 📋 CI/CD & Automation
 
-Tout est sauvegardé automatiquement toutes les quelques secondes (cookies/localStorage). Les valeurs sont abrégées (K, M, B…) puis passent en notation scientifique pour les très grands nombres. Pas de backend requis.
+- **Tests**: Runs on `main`, `work` branches and PRs via `npm ci && npm test`
+- **Pages**: Auto-deploys to GitHub Pages on push to `main` or `work`
+- **Releases**: Pushing tag `v*.*.*` creates GitHub Release with automatic notes
+- **Wiki Sync**: Syncs `wiki/` folder to GitHub Wiki (see workflow for setup)
+- **Dependabot**: Weekly dependency updates (npm & GitHub Actions)
+
+See [RELEASE_PROCESS.md](RELEASE_PROCESS.md) for versioning and release procedures.
+
+## 🎯 Canvas & Rendering Alternatives
+
+This project uses PixiJS for rendering. Other options for browser game development:
+
+| Technology | Description | Use Case |
+|------------|-------------|----------|
+| **WebGL** | Low-level GPU rendering API | High-performance 2D/3D games |
+| **WebGPU** | Next-gen GPU API (in development) | Advanced 3D, GPU compute |
+| **SVG** | Vector graphics with CSS/JS | Simple games, UI elements |
+| **CSS 3D** | CSS transforms and animations | Card games, light puzzles |
+| **DOM** | Direct DOM manipulation | Prototypes, casual games |
+
+### Popular Frameworks
+
+- **[Three.js](https://threejs.org/)** - 3D WebGL engine
+- **[Babylon.js](https://www.babylonjs.com/)** - Full 3D engine with physics
+- **[Phaser](https://phaser.io/)** - Popular 2D Canvas/WebGL framework
+- **[Godot HTML5](https://godotengine.org/)** - Full game engine with WebAssembly export
+- **[Unity WebGL](https://unity.com/)** - Unity games in browser via WebAssembly
+
+PixiJS provides an excellent balance of WebGL performance and ease of use for 2D games while remaining 100% client-side.
+
+## 🎨 Performance Features
+
+- **Spatial hash** for efficient collision detection
+- **Object pooling** for projectiles and particles
+- **Performance mode** button to reduce visual effects
+- **Budgets** to limit active projectiles and particles
+- **Grouped gain ticker** for reduced UI updates
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🔒 Security
+
+See [SECURITY.md](SECURITY.md) for security policy and vulnerability reporting.
+
+## 📜 Code of Conduct
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+## 🙏 Acknowledgments
+
+- Built with [PixiJS](https://pixijs.com/)
+- UI components from [DaisyUI](https://daisyui.com/)
+- Inspired by Vampire Survivors and other auto-battler games
+
+---
+
+**Enjoy the game!** If you encounter any issues or have suggestions, please [open an issue](../../issues).

@@ -1,12 +1,39 @@
 {
   "name": "neo-survivors-idle",
   "version": "0.1.0",
+  "description": "A 100% client-side incremental auto-battler game built with HTML, TypeScript, and PixiJS",
   "type": "module",
+  "keywords": [
+    "game",
+    "idle",
+    "incremental",
+    "auto-battler",
+    "survivors-like",
+    "browser-game",
+    "html5",
+    "typescript",
+    "pixijs"
+  ],
+  "author": "npiron",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/npiron/SolarSystem#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/npiron/SolarSystem.git"
+  },
+  "bugs": {
+    "url": "https://github.com/npiron/SolarSystem/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --coverage",
+    "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "demo:particles": "vite --open /examples/gpu-particles.html"
   },
