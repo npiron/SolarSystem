@@ -32,6 +32,33 @@
   <!-- Fullscreen canvas background -->
   <canvas id="webgl2" class="fullscreen-canvas" width="1920" height="1080"></canvas>
 
+  <!-- Live values overlay on canvas (like video game HUD) -->
+  <div id="liveValuesHud" class="live-values-hud">
+    <div class="live-values-header">⚡ Valeurs calculées</div>
+    <div class="live-values-content">
+      <div class="live-value-row">
+        <span class="live-value-label">DPS joueur</span>
+        <span id="hudLiveDps" class="live-value-number">0</span>
+      </div>
+      <div class="live-value-row">
+        <span class="live-value-label">Spawn actuel</span>
+        <span id="hudLiveSpawnRate" class="live-value-number">0 /s</span>
+      </div>
+      <div class="live-value-row">
+        <span class="live-value-label">HP ennemis</span>
+        <span id="hudLiveEnemyHp" class="live-value-number">0</span>
+      </div>
+      <div class="live-value-row">
+        <span class="live-value-label">Vitesse ennemis</span>
+        <span id="hudLiveEnemySpeed" class="live-value-number">0</span>
+      </div>
+      <div class="live-value-row">
+        <span class="live-value-label">Chance élite</span>
+        <span id="hudLiveEliteChance" class="live-value-number">0%</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Left UI Panel -->
   <aside class="ui-panel ui-panel-left">
     <div class="panel-content">
