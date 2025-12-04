@@ -1,8 +1,26 @@
 /**
  * HUD Decorations - Lightweight CSS-based visual enhancements
- * These decorations are applied using CSS pseudo-elements and gradients
- * to avoid any performance impact on the canvas rendering.
- * All decorations respect the performance mode (visualsLow).
+ * 
+ * This stylesheet adds decorative visual elements to the game's HUD (Heads-Up Display)
+ * using only CSS techniques to ensure zero performance impact on canvas rendering.
+ * 
+ * Key Features:
+ * - Corner ornaments using CSS borders and pseudo-elements
+ * - Subtle background patterns and gradients
+ * - Animated accents (rotating hexagons, pulsing values)
+ * - Hover effects for better interactivity feedback
+ * - Full performance mode support - all decorations are disabled when visualsLow is true
+ * 
+ * Performance Considerations:
+ * - All decorations are CSS-only (no JavaScript, no canvas rendering)
+ * - Animations use GPU-accelerated properties (transform, opacity)
+ * - Performance mode class (body.performance-mode) disables all decorations
+ * - Zero impact on game logic or canvas FPS
+ * 
+ * Usage:
+ * - Decorations are automatically applied to .hud-card, .live-values-hud, .performance-hud
+ * - Toggle performance mode with the "Perfo" button to disable decorations
+ * - The body.performance-mode class is managed by src/main.ts
  */
 
 /* ===== CORNER ORNAMENTS FOR HUD CARDS ===== */
@@ -293,4 +311,148 @@ body.performance-mode .hud-card:hover,
 body.performance-mode .live-values-hud:hover,
 body.performance-mode .performance-hud:hover {
   border-color: inherit;
+}
+
+/* ===== ADDITIONAL DECORATIVE SVG PATTERNS ===== */
+/* Add subtle diagonal lines pattern to HUD backgrounds */
+.hud-card::after,
+.live-values-hud::after,
+.performance-hud::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      oklch(var(--bc, 0.9 0 0) / 2%) 10px,
+      oklch(var(--bc, 0.9 0 0) / 2%) 11px
+    );
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+body.performance-mode .hud-card::after,
+body.performance-mode .live-values-hud::after,
+body.performance-mode .performance-hud::after {
+  opacity: 0;
+}
+
+/* ===== ANIMATED CORNER ACCENTS ===== */
+/* Add small animated dots in corners */
+.live-values-header::before {
+  content: '⬢';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: oklch(var(--in, 0.7 0.15 220) / 50%);
+  font-size: 0.7em;
+  animation: rotate-slow 8s linear infinite;
+}
+
+.performance-header::before {
+  content: '⬡';
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: oklch(var(--su, 0.7 0.2 160) / 50%);
+  font-size: 0.7em;
+  animation: rotate-slow 6s linear infinite;
+}
+
+@keyframes rotate-slow {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+body.performance-mode .live-values-header::before,
+body.performance-mode .performance-header::before {
+  animation: none;
+}
+
+/* ===== STAT ROW HIGHLIGHT EFFECT ===== */
+.hud-card .stat-row::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    oklch(var(--p, 0.6 0.2 260) / 30%),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hud-card .stat-row:hover::after {
+  opacity: 1;
+}
+
+body.performance-mode .hud-card .stat-row::after {
+  display: none;
+}
+
+/* ===== GLOWING DIVIDER LINES ===== */
+.hud-card h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(var(--p, 0.6 0.2 260) / 20%),
+    transparent
+  );
+}
+
+/* ===== RESOURCE ICON GLOW ON HOVER ===== */
+.resource-row:hover .resource-icon {
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* ===== SUBTLE SHIMMER EFFECT ON HUD CARDS ===== */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.hud-card:hover::before {
+  background-image: 
+    linear-gradient(
+      90deg,
+      transparent,
+      oklch(var(--p, 0.6 0.2 260) / 5%),
+      transparent
+    );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out;
+}
+
+body.performance-mode .hud-card:hover::before {
+  animation: none;
+  background-image: none;
 }
