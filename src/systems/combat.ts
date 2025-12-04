@@ -1,8 +1,10 @@
 import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
 import type { TuningConfig } from "../config/tuning.ts";
+import type { EnemyVariantDefinition } from "../config/enemyVariants.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
+import { getVariantDefinition } from "../config/enemyVariants.ts";
 
 function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
   let closest: Enemy | { x: number; y: number } | null = null;
@@ -37,6 +39,88 @@ function calculateOrbitProjectiles(state: GameState, orbitConfig: TuningConfig["
   const desiredOrbs = state.player.orbitProjectiles + bonusProjectiles;
   const roundedOrbs = Math.max(1, Math.round(desiredOrbs));
   return Math.min(orbitConfig.maxOrbitProjectiles, roundedOrbs);
+}
+
+function applyExplosionDamage(
+  state: GameState,
+  enemy: Enemy,
+  variantDef: EnemyVariantDefinition
+): void {
+  if (!variantDef.explosion) return;
+
+  const { radius, damage } = variantDef.explosion;
+  const dx = enemy.x - state.player.x;
+  const dy = enemy.y - state.player.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  if (dist > radius + state.player.radius) return;
+
+  const scaledDamage = damage * (1 + state.wave * 0.025) * (1 - state.player.damageReduction);
+  state.player.hp -= scaledDamage;
+  addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#fb7185");
+}
+
+function spawnSplitChildren(
+  state: GameState,
+  enemy: Enemy,
+  variantDef: EnemyVariantDefinition,
+  spawned: Enemy[]
+): void {
+  const split = variantDef.split;
+  if (!split) return;
+
+  const generation = (enemy.generation ?? 0) + 1;
+  if (generation > split.maxGenerations) return;
+
+  for (let i = 0; i < split.count; i++) {
+    const angle = Math.random() * TAU;
+    const offset = split.spread * (0.8 + Math.random() * 0.6);
+    const childX = enemy.x + Math.cos(angle) * offset;
+    const childY = enemy.y + Math.sin(angle) * offset;
+    const hp = Math.max(6, enemy.maxHp * split.hpScale);
+    const radius = Math.max(4, enemy.radius * split.radiusScale);
+    const reward = Math.max(0.5, enemy.reward * split.rewardScale);
+
+    const child: Enemy = {
+      x: childX,
+      y: childY,
+      radius,
+      hp,
+      maxHp: hp,
+      speed: enemy.speed * split.speedScale,
+      reward,
+      fireTimer: enemy.fireDelay * Math.random(),
+      fireDelay: enemy.fireDelay,
+      elite: false,
+      type: enemy.type === "weak" ? "weak" : "normal",
+      variant: enemy.variant,
+      generation
+    };
+    spawned.push(child);
+  }
+}
+
+function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): void {
+  const variantDef = getVariantDefinition(enemy.variant);
+  applyExplosionDamage(state, enemy, variantDef);
+  spawnSplitChildren(state, enemy, variantDef, spawned);
+
+  const fragReward = enemy.reward * 0.35;
+  state.resources.essence += enemy.reward;
+  state.runStats.kills += 1;
+  state.runStats.essence += enemy.reward;
+  const { maxFragments } = getTuning().fx;
+  if (state.fragmentsOrbs.length < maxFragments) {
+    state.fragmentsOrbs.push({
+      x: enemy.x,
+      y: enemy.y,
+      value: fragReward,
+      vx: (Math.random() - 0.5) * 30,
+      vy: (Math.random() - 0.5) * 30,
+      life: 12
+    });
+  } else {
+    registerFragmentGain(state, fragReward, enemy.x, enemy.y, true);
+  }
 }
 
 function fire(state: GameState): void {
@@ -204,11 +288,38 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     registerFragmentGain(state, merged, state.player.x, state.player.y - 10, true);
   }
 
+  const newEnemyProjectiles: EnemyProjectile[] = [];
   state.enemies.forEach((e) => {
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
-    e.x += Math.cos(angle) * e.speed * dt;
-    e.y += Math.sin(angle) * e.speed * dt;
+    const variantDef = getVariantDefinition(e.variant);
+
+    if (e.variant === "artillery" && variantDef.projectile) {
+      const distance = Math.hypot(state.player.x - e.x, state.player.y - e.y);
+      const desiredRange = 240;
+      const approachDirection = distance > desiredRange ? 1 : -0.65;
+      e.x += Math.cos(angle) * e.speed * dt * approachDirection;
+      e.y += Math.sin(angle) * e.speed * dt * approachDirection;
+
+      e.fireTimer -= dt;
+      if (e.fireTimer <= 0) {
+        const projectileSpeed = variantDef.projectile.speed;
+        const projectileDamage = variantDef.projectile.damage * (1 + state.wave * 0.02);
+        newEnemyProjectiles.push({
+          x: e.x,
+          y: e.y,
+          dx: Math.cos(angle) * projectileSpeed,
+          dy: Math.sin(angle) * projectileSpeed,
+          life: variantDef.projectile.life,
+          damage: projectileDamage
+        });
+        e.fireTimer = e.fireDelay;
+      }
+    } else {
+      e.x += Math.cos(angle) * e.speed * dt;
+      e.y += Math.sin(angle) * e.speed * dt;
+    }
   });
+  state.enemyProjectiles.push(...newEnemyProjectiles);
 
   const enemyBuckets = new Map<string, Enemy[]>();
   const bucketKey = (x: number, y: number): string => `${Math.floor(x / CELL_SIZE)},${Math.floor(y / CELL_SIZE)}`;
@@ -260,29 +371,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
 
   state.bullets = state.bullets.filter((b) => b.life > 0);
 
+  const spawnedEnemies: Enemy[] = [];
   state.enemies = state.enemies.filter((e) => {
     if (e.hp <= 0) {
-      const fragReward = e.reward * 0.35;
-      state.resources.essence += e.reward;
-      state.runStats.kills += 1;
-      state.runStats.essence += e.reward;
-      const { maxFragments } = getTuning().fx;
-      if (state.fragmentsOrbs.length < maxFragments) {
-        state.fragmentsOrbs.push({
-          x: e.x,
-          y: e.y,
-          value: fragReward,
-          vx: (Math.random() - 0.5) * 30,
-          vy: (Math.random() - 0.5) * 30,
-          life: 12
-        });
-      } else {
-        registerFragmentGain(state, fragReward, e.x, e.y, true);
-      }
+      handleEnemyDeath(state, e, spawnedEnemies);
       return false;
     }
     return true;
   });
+  state.enemies.push(...spawnedEnemies);
 
   state.enemies.forEach((e) => {
     const dx = e.x - state.player.x;

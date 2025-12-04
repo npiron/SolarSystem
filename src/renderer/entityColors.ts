@@ -3,6 +3,7 @@
  * Provides color mappings for WebGL2 renderers.
  */
 
+import type { EnemyVariant } from "../types/index.ts";
 import { colors, webglColors } from "./colors.ts";
 
 /**
@@ -32,6 +33,15 @@ export function getEnemyColorWebGL(type: string): readonly [number, number, numb
     case 'strong': return webglColors.enemyStrong;
     case 'elite': return webglColors.enemyElite;
     default: return webglColors.enemyNormal;
+  }
+}
+
+export function getVariantHaloColor(variant: EnemyVariant): readonly [number, number, number, number] | undefined {
+  switch (variant) {
+    case 'volatile': return webglColors.enemyVolatile;
+    case 'splitter': return webglColors.enemySplitter;
+    case 'artillery': return webglColors.enemyArtillery;
+    default: return undefined;
   }
 }
 

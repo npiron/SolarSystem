@@ -7,4 +7,5 @@ export * from "./generators.ts";
 export * from "./player.ts";
 export * from "./talents.ts";
 export * from "./upgrades.ts";
+export * from "./enemyVariants.ts";
 export { loadSave, saveGame } from "./persistence.ts";

@@ -410,7 +410,9 @@ export const tuningMeta: TuningMetaMap = {
       maxOrbsPerRing: { label: "Orbes par anneau", min: 1, max: 12, step: 1 },
       ringAngleOffset: { label: "Décalage angulaire", min: 0, max: 1.5, step: 0.05, unit: "rad" },
       spinSpeedBase: { label: "Vitesse de rotation", min: 0.2, max: 4, step: 0.1 },
-      spinSpeedBulletBaseline: { label: "Référence vitesse tir", min: 50, max: 400, step: 10 }
+      spinSpeedBulletBaseline: { label: "Référence vitesse tir", min: 50, max: 400, step: 10 },
+      projectileScaling: { label: "Scaling projectiles orbitaux", min: 0, max: 4, step: 0.1 },
+      maxOrbitProjectiles: { label: "Projectiles orbitaux max", min: 1, max: 64, step: 1 }
     }
   },
   combat: {

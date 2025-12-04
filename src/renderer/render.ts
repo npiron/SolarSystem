@@ -8,7 +8,7 @@ import type { GameState, EnemyType } from "../types/index.ts";
 import type { WebGL2Renderer } from "./webgl2Renderer.ts";
 import * as renderer from "./index.ts";
 import { webglColors, hexStringToVec4 } from "./colors.ts";
-import { getEnemyColorWebGL, getFragmentVisuals } from "./entityColors.ts";
+import { getEnemyColorWebGL, getFragmentVisuals, getVariantHaloColor } from "./entityColors.ts";
 import { icons } from "../config/constants.ts";
 import { formatNumber } from "../systems/hud.ts";
 
@@ -175,11 +175,14 @@ export function render(state: GameState, context: RenderContext): void {
     // Render enemies with type-based colors
     state.enemies.forEach((e) => {
       const enemyColor = getEnemyColorWebGL(e.type);
+      const variantHaloColor = getVariantHaloColor(e.variant);
       const enemyShape = getEnemyShape(e.type);
       const wobblePhase = time + (e.x + e.y) * 0.01;
       const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
       const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
-      const enemyHalo = allowFx ? { color: enemyColor, scale: 1.15 + enemyPulse * 0.3 } : undefined;
+      const enemyHalo = allowFx
+        ? { color: variantHaloColor ?? enemyColor, scale: 1.15 + enemyPulse * 0.3 }
+        : undefined;
       const flash = e.hitThisFrame ? 0.3 : 0;
       const tintedEnemyColor = [
         Math.min(1, enemyColor[0] + flash),

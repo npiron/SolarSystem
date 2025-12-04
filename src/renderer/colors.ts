@@ -27,6 +27,9 @@ export const colors = {
   enemyNormal: string2hex("#90caf9"),   // Blue - standard threat
   enemyStrong: string2hex("#ce93d8"),   // Purple - dangerous
   enemyElite: string2hex("#ffab91"),    // Orange - boss-like
+  enemyVolatile: string2hex("#fb7185"), // Pink-red - explodes on death
+  enemySplitter: string2hex("#34d399"), // Teal - divides into smaller foes
+  enemyArtillery: string2hex("#facc15"), // Gold - fires from afar
   // Boss colors
   boss: string2hex("#ff5252"),          // Red - boss
   bossHalo: string2hex("#ff5252"),      // Red glow
@@ -69,6 +72,9 @@ export const webglColors = {
   enemyNormal: toVec4(colors.enemyNormal, 1),
   enemyStrong: toVec4(colors.enemyStrong, 1),
   enemyElite: toVec4(colors.enemyElite, 1),
+  enemyVolatile: toVec4(colors.enemyVolatile, 1),
+  enemySplitter: toVec4(colors.enemySplitter, 1),
+  enemyArtillery: toVec4(colors.enemyArtillery, 1),
   // Boss colors for WebGL
   boss: toVec4(colors.boss, 1),
   bossHalo: toVec4(colors.bossHalo, 0.4),

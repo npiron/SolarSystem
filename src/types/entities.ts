@@ -42,6 +42,7 @@ export interface Bullet {
 }
 
 export type EnemyType = 'weak' | 'normal' | 'strong' | 'elite';
+export type EnemyVariant = 'chaser' | 'volatile' | 'splitter' | 'artillery';
 
 export interface Enemy {
   x: number;
@@ -55,6 +56,8 @@ export interface Enemy {
   fireDelay: number;
   elite: boolean;
   type: EnemyType;
+  variant: EnemyVariant;
+  generation?: number;
   hitThisFrame?: boolean;
 }
 
