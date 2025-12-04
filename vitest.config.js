@@ -7,10 +7,13 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       all: true,
       include: [
-        "src/config/**/*.ts", 
+        "src/config/**/*.ts",
         "src/systems/talents.ts",
         "src/systems/gameState.ts",
-        "src/systems/progression.ts"
+        "src/systems/progression.ts",
+        "src/systems/combat.ts",
+        "src/systems/economy.ts",
+        "src/systems/assist.ts"
       ],
       exclude: [
         "src/config/index.ts",
