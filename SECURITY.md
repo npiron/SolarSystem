@@ -91,6 +91,17 @@ We monitor dependencies for known vulnerabilities:
 - Run `npm audit` to check for vulnerabilities in dependencies
 - Review the [GitHub Security tab](../../security) for automated alerts
 
+### Current Known Issues
+
+**Development Dependencies Only:**
+- Some development dependencies (vitest, vite-node) use older versions of esbuild with a moderate vulnerability (GHSA-67mh-4wv8-2f99) affecting the development server
+- **Impact**: This only affects the development server, not production builds or the deployed game
+- **Mitigation**: The vulnerability allows requests to the dev server, which is only used locally during development
+- **Status**: Waiting for compatible vitest updates that don't introduce breaking changes
+- **Production**: The production build (via `npm run build`) uses the latest secure version of esbuild
+
+Users playing the deployed game are not affected by this vulnerability.
+
 ## Best Practices for Contributors
 
 If you're contributing code:
