@@ -1,0 +1,114 @@
+/* ===== FULLSCREEN CANVAS ===== */
+.fullscreen-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background: oklch(var(--b3, 0.15 0 0));
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: oklch(var(--b1, 0.2 0 0) / 90%);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
+  min-height: var(--header-height);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.game-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  filter: drop-shadow(0 4px 6px oklch(var(--p, 0.6 0.2 260) / 30%));
+  animation: logo-float 3s ease-in-out infinite;
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: oklch(var(--p, 0.6 0.2 260));
+  margin: 0;
+}
+
+.eyebrow {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: oklch(var(--bc, 0.9 0 0) / 50%);
+  margin: 0;
+}
+
+.lede {
+  font-size: 0.8rem;
+  color: oklch(var(--bc, 0.9 0 0) / 60%);
+  margin: 0;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== UI PANELS ===== */
+.ui-panel {
+  position: fixed;
+  z-index: 40;
+  background: oklch(var(--b1, 0.2 0 0) / 85%);
+  backdrop-filter: blur(20px);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  top: calc(var(--header-height) + 8px);
+  bottom: calc(var(--footer-height) + 8px);
+  width: var(--panel-width);
+  scrollbar-width: thin;
+  border-radius: 1rem;
+}
+
+.ui-panel-left {
+  left: 0.5rem;
+}
+
+.ui-panel-right {
+  right: 0.5rem;
+}
+
+.panel-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.7rem;
+  color: oklch(var(--bc, 0.9 0 0) / 40%);
+  background: oklch(var(--b1, 0.2 0 0) / 90%);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+  height: var(--footer-height);
+}

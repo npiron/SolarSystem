@@ -1,0 +1,168 @@
+/* ===== STAT BLOCKS (Cards) ===== */
+.stat-block {
+  background: oklch(var(--b2, 0.18 0 0) / 50%);
+  border-radius: 0.75rem;
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 5%);
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px oklch(0 0 0 / 10%), 0 2px 4px -2px oklch(0 0 0 / 10%);
+}
+
+.stat-block h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(var(--p, 0.6 0.2 260));
+  padding: 0.75rem 1rem 0.5rem;
+  margin: 0;
+  border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+}
+
+.stat-block .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.stat-block .stat-row:hover {
+  background: oklch(var(--bc, 0.9 0 0) / 5%);
+}
+
+.stat-row.muted {
+  color: oklch(var(--bc, 0.9 0 0) / 50%);
+}
+
+/* ===== COLLAPSIBLE SECTIONS ===== */
+.stat-block.collapsible>h2 {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.stat-block.collapsible>h2:hover {
+  color: oklch(var(--p, 0.6 0.2 260) / 80%);
+}
+
+.stat-block.collapsible>h2::before {
+  content: "▼";
+  font-size: 0.6rem;
+  transition: transform 0.2s ease;
+}
+
+.stat-block.collapsible.collapsed>h2::before {
+  transform: rotate(-90deg);
+}
+
+.stat-block.collapsible.collapsed>*:not(h2) {
+  display: none;
+}
+
+/* ===== BUTTONS ===== */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: oklch(var(--b2, 0.2 0 0));
+  color: oklch(var(--bc, 0.9 0 0));
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 20%);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button.primary {
+  background: linear-gradient(135deg, oklch(var(--p, 0.6 0.2 260)), oklch(var(--s, 0.6 0.2 300)));
+  color: oklch(var(--pc, 0.95 0 0));
+  border: none;
+  box-shadow: 0 4px 15px oklch(var(--p, 0.6 0.2 260) / 30%);
+}
+
+button.primary:hover {
+  box-shadow: 0 6px 20px oklch(var(--p, 0.6 0.2 260) / 40%);
+}
+
+button.secondary {
+  background: oklch(var(--s, 0.6 0.2 300) / 15%);
+  border-color: oklch(var(--s, 0.6 0.2 300) / 50%);
+  color: oklch(var(--s, 0.6 0.2 300));
+}
+
+button.ghost {
+  background: transparent;
+  border-color: oklch(var(--bc, 0.9 0 0) / 20%);
+  color: oklch(var(--bc, 0.9 0 0) / 70%);
+}
+
+button.ghost:hover {
+  background: oklch(var(--bc, 0.9 0 0) / 10%);
+}
+
+button.danger {
+  border-color: oklch(var(--er, 0.6 0.2 25));
+  color: oklch(var(--er, 0.6 0.2 25));
+}
+
+button.small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+/* ===== CARDS (Upgrades, Generators) ===== */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.card {
+  background: oklch(var(--b2, 0.18 0 0) / 60%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background: oklch(var(--b2, 0.18 0 0));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px oklch(0 0 0 / 15%);
+}
+
+.card h3 {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem;
+}
+
+.card p {
+  font-size: 0.75rem;
+  color: oklch(var(--bc, 0.9 0 0) / 60%);
+  margin: 0;
+}
+
+.card .cost {
+  color: oklch(var(--wa, 0.75 0.15 85));
+  font-weight: 700;
+}
