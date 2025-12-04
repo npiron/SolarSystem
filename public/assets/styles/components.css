@@ -31,10 +31,6 @@
   background: oklch(var(--bc, 0.9 0 0) / 5%);
 }
 
-.stat-row.muted {
-  color: oklch(var(--bc, 0.9 0 0) / 50%);
-}
-
 /* ===== COLLAPSIBLE SECTIONS ===== */
 .stat-block.collapsible>h2 {
   cursor: pointer;
