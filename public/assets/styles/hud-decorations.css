@@ -1,0 +1,296 @@
+/**
+ * HUD Decorations - Lightweight CSS-based visual enhancements
+ * These decorations are applied using CSS pseudo-elements and gradients
+ * to avoid any performance impact on the canvas rendering.
+ * All decorations respect the performance mode (visualsLow).
+ */
+
+/* ===== CORNER ORNAMENTS FOR HUD CARDS ===== */
+.hud-card::before,
+.hud-card::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+
+.hud-card::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 0.75rem;
+}
+
+.hud-card::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 0.75rem;
+}
+
+/* Add inner glow effect */
+.hud-card {
+  box-shadow: 
+    0 8px 30px oklch(0 0 0 / 35%),
+    inset 0 0 20px oklch(var(--p, 0.6 0.2 260) / 8%);
+}
+
+/* ===== DECORATIVE ACCENTS FOR HEADERS ===== */
+.hud-card h2::before {
+  content: '◆';
+  color: oklch(var(--p, 0.6 0.2 260) / 60%);
+  margin-right: 0.5rem;
+  font-size: 0.8em;
+}
+
+.hud-card h2::after {
+  content: '◆';
+  color: oklch(var(--p, 0.6 0.2 260) / 60%);
+  margin-left: 0.5rem;
+  font-size: 0.8em;
+}
+
+/* ===== LIVE VALUES HUD DECORATIONS ===== */
+.live-values-hud {
+  position: relative;
+  box-shadow: 
+    0 4px 20px oklch(0 0 0 / 25%),
+    inset 0 0 30px oklch(var(--in, 0.7 0.15 220) / 10%);
+}
+
+.live-values-hud::before,
+.live-values-hud::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 2px solid oklch(var(--in, 0.7 0.15 220) / 35%);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.live-values-hud::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 0.75rem;
+}
+
+.live-values-hud::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 0.75rem;
+}
+
+/* Decorative line under header */
+.live-values-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -2px;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(var(--in, 0.7 0.15 220)),
+    transparent
+  );
+}
+
+.live-values-header {
+  position: relative;
+}
+
+/* Add subtle pulse to values */
+.live-value-number {
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% {
+    text-shadow: 0 1px 3px oklch(0 0 0 / 60%);
+  }
+  50% {
+    text-shadow: 0 1px 6px oklch(var(--wa, 0.75 0.15 85) / 40%);
+  }
+}
+
+/* ===== PERFORMANCE HUD DECORATIONS ===== */
+.performance-hud {
+  position: relative;
+  box-shadow: 
+    0 4px 20px oklch(0 0 0 / 40%),
+    inset 0 0 30px oklch(var(--su, 0.7 0.2 160) / 12%);
+}
+
+.performance-hud::before,
+.performance-hud::after {
+  content: '';
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  border: 2px solid oklch(var(--su, 0.7 0.2 160) / 40%);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.performance-hud::before {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 0.5rem;
+}
+
+.performance-hud::after {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 0.5rem;
+}
+
+/* Decorative accent line */
+.performance-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -2px;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(var(--su, 0.7 0.2 160)),
+    transparent
+  );
+}
+
+.performance-header {
+  position: relative;
+}
+
+/* ===== VISUAL ENHANCEMENT FOR STAT ROWS ===== */
+.hud-card .stat-row {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.hud-card .stat-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    oklch(var(--p, 0.6 0.2 260) / 40%),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.hud-card .stat-row:hover::before {
+  opacity: 1;
+}
+
+/* ===== ICON ENHANCEMENTS ===== */
+.stat-icon {
+  filter: drop-shadow(0 0 3px currentColor);
+  transition: filter 0.3s ease;
+}
+
+.hud-card .stat-row:hover .stat-icon {
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* ===== PERFORMANCE MODE: HIDE DECORATIONS ===== */
+/* These rules will hide decorations when performance mode is active */
+body.performance-mode .hud-card::before,
+body.performance-mode .hud-card::after,
+body.performance-mode .live-values-hud::before,
+body.performance-mode .live-values-hud::after,
+body.performance-mode .performance-hud::before,
+body.performance-mode .performance-hud::after {
+  opacity: 0;
+}
+
+body.performance-mode .live-value-number {
+  animation: none;
+}
+
+body.performance-mode .hud-card .stat-row::before {
+  display: none;
+}
+
+body.performance-mode .hud-card,
+body.performance-mode .live-values-hud,
+body.performance-mode .performance-hud {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
+}
+
+/* ===== SUBTLE GRID PATTERN BACKGROUND ===== */
+.hud-card::before,
+.live-values-hud::before,
+.performance-hud::before {
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      oklch(var(--bc, 0.9 0 0) / 2%) 0px,
+      transparent 1px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      oklch(var(--bc, 0.9 0 0) / 2%) 0px,
+      transparent 1px,
+      transparent 8px
+    );
+  background-size: 8px 8px;
+  opacity: 0.3;
+}
+
+body.performance-mode .hud-card::before,
+body.performance-mode .live-values-hud::before,
+body.performance-mode .performance-hud::before {
+  background-image: none;
+}
+
+/* ===== ADDITIONAL DECORATIVE ELEMENTS ===== */
+/* Add subtle animated border glow on hover */
+.hud-card:hover {
+  border-color: oklch(var(--p, 0.6 0.2 260) / 20%);
+  transition: border-color 0.3s ease;
+}
+
+.live-values-hud:hover {
+  border-color: oklch(var(--in, 0.7 0.15 220) / 35%);
+  transition: border-color 0.3s ease;
+}
+
+.performance-hud:hover {
+  border-color: oklch(var(--su, 0.7 0.2 160) / 45%);
+  transition: border-color 0.3s ease;
+}
+
+/* Disable hover effects in performance mode */
+body.performance-mode .hud-card:hover,
+body.performance-mode .live-values-hud:hover,
+body.performance-mode .performance-hud:hover {
+  border-color: inherit;
+}
