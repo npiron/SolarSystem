@@ -1,16 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="night">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Neo Survivors Idle</title>
   <link rel="stylesheet" href="./public/assets/styles/main.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600&display=swap"
-    rel="stylesheet" />
 </head>
 
 <body>
@@ -41,7 +36,7 @@
   <aside class="ui-panel ui-panel-left">
     <div class="panel-content">
       <div class="stat-block collapsible">
-        <h2>╔═ RESSOURCES ═╗</h2>
+        <h2>Ressources</h2>
         <div class="stat-row">
           <span>> Essence</span>
           <span id="essence">0</span>
@@ -57,7 +52,7 @@
       </div>
 
       <div class="stat-block collapsible">
-        <h2>╔═ RUN EN COURS ═╗</h2>
+        <h2>Run en cours</h2>
         <div class="stat-row"><span>> Vague</span><span id="wave">1</span></div>
         <div class="stat-row"><span>> Vie</span><span id="hp">100</span></div>
         <div class="stat-row tooltip" id="damageRow"><span>> Dégâts</span><span id="dps">0</span></div>
@@ -68,7 +63,7 @@
       </div>
 
       <div class="stat-block collapsible collapsed">
-        <h2>╔═ PERFORMANCE ═╗</h2>
+        <h2>Performance</h2>
         <div class="stat-row"><span>> FPS</span><span id="fpsValue">--</span></div>
         <button id="toggleFps" class="ghost small">[ GRAPH ]</button>
         <canvas id="fpsGraph" class="fps-chart" width="260" height="80"></canvas>
@@ -76,7 +71,7 @@
 
 
       <div class="stat-block">
-        <h2>╔═ PRODUCTION ═╗</h2>
+        <h2>Production</h2>
         <div id="generators" class="list"></div>
       </div>
     </div>
@@ -86,17 +81,17 @@
   <aside class="ui-panel ui-panel-right">
     <div class="panel-content">
       <div class="stat-block assist collapsible">
-        <h2>╔═ AIDE RAPIDE ═╗</h2>
+        <h2>💡 Aide rapide</h2>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
 
       <div class="stat-block assist collapsible">
-        <h2>╔═ JALONS ═╗</h2>
+        <h2>🎯 Jalons</h2>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>
 
       <div class="stat-block collapsible">
-        <h2>╔═ TALENTS ═╗</h2>
+        <h2>⚡ Talents</h2>
         <div id="talents" class="talent-grid"></div>
         <div class="talent-actions">
           <p id="talentStatus" class="muted"></p>
@@ -105,18 +100,18 @@
       </div>
 
       <div class="stat-block">
-        <h2>╔═ AMÉLIORATIONS ═╗</h2>
+        <h2>🔧 Améliorations</h2>
         <div id="upgrades" class="list"></div>
       </div>
 
       <div class="stat-block collapsible">
-        <h2>╔═ PRESTIGE ═╗</h2>
+        <h2>✨ Prestige</h2>
         <button id="softPrestige" class="secondary">[ CONSOLIDATION ]</button>
         <button id="restartRun" class="ghost">[ RELANCER ]</button>
       </div>
 
       <div class="stat-block collapsible collapsed">
-        <h2>╔═ GUIDE ═╗</h2>
+        <h2>📖 Guide</h2>
         <ul class="guide">
           <li>> Investis Essence dans production passive</li>
           <li>> Fragments pour upgrades de combat</li>
@@ -127,7 +122,7 @@
       </div>
 
       <div class="stat-block collapsible collapsed debug">
-        <h2>╔═ DEBUG ═╗</h2>
+        <h2>🐛 Debug</h2>
         <div class="debug-grid">
           <button id="debugGiveEssence" class="ghost">+1M ESS</button>
           <button id="debugGiveFragments" class="ghost">+1M FRG</button>
@@ -137,7 +132,7 @@
       </div>
 
       <div class="stat-block collapsible collapsed debug">
-        <h2>╔═ TUNING ═╗</h2>
+        <h2>⚙️ Tuning</h2>
         <div id="tuningPanel" class="tuning-panel"></div>
       </div>
     </div>
