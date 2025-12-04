@@ -25,7 +25,7 @@ interface TuningPanelContext {
   onTuningChange?: () => void;
 }
 
-interface LiveValues {
+export interface LiveValues {
   playerDps: number;
   currentSpawnRate: number;
   currentEnemyHp: number;
@@ -310,7 +310,7 @@ function updateTuningParam(category: keyof TuningConfig, param: string, value: n
 /**
  * Calculate live values from game state
  */
-function calculateLiveValues(state: GameState): LiveValues {
+export function calculateLiveValues(state: GameState): LiveValues {
   const tuning = getTuning();
   const enemyConfig = tuning.enemy;
   const spawnConfig = tuning.spawn;

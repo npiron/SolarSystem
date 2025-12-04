@@ -31,6 +31,7 @@ import {
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
+import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud.ts";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
@@ -428,6 +429,9 @@ function initUI(): void {
 
   // Initialize collapsible sections with state persistence
   initCollapsibleSections();
+
+  // Initialize live values HUD
+  initLiveValuesHud();
 }
 
 async function bootstrap(): Promise<void> {
@@ -489,6 +493,7 @@ async function bootstrap(): Promise<void> {
     updateHud(state, hudContext);
     updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
     updateLiveValues(state);
+    updateLiveValuesHud(state);
     gameRender(state, {
       canvasWidth: width,
       canvasHeight: height,
