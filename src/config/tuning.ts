@@ -33,6 +33,8 @@ export interface TuningConfig {
     ringAngleOffset: number;
     spinSpeedBase: number;
     spinSpeedBulletBaseline: number;
+    projectileScaling: number;
+    maxOrbitProjectiles: number;
   };
 
   // Graphics sizes
@@ -170,7 +172,9 @@ export function getDefaultTuning(): TuningConfig {
       maxOrbsPerRing: 6,
       ringAngleOffset: 0.35,
       spinSpeedBase: 1.2,
-      spinSpeedBulletBaseline: 260
+      spinSpeedBulletBaseline: 260,
+      projectileScaling: 1.5,
+      maxOrbitProjectiles: 48
     },
     combat: {
       contactDamageBase: 18,
