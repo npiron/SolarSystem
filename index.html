@@ -60,6 +60,19 @@
     </div>
   </div>
 
+  <!-- Performance HUD (bottom right) -->
+  <div id="performanceHud" class="performance-hud">
+    <div class="performance-header"><i class="ti ti-chart-line"></i> Performance</div>
+    <div class="performance-content">
+      <div class="perf-row">
+        <span class="perf-label">FPS</span>
+        <span id="hudFpsValue" class="perf-value">--</span>
+      </div>
+      <button id="toggleFpsFromHud" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
+      <canvas id="fpsGraphHud" class="fps-chart-hud" width="180" height="60"></canvas>
+    </div>
+  </div>
+
   <!-- Left UI Panel -->
   <aside class="ui-panel ui-panel-left">
     <div class="panel-content">
@@ -81,21 +94,22 @@
 
       <div class="stat-block collapsible">
         <h2><i class="ti ti-sword"></i> Run en cours</h2>
-        <div class="stat-row"><span>> Vague</span><span id="wave">1</span></div>
-        <div class="stat-row"><span>> Vie</span><span id="hp">100</span></div>
-        <div class="stat-row tooltip" id="damageRow"><span>> Dégâts</span><span id="dps">0</span></div>
-        <div class="stat-row"><span>> Critiques</span><span id="crit">0%</span></div>
-        <div class="stat-row"><span>> Bouclier</span><span id="shield">0%</span></div>
-        <div class="stat-row"><span>> Collecte</span><span id="collect">0</span></div>
-        <div class="stat-row muted"><span>> Spawn</span><span id="spawnRate">0/s</span></div>
+        <div class="stat-row"><span><i class="ti ti-wave-square stat-icon"></i> Vague</span><span id="wave">1</span>
+        </div>
+        <div class="stat-row"><span><i class="ti ti-heart stat-icon"></i> Vie</span><span id="hp">100</span></div>
+        <div class="stat-row tooltip" id="damageRow"><span><i class="ti ti-sword stat-icon"></i> Dégâts</span><span
+            id="dps">0</span></div>
+        <div class="stat-row"><span><i class="ti ti-flame stat-icon"></i> Critiques</span><span id="crit">0%</span>
+        </div>
+        <div class="stat-row"><span><i class="ti ti-shield stat-icon"></i> Bouclier</span><span id="shield">0%</span>
+        </div>
+        <div class="stat-row"><span><i class="ti ti-magnet stat-icon"></i> Collecte</span><span id="collect">0</span>
+        </div>
+        <div class="stat-row muted"><span><i class="ti ti-clock stat-icon"></i> Spawn</span><span
+            id="spawnRate">0/s</span></div>
       </div>
 
-      <div class="stat-block collapsible collapsed">
-        <h2><i class="ti ti-chart-line"></i> Performance</h2>
-        <div class="stat-row"><span>> FPS</span><span id="fpsValue">--</span></div>
-        <button id="toggleFps" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
-        <canvas id="fpsGraph" class="fps-chart" width="260" height="80"></canvas>
-      </div>
+
 
 
       <div class="stat-block">
@@ -108,12 +122,12 @@
   <!-- Right UI Panel -->
   <aside class="ui-panel ui-panel-right">
     <div class="panel-content">
-      <div class="stat-block assist collapsible">
+      <div class="stat-block assist collapsible collapsed">
         <h2><i class="ti ti-bulb"></i> Aide rapide</h2>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
 
-      <div class="stat-block assist collapsible">
+      <div class="stat-block assist collapsible collapsed">
         <h2><i class="ti ti-target"></i> Jalons</h2>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>

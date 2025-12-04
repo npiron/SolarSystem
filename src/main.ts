@@ -70,7 +70,6 @@ const toggleSoundBtn = document.getElementById("toggleSound");
 const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
-const toggleFpsBtn = document.getElementById("toggleFps");
 const versionBadge = document.getElementById("versionBadge");
 const docDialog = document.getElementById("docDialog");
 const docTabs = document.getElementById("docTabs");
@@ -100,8 +99,9 @@ const upgradesContainer = (document.getElementById("upgradeBar") || document.get
 const talentsContainer = document.getElementById("talents") as HTMLElement | null;
 const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
 const talentStatusEl = document.getElementById("talentStatus");
-const fpsValueEl = document.getElementById("fpsValue");
-const fpsCanvas = document.getElementById("fpsGraph") as HTMLCanvasElement | null;
+const fpsValueEl = document.getElementById("hudFpsValue");
+const fpsCanvas = document.getElementById("fpsGraphHud") as HTMLCanvasElement | null;
+const toggleFpsBtn = document.getElementById("toggleFpsFromHud");
 const quickHelpList = document.getElementById("quickHelpList");
 const milestoneList = document.getElementById("milestoneList");
 const assistBubbles = document.getElementById("assistBubbles");
@@ -374,7 +374,6 @@ function initUI(): void {
   toggleFpsBtn?.addEventListener("click", () => {
     state.performance.graphVisible = !state.performance.graphVisible;
     fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
-    if (toggleFpsBtn) toggleFpsBtn.textContent = state.performance.graphVisible ? "📉 Masquer le graph" : "📈 Afficher le graph";
     if (fpsCanvas) drawFpsGraph(fpsCanvas, state.performance);
   });
 
