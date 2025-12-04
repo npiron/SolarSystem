@@ -1,7 +1,7 @@
 import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.mjs";
-import { GlowFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-glow/+esm";
-import { KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-kawase-blur/+esm";
-import { NoiseFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-noise/+esm";
+import { GlowFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-glow@7.4.2/+esm";
+import { KawaseBlurFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-kawase-blur@7.4.2/+esm";
+import { NoiseFilter } from "https://cdn.jsdelivr.net/npm/@pixi/filter-noise@7.4.2/+esm";
 import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm";
 import { FX_BUDGET, MAX_OFFLINE_SECONDS, STORAGE_KEY, TAU, VERSION, icons, palette } from "./config/constants.js";
 import { createGenerators } from "./config/generators.js";
