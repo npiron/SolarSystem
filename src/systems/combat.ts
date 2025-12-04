@@ -1,4 +1,5 @@
 import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
+import type { TuningConfig } from "../config/tuning.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
@@ -29,6 +30,13 @@ function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null
   }
 
   return closest;
+}
+
+function calculateOrbitProjectiles(state: GameState, orbitConfig: TuningConfig["orbit"]): number {
+  const bonusProjectiles = Math.max(0, state.player.projectiles - 1) * orbitConfig.projectileScaling;
+  const desiredOrbs = state.player.orbitProjectiles + bonusProjectiles;
+  const roundedOrbs = Math.max(1, Math.round(desiredOrbs));
+  return Math.min(orbitConfig.maxOrbitProjectiles, roundedOrbs);
 }
 
 function fire(state: GameState): void {
@@ -72,7 +80,7 @@ function fireOrbit(state: GameState): void {
   const { maxSpeed, maxLifetime } = getTuning().bullet;
   const { maxBullets } = getTuning().fx;
 
-  const count = Math.max(1, state.player.orbitProjectiles);
+  const count = calculateOrbitProjectiles(state, getTuning().orbit);
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
   const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
 
@@ -98,6 +106,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
 
   const bulletTuning = getTuning().bullet;
   const orbitTuning = getTuning().orbit;
+  const orbitCount = calculateOrbitProjectiles(state, orbitTuning);
 
   // Spin speed linked to bullet speed with tuning baseline
   const effectiveBulletSpeed = Math.min(state.player.bulletSpeed, bulletTuning.maxSpeed);
@@ -107,7 +116,6 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
 
   // Update orbital orbs visual positions
   state.orbitalOrbs = [];
-  const orbitCount = Math.max(0, state.player.orbitProjectiles);
   if (orbitCount > 0) {
     const orbitBaseDistance = Math.min(orbitTuning.baseDistance * state.player.range, orbitTuning.maxDistance);
     const orbsPerRing = Math.max(1, Math.floor(orbitTuning.maxOrbsPerRing));

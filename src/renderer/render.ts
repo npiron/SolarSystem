@@ -16,6 +16,7 @@ import { formatNumber } from "../systems/hud.ts";
 const PLAYER_SHAPE = { sides: 6, rotation: Math.PI / 6 };
 const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
+const ORBIT_SHAPE = { sides: 7, rotation: Math.PI / 7 };
 const BOSS_SHAPE = { sides: 8, rotation: 0 };
 const ENEMY_PROJECTILE_SHAPE = { sides: 3, rotation: Math.PI / 2 };
 
@@ -95,18 +96,18 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     // Render orbital orbs
-    const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
-    const orbitalHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.6 } : undefined;
+    const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.orbitBullet;
+    const orbitalHalo = allowFx ? { color: webglColors.orbitGlow, scale: 1.6 } : undefined;
     state.orbitalOrbs.forEach((orb) => {
       const orbX = state.player.x + Math.cos(orb.angle) * orb.distance;
       const orbY = state.player.y + Math.sin(orb.angle) * orb.distance;
       renderer.pushCircle({
         x: orbX,
         y: orbY,
-        radius: 5,
+        radius: 6,
         color: orbitalOrbColor,
-        sides: 6,
-        rotation: orb.angle,
+        sides: ORBIT_SHAPE.sides,
+        rotation: orb.angle + ORBIT_SHAPE.rotation,
         halo: orbitalHalo
       });
     });
