@@ -24,10 +24,24 @@
  */
 
 /* ===== HUD CARD BASE STYLES ===== */
-.hud-card {
-  box-shadow: 
+.hud-card,
+.merged-run-hud,
+.performance-hud,
+.stat-block {
+  background:
+    linear-gradient(155deg, oklch(var(--b1, 0.2 0 0) / 92%), oklch(var(--b2, 0.18 0 0) / 80%)),
+    radial-gradient(circle at 20% 20%, oklch(var(--p, 0.6 0.2 260) / 11%), transparent 45%),
+    radial-gradient(circle at 80% 80%, oklch(var(--s, 0.6 0.2 300) / 9%), transparent 50%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 12%);
+  box-shadow:
     0 8px 30px oklch(0 0 0 / 35%),
     inset 0 0 20px oklch(var(--p, 0.6 0.2 260) / 8%);
+}
+
+.hud-card,
+.merged-run-hud,
+.performance-hud {
+  backdrop-filter: blur(14px) saturate(115%);
 }
 
 /* ===== HUD CARD CORNER ORNAMENTS ===== */
@@ -325,7 +339,23 @@
 /* ===== STAT ROW ENHANCEMENTS ===== */
 .hud-card .stat-row {
   position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, oklch(var(--p, 0.6 0.2 260) / 9%), transparent 25%, transparent 75%, oklch(var(--s, 0.6 0.2 300) / 7%));
+  background-size: 200% 100%;
+  animation: hud-row-glow 14s ease-in-out infinite;
   transition: all 0.2s ease;
+}
+
+@keyframes hud-row-glow {
+  0% {
+    background-position: 0 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 
 .hud-card .stat-row::before {
@@ -426,6 +456,11 @@ body.performance-mode .stat-block:not(.collapsible) h2::before {
 body.performance-mode .hud-card .stat-row::before,
 body.performance-mode .hud-card .stat-row::after {
   display: none;
+}
+
+body.performance-mode .hud-card .stat-row {
+  animation: none;
+  background-position: 0 0;
 }
 
 body.performance-mode .hud-card,
