@@ -73,6 +73,10 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     },
     performance: {
       fps: 0,
+      frameTimeMs: 0,
+      avgFps: 0,
+      memoryUsageMb: null,
+      memoryLimitMb: null,
       history: [],
       maxSamples: 240,
       graphVisible: false

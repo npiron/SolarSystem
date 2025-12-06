@@ -23,7 +23,12 @@ import {
 import { createInitialState, softReset } from "./systems/gameState.ts";
 import { applyProgressionEffects, computeGeneratorRate, refreshGeneratorRates } from "./systems/progression.ts";
 import { computeIdleRate as computeIdleRateFromEconomy } from "./systems/economy.ts";
-import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
+import {
+  recordFpsSample,
+  drawFpsGraph,
+  updatePerformanceHud,
+  type PerformanceHudElements
+} from "./systems/performance.ts";
 import { initCollapsibleSections } from "./systems/collapsible.ts";
 import {
   renderGenerators as renderGeneratorsUI,
@@ -101,7 +106,17 @@ const talentsContainer = document.getElementById("talents") as HTMLElement | nul
 const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
 const talentStatusEl = document.getElementById("talentStatus");
 const fpsValueEl = document.getElementById("hudFpsValue");
+const frameTimeEl = document.getElementById("hudFrameTime");
+const avgFpsEl = document.getElementById("hudAvgFps");
+const memoryEl = document.getElementById("hudMemory");
 const fpsCanvas = document.getElementById("fpsGraphHud") as HTMLCanvasElement | null;
+const performanceHudElements: PerformanceHudElements = {
+  fpsValueEl,
+  frameTimeEl,
+  avgFpsEl,
+  memoryEl,
+  fpsCanvas
+};
 const toggleFpsBtn = document.getElementById("toggleFpsFromHud");
 const quickHelpList = document.getElementById("quickHelpList");
 const milestoneList = document.getElementById("milestoneList");
@@ -513,7 +528,7 @@ async function bootstrap(): Promise<void> {
       assistUi
     });
     updateHud(state, hudContext);
-    updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
+    updatePerformanceHud(performanceHudElements, state.performance);
     updateLiveValues(state);
     updateLiveValuesHud(state);
     renderWeapons(state);

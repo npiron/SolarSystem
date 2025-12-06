@@ -84,6 +84,18 @@
         <span class="perf-label">FPS</span>
         <span id="hudFpsValue" class="perf-value">--</span>
       </div>
+      <div class="perf-row">
+        <span class="perf-label tooltip" data-tooltip="Temps du dernier rendu complet du jeu">Frame</span>
+        <span id="hudFrameTime" class="perf-value">-- ms</span>
+      </div>
+      <div class="perf-row">
+        <span class="perf-label tooltip" data-tooltip="Moyenne mobile sur les 240 dernières frames">FPS moyen</span>
+        <span id="hudAvgFps" class="perf-value">--</span>
+      </div>
+      <div class="perf-row tooltip" data-tooltip="Consommation mémoire du navigateur (si disponible)">
+        <span class="perf-label">Mémoire</span>
+        <span id="hudMemory" class="perf-value">--</span>
+      </div>
       <button id="toggleFpsFromHud" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
       <canvas id="fpsGraphHud" class="fps-chart-hud" width="180" height="60"></canvas>
     </div>

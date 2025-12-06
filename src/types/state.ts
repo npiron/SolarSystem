@@ -59,6 +59,10 @@ export interface AudioState {
 
 export interface PerformanceState {
   fps: number;
+  frameTimeMs: number;
+  avgFps: number;
+  memoryUsageMb: number | null;
+  memoryLimitMb: number | null;
   history: number[];
   maxSamples: number;
   graphVisible: boolean;
