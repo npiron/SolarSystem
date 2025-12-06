@@ -25,10 +25,10 @@
 :root {
   --header-height: 64px;
   --footer-height: 40px;
-  --panel-width: 360px;
+  --panel-width: 0px;
   --hud-gap: 1rem;
-  --hud-safe-left: calc(var(--panel-width) + var(--hud-gap));
-  --hud-safe-right: calc(var(--panel-width) + var(--hud-gap));
+  --hud-safe-left: 1rem;
+  --hud-safe-right: 1rem;
 }
 
 /* ===== BASE STYLES ===== */
@@ -188,33 +188,46 @@ body {
   gap: 0.5rem;
 }
 
-/* ===== UI PANELS ===== */
-.ui-panel {
+/* ===== BLOCK WORKSPACE ===== */
+.block-workspace {
   position: fixed;
-  z-index: 40;
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  overflow-y: auto;
-  overflow-x: hidden;
-  top: calc(var(--header-height) + 0.75rem);
-  max-height: calc(100vh - var(--header-height) - var(--footer-height) - 1.5rem);
-  width: var(--panel-width);
-  scrollbar-width: thin;
-  border-radius: 1rem;
+  inset: calc(var(--header-height) + 0.5rem) 0.75rem calc(var(--footer-height) + 0.75rem);
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 0.75rem;
+  overflow: auto;
+  pointer-events: auto;
 }
 
-.ui-panel-left {
-  left: 0.5rem;
+.floating-block {
+  position: relative;
+  min-width: 280px;
 }
 
-.ui-panel-right {
-  right: 0.5rem;
+.floating-block .stat-block {
+  height: 100%;
+  resize: both;
+  overflow: auto;
 }
 
-.panel-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.floating-block h2 {
+  cursor: grab;
+}
+
+.floating-block--free {
+  position: absolute;
+  z-index: 35;
+}
+
+.floating-block--free .stat-block {
+  box-shadow: 0 10px 30px oklch(0 0 0 / 28%);
+  cursor: move;
+}
+
+.floating-block--free h2 {
+  cursor: grabbing;
 }
 
 /* ===== STAT BLOCKS (Cards) ===== */
@@ -1074,13 +1087,14 @@ button.small {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1400px) {
-  :root {
-    --panel-width: 340px;
+  .block-workspace {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
 @media (max-width: 1200px) {
-  :root {
-    --panel-width: 300px;
+  .block-workspace {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    inset: calc(var(--header-height) + 0.5rem) 0.5rem calc(var(--footer-height) + 0.5rem);
   }
 }

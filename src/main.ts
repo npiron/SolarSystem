@@ -36,6 +36,7 @@ import {
   renderUpgrades as renderUpgradesUI,
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
+import { initFloatingBlocks } from "./systems/floatingBlocks.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
 import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud.ts";
 import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI.ts";
@@ -441,6 +442,9 @@ function initUI(): void {
   // Initialize weapons UI
   initWeaponsUI();
   renderWeapons(state);
+
+  // Initialize floating workspace controls (drag + resize)
+  initFloatingBlocks();
 
   // After layout, recompute UI top margin and clamp bounds
   updateUiTopMargin();
