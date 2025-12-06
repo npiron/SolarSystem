@@ -193,7 +193,12 @@ export function render(state: GameState, context: RenderContext): void {
       const fragmentPhase = time + index * 0.3;
       const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.15);
       const fragmentRotation = FRAGMENT_SHAPE.rotation + time * 0.5 + index * 0.1;
-      const fragmentHalo = allowFx ? { color: ringColor, scale: 1.8 + oscillate(fragmentPhase, 2, 0.2) } : undefined;
+      
+      // Scale halo based on fragment value for better visibility
+      const baseHaloScale = f.value >= 10 ? 2.2 : f.value >= 3 ? 1.9 : 1.6;
+      const fragmentHalo = allowFx 
+        ? { color: ringColor, scale: baseHaloScale + oscillate(fragmentPhase, 2, 0.25) } 
+        : undefined;
 
       // Subtle floating effect
       const floatY = oscillate(fragmentPhase, 2, 2);
@@ -217,9 +222,13 @@ export function render(state: GameState, context: RenderContext): void {
       const wobblePhase = time + (e.x + e.y) * 0.01;
       const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
       const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
+      
+      // Enhanced halo for variants - larger and more visible
+      const haloScale = variantHaloColor ? 1.6 + enemyPulse * 0.4 : 1.15 + enemyPulse * 0.3;
       const enemyHalo = allowFx
-        ? { color: variantHaloColor ?? enemyColor, scale: 1.15 + enemyPulse * 0.3 }
+        ? { color: variantHaloColor ?? enemyColor, scale: haloScale }
         : undefined;
+      
       const flash = e.hitThisFrame ? 0.3 : 0;
       const tintedEnemyColor = [
         Math.min(1, enemyColor[0] + flash),
@@ -227,6 +236,7 @@ export function render(state: GameState, context: RenderContext): void {
         Math.min(1, enemyColor[2] + flash * 0.4),
         enemyColor[3]
       ] as const;
+      
       renderer.pushCircle({
         x: e.x,
         y: e.y,
@@ -271,9 +281,9 @@ export function render(state: GameState, context: RenderContext): void {
       });
     }
 
-    // Render enemy projectiles
+    // Render enemy projectiles with enhanced visibility
     state.enemyProjectiles.forEach((p) => {
-      const projHalo = allowFx ? { color: webglColors.enemyProjectileGlow, scale: 1.6 } : undefined;
+      const projHalo = allowFx ? { color: webglColors.enemyProjectileGlow, scale: 2.2 } : undefined;
       renderer.pushCircle({
         x: p.x,
         y: p.y,

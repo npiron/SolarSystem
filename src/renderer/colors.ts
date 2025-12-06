@@ -23,22 +23,22 @@ export const colors = {
   fragment: string2hex("#ff4da6"),
   fragmentRing: string2hex("#ff6bc5"),
   elite: string2hex("#ff6b35"),
-  // Enemy type colors - Neon palette for visual pop
-  enemyWeak: string2hex("#39ff14"),     // Neon green - easy to kill
-  enemyNormal: string2hex("#00bfff"),   // Electric blue - standard threat
-  enemyStrong: string2hex("#bf00ff"),   // Neon purple - dangerous
-  enemyElite: string2hex("#ff6b00"),    // Neon orange - boss-like
-  enemyVolatile: string2hex("#ff1744"), // Neon red - explodes on death
-  enemySplitter: string2hex("#00e5ff"), // Cyan - divides into smaller foes
-  enemyArtillery: string2hex("#ffea00"), // Neon yellow - fires from afar
+  // Enemy type colors - High contrast palette for clear differentiation
+  enemyWeak: string2hex("#7cff00"),     // Lime green - easy to kill
+  enemyNormal: string2hex("#00a8ff"),   // Sky blue - standard threat
+  enemyStrong: string2hex("#d400ff"),   // Vivid purple - dangerous
+  enemyElite: string2hex("#ff4500"),    // Red-orange - boss-like
+  enemyVolatile: string2hex("#ff0044"), // Bright red - explodes on death
+  enemySplitter: string2hex("#00ffff"), // Pure cyan - divides into smaller foes
+  enemyArtillery: string2hex("#ffff00"), // Pure yellow - fires from afar
   // Boss colors
   boss: string2hex("#ff0044"),          // Hot red - boss
   bossHalo: string2hex("#ff3366"),      // Pink-red glow
   enemyProjectile: string2hex("#ff5722"), // Orange-red - enemy projectile
-  // Fragment value colors - Neon gradient from cool to warm
-  fragmentLow: string2hex("#9c7cf4"),   // Soft purple - low value
-  fragmentMedium: string2hex("#ff4da6"), // Hot pink - medium value
-  fragmentHigh: string2hex("#ffd700"),  // Gold - high value
+  // Fragment value colors - Clear progression from low to high value
+  fragmentLow: string2hex("#8b7cf6"),   // Light purple - low value
+  fragmentMedium: string2hex("#ff66cc"), // Bright pink - medium value
+  fragmentHigh: string2hex("#ffaa00"),  // Vibrant gold - high value
   hpBg: string2hex("#0a0e1a"),
   hpFg: string2hex("#00ff66"),
   hudBg: string2hex("#0a0f1f"),
