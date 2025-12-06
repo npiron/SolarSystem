@@ -71,14 +71,15 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     const playerMotion = Math.min(1, Math.hypot(state.player.vx, state.player.vy) / Math.max(1, state.player.speed));
-    const playerScale = 1 + oscillate(time, 2.4, 0.06) + playerMotion * 0.04;
-    const playerRotation = PLAYER_SHAPE.rotation + oscillate(time, 1.8, 0.25 * (0.4 + playerMotion * 0.6));
+    const playerScale = 1 + oscillate(time, 2.4, 0.08) + playerMotion * 0.06;
+    const playerRotation = PLAYER_SHAPE.rotation + oscillate(time, 1.8, 0.3 * (0.4 + playerMotion * 0.6));
 
-    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.24 + oscillate(time, 1.2, 0.08) } : undefined;
-    const collectRing = { color: webglColors.collectRing, scale: 1.04 };
-    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.35 + oscillate(time, 2.2, 0.1) } : undefined;
+    // Enhanced halo colors with stronger glow
+    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.4 + oscillate(time, 1.2, 0.12) } : undefined;
+    const collectRing = { color: webglColors.collectRing, scale: 1.1 };
+    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.5 + oscillate(time, 2.2, 0.15) } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
-    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 1.8 } : undefined;
+    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 2.2 } : undefined;
 
     renderer.beginFrame();
 
@@ -104,33 +105,61 @@ export function render(state: GameState, context: RenderContext): void {
       halo: collectRing
     });
 
-    // Render orbital orbs
+    // Render orbital orbs with enhanced glow
     const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.orbitBullet;
-    const orbitalHalo = allowFx ? { color: webglColors.orbitGlow, scale: 1.6 } : undefined;
+    const orbitalHalo = allowFx ? { color: webglColors.orbitGlow, scale: 2.0 + oscillate(time, 3, 0.15) } : undefined;
     state.orbitalOrbs.forEach((orb) => {
       const orbX = state.player.x + Math.cos(orb.angle) * orb.distance;
       const orbY = state.player.y + Math.sin(orb.angle) * orb.distance;
+      const orbPulse = 1 + oscillate(time + orb.angle, 4, 0.1);
+
+      // Trail effect for orbital orbs
+      if (allowFx) {
+        const trailAngle = orb.angle - 0.3;
+        const trailX = state.player.x + Math.cos(trailAngle) * orb.distance;
+        const trailY = state.player.y + Math.sin(trailAngle) * orb.distance;
+        renderer.pushCircle({
+          x: trailX,
+          y: trailY,
+          radius: 4,
+          color: [orbitalOrbColor[0], orbitalOrbColor[1], orbitalOrbColor[2], 0.3] as const,
+          sides: ORBIT_SHAPE.sides,
+          rotation: trailAngle + ORBIT_SHAPE.rotation,
+          halo: { color: webglColors.orbitGlow, scale: 1.3 }
+        });
+      }
+
       renderer.pushCircle({
         x: orbX,
         y: orbY,
-        radius: 6,
+        radius: 7 * orbPulse,
         color: orbitalOrbColor,
         sides: ORBIT_SHAPE.sides,
-        rotation: orb.angle + ORBIT_SHAPE.rotation + oscillate(time + orb.angle, 2.5, 0.2),
+        rotation: orb.angle + ORBIT_SHAPE.rotation + oscillate(time + orb.angle, 2.5, 0.25),
         halo: orbitalHalo
       });
     });
 
-    if (allowFx && playerMotion > 0.15) {
-      renderer.pushCircle({
-        x: state.player.x - state.player.vx * 0.08,
-        y: state.player.y - state.player.vy * 0.08,
-        radius: state.player.radius * (0.9 + playerMotion * 0.4),
-        color: webglColors.playerAura,
-        sides: PLAYER_SHAPE.sides,
-        rotation: playerRotation,
-        halo: playerHalo
-      });
+    // Motion trail effect - multiple trailing afterimages
+    if (allowFx && playerMotion > 0.1) {
+      const trailColors = [
+        [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.4] as const,
+        [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.25] as const,
+        [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.12] as const,
+      ];
+      const trailOffsets = [0.06, 0.12, 0.2];
+
+      for (let i = 0; i < 3; i++) {
+        renderer.pushCircle({
+          x: state.player.x - state.player.vx * trailOffsets[i],
+          y: state.player.y - state.player.vy * trailOffsets[i],
+          radius: state.player.radius * (0.9 - i * 0.15 + playerMotion * 0.3),
+          color: trailColors[i],
+          sides: PLAYER_SHAPE.sides,
+          rotation: playerRotation - i * 0.1,
+          halo: i === 0 ? { color: webglColors.playerHalo, scale: 1.3 } : undefined
+        });
+      }
     }
 
     // Render player
@@ -157,17 +186,25 @@ export function render(state: GameState, context: RenderContext): void {
       })
     );
 
-    // Render fragments with value-based colors and sizes
-    state.fragmentsOrbs.forEach((f) => {
+    // Render fragments with value-based colors, sizes and animations
+    state.fragmentsOrbs.forEach((f, index) => {
       const { color, ringColor, radius } = getFragmentVisuals(f.value);
-      const fragmentHalo = allowFx ? { color: ringColor, scale: 1.65 } : undefined;
+      // Staggered pulse effect based on fragment index
+      const fragmentPhase = time + index * 0.3;
+      const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.15);
+      const fragmentRotation = FRAGMENT_SHAPE.rotation + time * 0.5 + index * 0.1;
+      const fragmentHalo = allowFx ? { color: ringColor, scale: 1.8 + oscillate(fragmentPhase, 2, 0.2) } : undefined;
+
+      // Subtle floating effect
+      const floatY = oscillate(fragmentPhase, 2, 2);
+
       renderer.pushCircle({
         x: f.x,
-        y: f.y,
-        radius,
+        y: f.y + floatY,
+        radius: radius * fragmentPulse,
         color,
         sides: FRAGMENT_SHAPE.sides,
-        rotation: FRAGMENT_SHAPE.rotation,
+        rotation: fragmentRotation,
         halo: fragmentHalo
       });
     });

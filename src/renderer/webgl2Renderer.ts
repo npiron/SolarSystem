@@ -3,6 +3,7 @@ import { createProgram } from "./shaders.ts";
 import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
 import { WebGL2PostProcessing } from "./webgl2PostProcessing.ts";
+import { WebGL2Background } from "./webgl2Background.ts";
 import {
   gridVertexShader,
   gridFragmentShader,
@@ -13,7 +14,8 @@ import {
 } from "./webgl2Shaders.ts";
 
 const GRID_SPACING = 64;
-const GRID_COLOR = [255 / 255, 210 / 255, 102 / 255, 0.08] as const;
+// Cyan/turquoise grid for cyberpunk aesthetic
+const GRID_COLOR = [0 / 255, 220 / 255, 255 / 255, 0.06] as const;
 
 export type ShapeInstance = {
   x: number;
@@ -101,6 +103,9 @@ export class WebGL2Renderer {
   // Post-processing
   private postProcessing: WebGL2PostProcessing;
 
+  // Background renderer
+  private background: WebGL2Background;
+
   private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
     this.dpr = dpr;
@@ -169,6 +174,9 @@ export class WebGL2Renderer {
 
     // Initialize post-processing
     this.postProcessing = new WebGL2PostProcessing(gl, dpr);
+
+    // Initialize background
+    this.background = new WebGL2Background(gl);
   }
 
   setEnabled(enabled: boolean) {
@@ -252,8 +260,11 @@ export class WebGL2Renderer {
     const gl = this.gl;
 
     gl.viewport(0, 0, this.resolution.width, this.resolution.height);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Render animated space background first
+    this.background.render(this.resolution.width, this.resolution.height, time);
 
     if (this.gridEnabled) {
       this.renderGrid();
@@ -278,15 +289,15 @@ export class WebGL2Renderer {
    */
   dispose() {
     const gl = this.gl;
-    
+
     // Dispose text renderer
     this.textRenderer.dispose();
-    
+
     // Clean up grid resources
     if (this.gridVao) gl.deleteVertexArray(this.gridVao);
     if (this.gridBuffer) gl.deleteBuffer(this.gridBuffer);
     if (this.gridProgram) gl.deleteProgram(this.gridProgram);
-    
+
     // Clean up circles resources
     if (this.circlesVao) gl.deleteVertexArray(this.circlesVao);
     if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);

@@ -14,34 +14,35 @@ function string2hex(hex: string): number {
 }
 
 export const colors = {
-  player: string2hex("#7dd3fc"),
-  collect: string2hex("#6ee7b7"),
-  bulletLow: string2hex("#fff7ed"),
-  bulletHigh: string2hex("#ffd166"),
-  orbitBullet: string2hex("#c084fc"),
-  fragment: string2hex("#ff7ac3"),
-  fragmentRing: string2hex("#ff7ac3"),
-  elite: string2hex("#ff9d6c"),
-  // Enemy type colors - distinct hues for visual differentiation
-  enemyWeak: string2hex("#a5d6a7"),     // Green - easy to kill
-  enemyNormal: string2hex("#90caf9"),   // Blue - standard threat
-  enemyStrong: string2hex("#ce93d8"),   // Purple - dangerous
-  enemyElite: string2hex("#ffab91"),    // Orange - boss-like
-  enemyVolatile: string2hex("#fb7185"), // Pink-red - explodes on death
-  enemySplitter: string2hex("#34d399"), // Teal - divides into smaller foes
-  enemyArtillery: string2hex("#facc15"), // Gold - fires from afar
+  // Player - Vibrant cyan with electric glow
+  player: string2hex("#00f5ff"),
+  collect: string2hex("#00ff88"),
+  bulletLow: string2hex("#ffffff"),
+  bulletHigh: string2hex("#ffdd00"),
+  orbitBullet: string2hex("#bf5fff"),
+  fragment: string2hex("#ff4da6"),
+  fragmentRing: string2hex("#ff6bc5"),
+  elite: string2hex("#ff6b35"),
+  // Enemy type colors - Neon palette for visual pop
+  enemyWeak: string2hex("#39ff14"),     // Neon green - easy to kill
+  enemyNormal: string2hex("#00bfff"),   // Electric blue - standard threat
+  enemyStrong: string2hex("#bf00ff"),   // Neon purple - dangerous
+  enemyElite: string2hex("#ff6b00"),    // Neon orange - boss-like
+  enemyVolatile: string2hex("#ff1744"), // Neon red - explodes on death
+  enemySplitter: string2hex("#00e5ff"), // Cyan - divides into smaller foes
+  enemyArtillery: string2hex("#ffea00"), // Neon yellow - fires from afar
   // Boss colors
-  boss: string2hex("#ff5252"),          // Red - boss
-  bossHalo: string2hex("#ff5252"),      // Red glow
-  enemyProjectile: string2hex("#ff8a65"), // Orange-red - enemy projectile
-  // Fragment value colors - brightness indicates value
-  fragmentLow: string2hex("#b39ddb"),   // Light purple - low value
-  fragmentMedium: string2hex("#ff7ac3"), // Pink - medium value
-  fragmentHigh: string2hex("#ffd54f"),  // Gold - high value
-  hpBg: string2hex("#0b1226"),
-  hpFg: string2hex("#a3e635"),
-  hudBg: string2hex("#0d1530"),
-  hudBorder: string2hex("#e2e8f0"),
+  boss: string2hex("#ff0044"),          // Hot red - boss
+  bossHalo: string2hex("#ff3366"),      // Pink-red glow
+  enemyProjectile: string2hex("#ff5722"), // Orange-red - enemy projectile
+  // Fragment value colors - Neon gradient from cool to warm
+  fragmentLow: string2hex("#9c7cf4"),   // Soft purple - low value
+  fragmentMedium: string2hex("#ff4da6"), // Hot pink - medium value
+  fragmentHigh: string2hex("#ffd700"),  // Gold - high value
+  hpBg: string2hex("#0a0e1a"),
+  hpFg: string2hex("#00ff66"),
+  hudBg: string2hex("#0a0f1f"),
+  hudBorder: string2hex("#ffffff"),
 };
 
 export function toVec4(hex: number | string, alpha = 1): [number, number, number, number] {

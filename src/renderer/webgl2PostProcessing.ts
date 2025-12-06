@@ -64,21 +64,39 @@ uniform sampler2D u_texture;
 uniform float u_intensity;
 uniform vec2 u_resolution;
 
-// Source: https://www.shadertoy.com/view/4sXSWs
+// Enhanced bloom with wider sampling and better falloff
 vec4 bloom(sampler2D tex, vec2 uv, vec2 resolution, float intensity) {
     vec4 sum = vec4(0.0);
     vec2 texel = 1.0 / resolution;
-
-    for (int i = -4; i < 4; i++) {
-        for (int j = -4; j < 4; j++) {
-            sum += texture(tex, uv + vec2(j, i) * texel) * 0.25;
+    
+    // Gaussian-like weights for natural falloff
+    float weights[5];
+    weights[0] = 0.227027;
+    weights[1] = 0.1945946;
+    weights[2] = 0.1216216;
+    weights[3] = 0.054054;
+    weights[4] = 0.016216;
+    
+    // Multi-pass bloom sampling
+    for (int i = -4; i <= 4; i++) {
+        for (int j = -4; j <= 4; j++) {
+            float weight = weights[abs(i)] * weights[abs(j)] * 4.0;
+            sum += texture(tex, uv + vec2(float(j), float(i)) * texel * 2.0) * weight;
         }
     }
-
-    if (texture(tex, uv).r < 0.3) {
-        return sum * sum * 0.012 * intensity + texture(tex, uv);
-    }
-    return texture(tex, uv);
+    
+    vec4 original = texture(tex, uv);
+    float luminance = dot(original.rgb, vec3(0.299, 0.587, 0.114));
+    
+    // Apply bloom more aggressively to bright areas
+    float bloomFactor = smoothstep(0.2, 0.8, luminance);
+    vec4 bloomColor = sum * intensity * (0.5 + bloomFactor * 0.5);
+    
+    // Additive blend with slight saturation boost
+    vec3 result = original.rgb + bloomColor.rgb * 0.8;
+    result = mix(result, result * 1.1, bloomFactor * 0.3);
+    
+    return vec4(result, original.a);
 }
 
 void main() {
@@ -96,15 +114,35 @@ uniform sampler2D u_texture;
 uniform float u_intensity;
 uniform float u_time;
 
-// Source: https://www.shadertoy.com/view/4ssXRX
+// Enhanced noise function
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
 void main() {
   vec4 color = texture(u_texture, v_uv);
-  float noise = (random(v_uv * u_time) - 0.5) * u_intensity;
-  fragColor = vec4(color.rgb + noise, color.a);
+  
+  // Film grain noise
+  float noise = (random(v_uv * u_time + u_time * 0.1) - 0.5) * u_intensity;
+  
+  // Cinematic vignette effect
+  vec2 center = v_uv - 0.5;
+  float vignette = 1.0 - dot(center, center) * 0.8;
+  vignette = smoothstep(0.2, 1.0, vignette);
+  
+  // Subtle color grading - slight cool tint in shadows, warm in highlights
+  float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+  vec3 coolTint = vec3(0.95, 0.98, 1.02);
+  vec3 warmTint = vec3(1.02, 1.0, 0.98);
+  vec3 gradedColor = color.rgb * mix(coolTint, warmTint, luminance);
+  
+  // Combine all effects
+  vec3 result = gradedColor * vignette + noise;
+  
+  // Slight contrast boost
+  result = (result - 0.5) * 1.05 + 0.5;
+  
+  fragColor = vec4(clamp(result, 0.0, 1.0), color.a);
 }
 `;
 

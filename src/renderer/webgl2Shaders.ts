@@ -62,7 +62,7 @@ void main() {
 }`;
 
 /**
- * Fragment shader for circles rendering with smooth edges and optional halo.
+ * Fragment shader for circles rendering with enhanced glow, bloom and smooth edges.
  */
 export const circlesFragmentShader = `#version 300 es
 precision highp float;
@@ -74,6 +74,7 @@ in float v_haloScale;
 in float v_sides;
 in float v_rotation;
 out vec4 outColor;
+
 float sdRegularPolygon(vec2 p, float radius, float sides, float rotation) {
   float n = max(3.0, floor(sides + 0.5));
   float angle = 6.28318530718 / n;
@@ -84,26 +85,66 @@ float sdRegularPolygon(vec2 p, float radius, float sides, float rotation) {
   float radial = cos(sector) * len;
   return radial - radius;
 }
+
 void main() {
-  float aa = 1.0;
+  float aa = 1.5; // Increased anti-aliasing for smoother edges
   vec2 pos = v_corner * v_radius;
   float radial = length(pos);
   float sides = max(0.0, v_sides);
   float distPx = sides < 2.5 ? radial - v_radius : sdRegularPolygon(pos, v_radius, sides, v_rotation);
-  float fill = smoothstep(0.0, -aa, distPx) * v_color.a;
+  
+  // Core shape with smooth edges
+  float fill = smoothstep(0.5, -aa, distPx) * v_color.a;
+  
+  // Inner glow - soft light emanating from center
+  float innerGlow = 0.0;
+  if (v_color.a > 0.0) {
+    float centerDist = radial / v_radius;
+    innerGlow = (1.0 - centerDist * 0.6) * fill * 0.3;
+  }
+  
+  // Multi-layer halo for premium glow effect
   float halo = 0.0;
+  float halo2 = 0.0;
+  float halo3 = 0.0;
+  
   if (v_haloScale > 1.0 && v_haloColor.a > 0.0) {
+    // Primary halo - tight and bright
     float haloStart = v_radius;
     float haloEnd = v_radius * v_haloScale;
-    float inner = smoothstep(haloStart + aa, haloStart, radial);
-    float outer = smoothstep(haloEnd, haloEnd - aa, radial);
+    float haloMid = v_radius * (1.0 + (v_haloScale - 1.0) * 0.5);
+    
+    float inner = smoothstep(haloStart + aa * 2.0, haloStart, radial);
+    float outer = smoothstep(haloEnd, haloMid, radial);
     halo = inner * outer * v_haloColor.a;
+    
+    // Secondary halo - wider and softer
+    float haloEnd2 = v_radius * (v_haloScale * 1.3);
+    float outer2 = smoothstep(haloEnd2, haloEnd, radial);
+    halo2 = inner * outer2 * v_haloColor.a * 0.4;
+    
+    // Tertiary halo - very wide ambient glow
+    float haloEnd3 = v_radius * (v_haloScale * 1.8);
+    float outer3 = smoothstep(haloEnd3, haloEnd2, radial);
+    halo3 = inner * outer3 * v_haloColor.a * 0.15;
   }
-  float alpha = clamp(fill + halo, 0.0, 1.0);
+  
+  float totalHalo = halo + halo2 + halo3;
+  float alpha = clamp(fill + totalHalo, 0.0, 1.0);
+  
   vec3 color = vec3(0.0);
   if (alpha > 0.0) {
-    color = (v_color.rgb * fill + v_haloColor.rgb * halo);
+    // Brighten core color slightly for more vibrant look
+    vec3 brightCore = v_color.rgb * (1.0 + innerGlow);
+    color = brightCore * fill + v_haloColor.rgb * totalHalo;
+    
+    // Add subtle bloom effect on bright areas
+    float brightness = dot(color, vec3(0.299, 0.587, 0.114));
+    if (brightness > 0.7) {
+      color += (color - 0.7) * 0.2;
+    }
   }
+  
   outColor = vec4(color, alpha);
 }`;
 
