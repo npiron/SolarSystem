@@ -53,6 +53,15 @@ body {
   background: oklch(var(--b3, 0.15 0 0));
 }
 
+/* ===== GLOBAL STATS HUD (Bottom Left, Top) ===== */
+.global-stats-hud {
+  bottom: calc(var(--footer-height) + 1rem);
+  left: var(--hud-safe-left);
+  max-width: clamp(280px, calc(100vw - var(--hud-safe-left) - var(--hud-safe-right)), 360px);
+  width: clamp(280px, calc(100vw - var(--hud-safe-left) - var(--hud-safe-right)), 360px);
+  transform: translateY(-350px);
+}
+
 /* ===== MERGED RUN HUD (Bottom Left) ===== */
 .merged-run-hud {
   bottom: calc(var(--footer-height) + 1rem);
@@ -1031,6 +1040,15 @@ button.small {
   padding: 0.75rem;
   box-shadow: 0 4px 20px oklch(0 0 0 / 40%);
   font-family: var(--font-mono);
+  transform: translateY(-200px);
+}
+
+/* ===== WEAPONS HUD (Bottom Right) ===== */
+.weapons-hud {
+  bottom: calc(var(--footer-height) + 1rem);
+  right: var(--hud-safe-right);
+  min-width: clamp(240px, 25vw, 320px);
+  max-width: clamp(240px, 25vw, 320px);
 }
 
 .performance-header {
