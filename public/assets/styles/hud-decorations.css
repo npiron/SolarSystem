@@ -293,8 +293,7 @@
   position: relative;
 }
 
-/* Only add hexagon decoration to non-collapsible stat-blocks */
-.stat-block:not(.collapsible) h2::before {
+.stat-block h2::before {
   content: '⬢';
   position: absolute;
   left: 0.5rem;
@@ -449,7 +448,7 @@ body.performance-mode .live-value-number {
 
 body.performance-mode .live-values-header::before,
 body.performance-mode .performance-header::before,
-body.performance-mode .stat-block:not(.collapsible) h2::before {
+body.performance-mode .stat-block h2::before {
   animation: none;
 }
 

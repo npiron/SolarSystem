@@ -42,34 +42,6 @@
   background: oklch(var(--bc, 0.9 0 0) / 5%);
 }
 
-/* ===== COLLAPSIBLE SECTIONS ===== */
-.stat-block.collapsible>h2 {
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: color 0.15s ease;
-}
-
-.stat-block.collapsible>h2:hover {
-  color: oklch(var(--p, 0.6 0.2 260) / 80%);
-}
-
-.stat-block.collapsible>h2::before {
-  content: "▼";
-  font-size: 0.6rem;
-  transition: transform 0.2s ease;
-}
-
-.stat-block.collapsible.collapsed>h2::before {
-  transform: rotate(-90deg);
-}
-
-.stat-block.collapsible.collapsed>*:not(h2) {
-  display: none;
-}
-
 /* ===== BUTTONS ===== */
 button {
   display: inline-flex;
