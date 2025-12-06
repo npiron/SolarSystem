@@ -514,7 +514,7 @@ export const tuningMeta: TuningMetaMap = {
       playerAcceleration: { label: "Accélération joueur", min: 1, max: 20, step: 0.5 },
       playerFriction: { label: "Friction joueur", min: 1, max: 10, step: 0.5 },
       maxSpeedMultiplier: { label: "Multiplicateur vitesse max", min: 1, max: 2, step: 0.1 },
-      momentumPreservation: { label: "Conservation momentum", min: 0, max: 0.8, step: 0.05, description: "Préserve la vitesse en mouvement" },
+      momentumPreservation: { label: "Conservation du momentum", min: 0, max: 0.8, step: 0.05, description: "Préserve la vitesse en mouvement" },
       enemyAcceleration: { label: "Accélération ennemis", min: 1, max: 20, step: 0.5 },
       enemyMaxSpeedRatio: { label: "Ratio vitesse max ennemis", min: 1, max: 1.5, step: 0.05 },
       fragmentGravity: { label: "Gravité fragments", min: 0, max: 200, step: 10, description: "Force vers le bas sur les fragments" },

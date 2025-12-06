@@ -263,6 +263,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   const { attractionSpeed, collectDistanceMultiplier } = getTuning().fragments;
   const { maxFragments } = getTuning().fx;
   const { fragmentGravity, fragmentDrag, fragmentBounce } = getTuning().physics;
+  
+  // Pre-calculate drag factor for better performance (per-frame constant)
+  const dragFactor = 1 - (1 - fragmentDrag) * dt * 60;
 
   state.fragmentsOrbs.forEach((f) => {
     f.life -= dt;
@@ -273,9 +276,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     // Apply gravity (downward force)
     f.vy += fragmentGravity * dt;
     
-    // Apply air drag to slow fragments over time
-    f.vx *= Math.pow(fragmentDrag, dt * 60);
-    f.vy *= Math.pow(fragmentDrag, dt * 60);
+    // Apply air drag to slow fragments over time (optimized linear approximation)
+    f.vx *= dragFactor;
+    f.vy *= dragFactor;
     
     // Attraction force when in collection radius
     if (dist < state.player.collectRadius) {
