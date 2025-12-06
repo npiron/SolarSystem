@@ -25,6 +25,7 @@ import { applyProgressionEffects, computeGeneratorRate, refreshGeneratorRates } 
 import { computeIdleRate as computeIdleRateFromEconomy } from "./systems/economy.ts";
 import { recordFpsSample, drawFpsGraph, updatePerformanceHud } from "./systems/performance.ts";
 import { initCollapsibleSections } from "./systems/collapsible.ts";
+import { initHudToggle } from "./systems/hudToggle.ts";
 import {
   renderGenerators as renderGeneratorsUI,
   renderUpgrades as renderUpgradesUI,
@@ -448,6 +449,9 @@ function initUI(): void {
 
   // Initialize collapsible sections with state persistence
   initCollapsibleSections();
+
+  // Initialize HUD toggle buttons
+  initHudToggle();
 
   // Initialize live values HUD
   initLiveValuesHud();
