@@ -3,8 +3,8 @@
  * Renders global stats and weapons info HUDs in bottom corners
  */
 
-import type { GameState } from "../types/index.ts";
-import { formatNumber } from "./hud.ts";
+import type { GameState } from "../types/index";
+import { formatNumber } from "./hud";
 
 interface GlobalStatsElements {
   bestWave: HTMLElement | null;

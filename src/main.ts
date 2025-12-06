@@ -38,9 +38,9 @@ import {
 } from "./systems/ui.ts";
 import { initFloatingBlocks } from "./systems/floatingBlocks.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
-import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud.ts";
-import { initAdditionalHuds, updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds.ts";
-import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI.ts";
+import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud";
+import { initAdditionalHuds, updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds";
+import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
