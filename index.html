@@ -113,9 +113,8 @@
     </div>
   </div>
 
-  <!-- Left UI Panel -->
-  <aside class="ui-panel ui-panel-left">
-    <div class="panel-content">
+  <section class="block-workspace" data-block-workspace>
+    <div class="floating-block" data-block-id="resources">
       <div class="stat-block collapsible">
         <h2><i class="ti ti-diamonds"></i> Ressources</h2>
         <div class="stat-row resource-row">
@@ -131,32 +130,44 @@
           <span id="idleRate">0 /s</span>
         </div>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="run">
       <div class="stat-block collapsible">
         <h2><i class="ti ti-sword"></i> Run en cours</h2>
         <div class="stat-row muted">Déplacé dans l'overlay de HUD.</div>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="weapons">
+      <div class="stat-block collapsible">
+        <h2><i class="ti ti-swords"></i> Armes</h2>
+        <div id="weaponsGrid" class="weapons-grid"></div>
+      </div>
+    </div>
+
+    <div class="floating-block" data-block-id="generators">
       <div class="stat-block">
         <h2><i class="ti ti-building-factory"></i> Production</h2>
         <div id="generators" class="list"></div>
       </div>
     </div>
-  </aside>
 
-  <!-- Right UI Panel -->
-  <aside class="ui-panel ui-panel-right">
-    <div class="panel-content">
+    <div class="floating-block" data-block-id="quickHelp">
       <div class="stat-block assist collapsible collapsed">
         <h2><i class="ti ti-bulb"></i> Aide rapide</h2>
         <ul id="quickHelpList" class="assist-list"></ul>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="milestones">
       <div class="stat-block assist collapsible collapsed">
         <h2><i class="ti ti-target"></i> Jalons</h2>
         <ul id="milestoneList" class="assist-list milestones"></ul>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="talents">
       <div class="stat-block collapsible">
         <h2><i class="ti ti-bolt"></i> Talents</h2>
         <div id="talents" class="talent-grid"></div>
@@ -165,18 +176,24 @@
           <button id="resetTalents" class="ghost danger"><i class="ti ti-trash"></i> Reset: 1200</button>
         </div>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="upgrades">
       <div class="stat-block">
         <h2><i class="ti ti-arrow-big-up-lines"></i> Améliorations</h2>
         <div id="upgrades" class="list"></div>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="prestige">
       <div class="stat-block collapsible">
         <h2><i class="ti ti-sparkles"></i> Prestige</h2>
         <button id="softPrestige" class="secondary"><i class="ti ti-stack-2"></i> Consolidation</button>
         <button id="restartRun" class="ghost"><i class="ti ti-rotate"></i> Relancer</button>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="guide">
       <div class="stat-block collapsible collapsed">
         <h2><i class="ti ti-book"></i> Guide</h2>
         <ul class="guide">
@@ -187,7 +204,9 @@
           <li>> Élites = + rewards + damage</li>
         </ul>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="debug">
       <div class="stat-block collapsible collapsed debug">
         <h2><i class="ti ti-bug"></i> Debug</h2>
         <div class="debug-grid">
@@ -197,13 +216,15 @@
           <button id="debugNuke" class="ghost">NUKE</button>
         </div>
       </div>
+    </div>
 
+    <div class="floating-block" data-block-id="tuning">
       <div class="stat-block collapsible collapsed debug">
         <h2><i class="ti ti-adjustments"></i> Tuning</h2>
         <div id="tuningPanel" class="tuning-panel"></div>
       </div>
     </div>
-  </aside>
+  </section>
 
   <!-- Bottom status overlay -->
   <div class="status-overlay">

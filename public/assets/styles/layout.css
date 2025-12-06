@@ -79,33 +79,45 @@
   gap: 0.5rem;
 }
 
-/* ===== UI PANELS ===== */
-.ui-panel {
+/* ===== BLOCK WORKSPACE ===== */
+.block-workspace {
   position: fixed;
-  z-index: 40;
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
-  overflow-y: auto;
-  overflow-x: hidden;
-  top: calc(var(--header-height) + 8px);
-  bottom: calc(var(--footer-height) + 8px);
-  width: var(--panel-width);
-  scrollbar-width: thin;
-  border-radius: 1rem;
+  inset: calc(var(--header-height) + 0.5rem) 0.75rem calc(var(--footer-height) + 0.75rem);
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 0.75rem;
+  overflow: auto;
 }
 
-.ui-panel-left {
-  left: 0.5rem;
+.floating-block {
+  position: relative;
+  min-width: 280px;
 }
 
-.ui-panel-right {
-  right: 0.5rem;
+.floating-block .stat-block {
+  height: 100%;
+  resize: both;
+  overflow: auto;
 }
 
-.panel-content {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.floating-block h2 {
+  cursor: grab;
+}
+
+.floating-block--free {
+  position: absolute;
+  z-index: 35;
+}
+
+.floating-block--free .stat-block {
+  box-shadow: 0 10px 30px oklch(0 0 0 / 28%);
+  cursor: move;
+}
+
+.floating-block--free h2 {
+  cursor: grabbing;
 }
 
 /* ===== FOOTER ===== */
