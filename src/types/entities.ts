@@ -47,6 +47,8 @@ export type EnemyVariant = 'chaser' | 'volatile' | 'splitter' | 'artillery';
 export interface Enemy {
   x: number;
   y: number;
+  vx?: number;
+  vy?: number;
   radius: number;
   hp: number;
   maxHp: number;
@@ -88,6 +90,8 @@ export interface GainTicker {
 export interface BossEnemy {
   x: number;
   y: number;
+  vx?: number;
+  vy?: number;
   radius: number;
   hp: number;
   maxHp: number;

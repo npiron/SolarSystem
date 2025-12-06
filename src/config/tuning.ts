@@ -126,6 +126,12 @@ export interface TuningConfig {
     playerAcceleration: number;
     playerFriction: number;
     maxSpeedMultiplier: number;
+    momentumPreservation: number;
+    enemyAcceleration: number;
+    enemyMaxSpeedRatio: number;
+    fragmentGravity: number;
+    fragmentDrag: number;
+    fragmentBounce: number;
   };
 }
 
@@ -236,7 +242,13 @@ export function getDefaultTuning(): TuningConfig {
     physics: {
       playerAcceleration: 8.0,
       playerFriction: 4.5,
-      maxSpeedMultiplier: 1.2
+      maxSpeedMultiplier: 1.2,
+      momentumPreservation: 0.35,
+      enemyAcceleration: 6.0,
+      enemyMaxSpeedRatio: 1.15,
+      fragmentGravity: 80,
+      fragmentDrag: 0.85,
+      fragmentBounce: 0.4
     }
   };
 }
@@ -501,7 +513,13 @@ export const tuningMeta: TuningMetaMap = {
     params: {
       playerAcceleration: { label: "Accélération joueur", min: 1, max: 20, step: 0.5 },
       playerFriction: { label: "Friction joueur", min: 1, max: 10, step: 0.5 },
-      maxSpeedMultiplier: { label: "Multiplicateur vitesse max", min: 1, max: 2, step: 0.1 }
+      maxSpeedMultiplier: { label: "Multiplicateur vitesse max", min: 1, max: 2, step: 0.1 },
+      momentumPreservation: { label: "Conservation momentum", min: 0, max: 0.8, step: 0.05, description: "Préserve la vitesse en mouvement" },
+      enemyAcceleration: { label: "Accélération ennemis", min: 1, max: 20, step: 0.5 },
+      enemyMaxSpeedRatio: { label: "Ratio vitesse max ennemis", min: 1, max: 1.5, step: 0.05 },
+      fragmentGravity: { label: "Gravité fragments", min: 0, max: 200, step: 10, description: "Force vers le bas sur les fragments" },
+      fragmentDrag: { label: "Traînée fragments", min: 0.5, max: 1, step: 0.05, description: "Résistance de l'air" },
+      fragmentBounce: { label: "Rebond fragments", min: 0, max: 0.9, step: 0.05, description: "Élasticité des rebonds" }
     }
   }
 };
