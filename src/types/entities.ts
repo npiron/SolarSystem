@@ -110,3 +110,29 @@ export interface OrbitalOrb {
   angle: number;
   distance: number;
 }
+
+// New weapon visual types
+export interface LightningBolt {
+  startX: number;
+  startY: number;
+  segments: { x: number; y: number }[];
+  life: number;
+}
+
+export interface LaserBeam {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  life: number;
+}
+
+export interface HomingMissile {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  targetId: number;
+  life: number;
+  damage: number;
+}

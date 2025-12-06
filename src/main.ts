@@ -32,6 +32,7 @@ import {
 } from "./systems/ui.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
 import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud.ts";
+import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI.ts";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
@@ -374,10 +375,10 @@ function initUI(): void {
   togglePerfBtn?.addEventListener("click", () => {
     state.visualsLow = !state.visualsLow;
     if (togglePerfBtn) togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
-    
+
     // Toggle CSS class for performance mode decorations
     document.body.classList.toggle("performance-mode", state.visualsLow);
-    
+
     buildBackground(webgl2Canvas.width, webgl2Canvas.height);
     webgl2Renderer?.setEnabled(!state.visualsLow);
     playUiToggle();
@@ -420,6 +421,10 @@ function initUI(): void {
   renderGenerators();
   renderUpgrades();
   renderTalents();
+
+  // Initialize weapons UI
+  initWeaponsUI();
+  renderWeapons(state);
 
   // After layout, recompute UI top margin and clamp bounds
   updateUiTopMargin();
@@ -511,6 +516,7 @@ async function bootstrap(): Promise<void> {
     updatePerformanceHud(fpsValueEl, fpsCanvas, state.performance);
     updateLiveValues(state);
     updateLiveValuesHud(state);
+    renderWeapons(state);
     gameRender(state, {
       canvasWidth: width,
       canvasHeight: height,

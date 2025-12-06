@@ -3,6 +3,7 @@
  */
 import type { GameState, TalentBonuses } from "../types/index.ts";
 import { getPlayerStatsFromTuning, getInitialHP, getPlayerRadius } from "../config/player.ts";
+import { createInitialWeaponStates } from "../config/weapons.ts";
 
 export function createInitialTalentBonuses(): TalentBonuses {
   return {
@@ -85,7 +86,15 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     currentBoss: null,
     enemyProjectiles: [],
     lastBossWave: 0,
-    orbitalOrbs: []
+    orbitalOrbs: [],
+    // Weapons system
+    weapons: createInitialWeaponStates(),
+    lightningBolts: [],
+    laserBeams: [],
+    missiles: [],
+    lightningTimer: 0,
+    laserTimer: 0,
+    missileTimer: 0,
   };
 }
 
@@ -114,4 +123,11 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.enemyProjectiles = [];
   state.lastBossWave = 0;
   state.orbitalOrbs = [];
+  // Reset weapon visuals but preserve weapon levels
+  state.lightningBolts = [];
+  state.laserBeams = [];
+  state.missiles = [];
+  state.lightningTimer = 0;
+  state.laserTimer = 0;
+  state.missileTimer = 0;
 }

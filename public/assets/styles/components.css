@@ -162,3 +162,100 @@ button.small {
   color: oklch(var(--wa, 0.75 0.15 85));
   font-weight: 700;
 }
+
+/* ===== WEAPONS GRID ===== */
+.weapons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.weapon-card {
+  background: oklch(var(--b2, 0.18 0 0) / 60%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.weapon-card:hover {
+  background: oklch(var(--b2, 0.18 0 0));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px oklch(0 0 0 / 15%);
+}
+
+.weapon-card.locked {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+
+.weapon-card.locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.weapon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.weapon-icon {
+  font-size: 1.2rem;
+}
+
+.weapon-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.weapon-level {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  background: oklch(var(--p, 0.6 0.2 260) / 20%);
+  border-radius: 0.25rem;
+  color: oklch(var(--p, 0.6 0.2 260));
+}
+
+.weapon-level.max {
+  background: oklch(var(--su, 0.7 0.2 145) / 20%);
+  color: oklch(var(--su, 0.7 0.2 145));
+}
+
+.weapon-stats {
+  font-size: 0.65rem;
+  color: oklch(var(--bc, 0.9 0 0) / 60%);
+}
+
+.weapon-action {
+  margin-top: 0.3rem;
+}
+
+.weapon-action button {
+  width: 100%;
+  font-size: 0.65rem;
+  padding: 0.3rem;
+}
+
+.weapon-action .unlock-btn {
+  background: oklch(var(--a, 0.7 0.2 200) / 15%);
+  border-color: oklch(var(--a, 0.7 0.2 200) / 50%);
+  color: oklch(var(--a, 0.7 0.2 200));
+}
+
+.weapon-action .upgrade-btn {
+  background: oklch(var(--p, 0.6 0.2 260) / 15%);
+  border-color: oklch(var(--p, 0.6 0.2 260) / 50%);
+  color: oklch(var(--p, 0.6 0.2 260));
+}
+
+.weapon-action .maxed-btn {
+  background: oklch(var(--su, 0.7 0.2 145) / 10%);
+  color: oklch(var(--su, 0.7 0.2 145) / 70%);
+  cursor: default;
+}

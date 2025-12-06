@@ -43,6 +43,13 @@ export const colors = {
   hpFg: string2hex("#00ff66"),
   hudBg: string2hex("#0a0f1f"),
   hudBorder: string2hex("#ffffff"),
+  // Weapon colors
+  lightning: string2hex("#9f7aea"),
+  lightningGlow: string2hex("#c4b5fd"),
+  laser: string2hex("#ff3333"),
+  laserGlow: string2hex("#ff6666"),
+  missile: string2hex("#ff8c00"),
+  missileGlow: string2hex("#ffa500"),
 };
 
 export function toVec4(hex: number | string, alpha = 1): [number, number, number, number] {
@@ -90,5 +97,12 @@ export const webglColors = {
   fragmentRingHigh: toVec4(colors.fragmentHigh, 0.45),
   hpBg: toVec4(colors.hpBg, 0.5),
   hpFg: toVec4(colors.hpFg, 1),
-  transparent: [0, 0, 0, 0] as const
+  transparent: [0, 0, 0, 0] as const,
+  // Weapon colors for WebGL
+  lightning: toVec4(colors.lightning, 1),
+  lightningGlow: toVec4(colors.lightningGlow, 0.6),
+  laser: toVec4(colors.laser, 1),
+  laserGlow: toVec4(colors.laserGlow, 0.5),
+  missile: toVec4(colors.missile, 1),
+  missileGlow: toVec4(colors.missileGlow, 0.5),
 };

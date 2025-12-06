@@ -8,7 +8,11 @@ import type {
   BossEnemy,
   EnemyProjectile,
   OrbitalOrb,
+  LightningBolt,
+  LaserBeam,
+  HomingMissile,
 } from './entities';
+import type { WeaponState } from '../config/weapons';
 
 export interface RunStats {
   kills: number;
@@ -89,4 +93,12 @@ export interface GameState {
   enemyProjectiles: EnemyProjectile[];
   lastBossWave: number;
   orbitalOrbs: OrbitalOrb[];
+  // Weapons system
+  weapons: WeaponState[];
+  lightningBolts: LightningBolt[];
+  laserBeams: LaserBeam[];
+  missiles: HomingMissile[];
+  lightningTimer: number;
+  laserTimer: number;
+  missileTimer: number;
 }
