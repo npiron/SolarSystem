@@ -309,7 +309,8 @@ export function render(state: GameState, context: RenderContext): void {
       });
     });
 
-    renderer.render(state.addons, state.time);
+    // Pass player position to renderer for grid centering
+    renderer.render(state.addons, state.time, { x: state.player.x, y: state.player.y });
   }
 
   // Render HUD text overlay
