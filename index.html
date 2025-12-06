@@ -33,35 +33,8 @@
   <!-- Fullscreen canvas background -->
   <canvas id="webgl2" class="fullscreen-canvas" width="1920" height="1080"></canvas>
 
-  <!-- Live values overlay on canvas (like video game HUD) -->
-  <div id="liveValuesHud" class="live-values-hud">
-    <div class="live-values-header">⚡ Valeurs calculées</div>
-    <div class="live-values-content">
-      <div class="live-value-row">
-        <span class="live-value-label">DPS joueur</span>
-        <span id="hudLiveDps" class="live-value-number">0</span>
-      </div>
-      <div class="live-value-row">
-        <span class="live-value-label">Spawn actuel</span>
-        <span id="hudLiveSpawnRate" class="live-value-number">0 /s</span>
-      </div>
-      <div class="live-value-row">
-        <span class="live-value-label">HP ennemis</span>
-        <span id="hudLiveEnemyHp" class="live-value-number">0</span>
-      </div>
-      <div class="live-value-row">
-        <span class="live-value-label">Vitesse ennemis</span>
-        <span id="hudLiveEnemySpeed" class="live-value-number">0</span>
-      </div>
-      <div class="live-value-row">
-        <span class="live-value-label">Chance élite</span>
-        <span id="hudLiveEliteChance" class="live-value-number">0%</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Run summary overlay (top-left) -->
-  <div class="hud-card run-status-hud">
+  <!-- Merged Run Status & Calculated Values HUD (bottom-left) -->
+  <div class="hud-card merged-run-hud">
     <h2><i class="ti ti-sword"></i> Run en cours</h2>
     <div class="hud-card-content">
       <div class="stat-row"><span><i class="ti ti-wave-square stat-icon"></i> Vague</span><span id="wave">1</span>
@@ -77,6 +50,29 @@
       </div>
       <div class="stat-row muted"><span><i class="ti ti-clock stat-icon"></i> Spawn</span><span
           id="spawnRate">0/s</span></div>
+    </div>
+    <h2><i class="ti ti-calculator"></i> Valeurs calculées</h2>
+    <div class="hud-card-content">
+      <div class="stat-row">
+        <span><i class="ti ti-sword stat-icon"></i> DPS joueur</span>
+        <span id="hudLiveDps">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-clock stat-icon"></i> Spawn actuel</span>
+        <span id="hudLiveSpawnRate">0 /s</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-heart stat-icon"></i> HP ennemis</span>
+        <span id="hudLiveEnemyHp">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-speed stat-icon"></i> Vitesse ennemis</span>
+        <span id="hudLiveEnemySpeed">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-star stat-icon"></i> Chance élite</span>
+        <span id="hudLiveEliteChance">0%</span>
+      </div>
     </div>
   </div>
 

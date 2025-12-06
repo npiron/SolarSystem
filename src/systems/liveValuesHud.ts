@@ -1,13 +1,12 @@
 /**
  * Live Values HUD System
- * Renders calculated real-time values as an overlay on the canvas (video game style)
+ * Renders calculated real-time values in the merged run HUD at bottom-left
  */
 
 import { calculateLiveValues } from "./tuningPanel.ts";
 import type { GameState } from "../types/index.ts";
 
 interface HudElements {
-  container: HTMLElement | null;
   dps: HTMLElement | null;
   spawnRate: HTMLElement | null;
   enemyHp: HTMLElement | null;
@@ -16,7 +15,6 @@ interface HudElements {
 }
 
 let hudElements: HudElements = {
-  container: null,
   dps: null,
   spawnRate: null,
   enemyHp: null,
@@ -29,7 +27,6 @@ let hudElements: HudElements = {
  */
 export function initLiveValuesHud(): void {
   hudElements = {
-    container: document.getElementById("liveValuesHud"),
     dps: document.getElementById("hudLiveDps"),
     spawnRate: document.getElementById("hudLiveSpawnRate"),
     enemyHp: document.getElementById("hudLiveEnemyHp"),
@@ -42,8 +39,6 @@ export function initLiveValuesHud(): void {
  * Update the live values HUD display
  */
 export function updateLiveValuesHud(state: GameState): void {
-  if (!hudElements.container) return;
-
   const liveValues = calculateLiveValues(state);
 
   if (hudElements.dps) {
@@ -68,15 +63,8 @@ export function updateLiveValuesHud(state: GameState): void {
 }
 
 /**
- * Toggle visibility of the live values HUD
+ * Toggle visibility is no longer needed as the HUD is always visible
  */
 export function toggleLiveValuesHud(visible?: boolean): void {
-  if (!hudElements.container) return;
-
-  if (visible === undefined) {
-    hudElements.container.style.display = 
-      hudElements.container.style.display === "none" ? "block" : "none";
-  } else {
-    hudElements.container.style.display = visible ? "block" : "none";
-  }
+  // No-op: merged HUD is always visible
 }
