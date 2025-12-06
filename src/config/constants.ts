@@ -29,6 +29,18 @@ export const icons: Icons = {
   magnet: '<i class="ti ti-magnet"></i>'
 };
 
+// Simple emoji/text icons for WebGL/canvas rendering (no HTML)
+export const glIcons = {
+  essence: "💧",
+  fragments: "💎",
+  wave: "〰️",
+  reach: "📡",
+  speed: "⚡",
+  shield: "🛡️",
+  crit: "🎯",
+  magnet: "🧲"
+};
+
 // Boss configuration
 export const BOSS_WAVE_INTERVAL = 5;
 export const BOSS_RADIUS = 48;

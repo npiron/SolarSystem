@@ -9,7 +9,6 @@ import type { WebGL2Renderer } from "./webgl2Renderer.ts";
 import * as renderer from "./index.ts";
 import { webglColors, hexStringToVec4 } from "./colors.ts";
 import { getEnemyColorWebGL, getFragmentVisuals, getVariantHaloColor } from "./entityColors.ts";
-import { icons } from "../config/constants.ts";
 import { formatNumber } from "../systems/hud.ts";
 
 // Shape definitions for different entity types
@@ -312,10 +311,10 @@ export function render(state: GameState, context: RenderContext): void {
  */
 function renderHudText(state: GameState): void {
   const hudTexts = [
-    { text: `${icons.wave} Vague ${state.wave.toFixed(1)}`, x: 24, y: 28 },
+    { text: `〰️ Vague ${state.wave.toFixed(1)}`, x: 24, y: 28 },
     { text: `⚔️ Kills ${state.runStats.kills}`, x: 24, y: 48 },
-    { text: `${icons.fragments} Fragments ${formatNumber(state.runStats.fragments)}`, x: 24, y: 68 },
-    { text: `${icons.essence} Essence ${formatNumber(state.runStats.essence)}`, x: 24, y: 88 },
+    { text: `💎 Fragments ${formatNumber(state.runStats.fragments)}`, x: 24, y: 68 },
+    { text: `💧 Essence ${formatNumber(state.runStats.essence)}`, x: 24, y: 88 },
   ];
 
   if (state.gainTicker.fragments > 0) {

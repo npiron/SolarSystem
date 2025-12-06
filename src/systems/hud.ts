@@ -1,5 +1,5 @@
 import type { GameState, HudContext } from "../types/index.ts";
-import { FX_BUDGET, icons } from "../config/constants.ts";
+import { FX_BUDGET } from "../config/constants.ts";
 import { packSize, spawnRate } from "./spawn.ts";
 import { playCollect } from "./sound.ts";
 
@@ -73,7 +73,8 @@ export function registerFragmentGain(state: GameState, value: number, x: number,
     state.gainTicker.timer = 1.2;
     return;
   }
-  addFloatingText(state, `+${formatNumber(value)} ${icons.fragments}`, x, y, "#f472b6");
+  // Use emoji instead of HTML icon for WebGL floating text
+  addFloatingText(state, `+${formatNumber(value)} 💎`, x, y, "#f472b6");
 }
 
 export function debugPing(state: GameState, text: string, color = "#c7d2fe", onUpdateHud?: () => void): void {
