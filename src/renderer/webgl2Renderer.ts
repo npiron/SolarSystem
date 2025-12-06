@@ -69,6 +69,7 @@ export class WebGL2Renderer {
   private gridNeedsRebuild = true;
   private gridUniforms: { resolution: WebGLUniformLocation | null; color: WebGLUniformLocation | null };
   private readonly cellSize = GRID_SPACING;
+  private playerPos = { x: 0, y: 0 };
 
   // Circles rendering resources
   private circlesProgram: WebGLProgram;
@@ -255,9 +256,15 @@ export class WebGL2Renderer {
     this.textRenderer.pushText(text);
   }
 
-  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number) {
+  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number, playerPos?: { x: number; y: number }) {
     if (!this.enabled) return;
     const gl = this.gl;
+
+    // Update player position and mark grid for rebuild if it changed
+    if (playerPos && (playerPos.x !== this.playerPos.x || playerPos.y !== this.playerPos.y)) {
+      this.playerPos = { x: playerPos.x, y: playerPos.y };
+      this.gridNeedsRebuild = true;
+    }
 
     gl.viewport(0, 0, this.resolution.width, this.resolution.height);
     gl.clearColor(0, 0, 0, 1);
@@ -392,10 +399,28 @@ export class WebGL2Renderer {
     const spacing = this.cellSize * this.dpr;
     const lines: number[] = [];
 
-    for (let x = 0; x <= this.resolution.width; x += spacing) {
+    // Center grid around player position (in pixel coordinates)
+    const playerPixelX = this.playerPos.x * this.dpr;
+    const playerPixelY = this.playerPos.y * this.dpr;
+
+    // Calculate the offset to align grid lines with player position
+    // This creates a scrolling effect as the player moves
+    const offsetX = playerPixelX % spacing;
+    const offsetY = playerPixelY % spacing;
+
+    // Draw vertical lines - ensure we cover the entire viewport
+    for (let x = offsetX; x <= this.resolution.width; x += spacing) {
       lines.push(x, 0, x, this.resolution.height);
     }
-    for (let y = 0; y <= this.resolution.height; y += spacing) {
+    for (let x = offsetX - spacing; x >= 0; x -= spacing) {
+      lines.push(x, 0, x, this.resolution.height);
+    }
+    
+    // Draw horizontal lines - ensure we cover the entire viewport
+    for (let y = offsetY; y <= this.resolution.height; y += spacing) {
+      lines.push(0, y, this.resolution.width, y);
+    }
+    for (let y = offsetY - spacing; y >= 0; y -= spacing) {
       lines.push(0, y, this.resolution.width, y);
     }
 
