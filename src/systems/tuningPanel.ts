@@ -96,7 +96,7 @@ export function renderTuningPanel(): void {
 }
 
 /**
- * Create a collapsible section for a category
+ * Create a section for a category
  */
 function createCategorySection<K extends keyof TuningConfig>(
   categoryKey: K,
@@ -105,7 +105,7 @@ function createCategorySection<K extends keyof TuningConfig>(
   paramsMeta: { [P in keyof TuningConfig[K]]: TuningParamMeta }
 ): HTMLElement {
   const section = document.createElement("div");
-  section.className = "tuning-section collapsible collapsed";
+  section.className = "tuning-section";
   section.dataset.category = categoryKey;
 
   const headerDiv = document.createElement("h3");
@@ -227,16 +227,6 @@ function attachTuningEventListeners(): void {
       if (slider) slider.value = value.toString();
 
       updateTuningParam(category, param, value);
-    });
-  });
-
-  // Section toggle events
-  container.querySelectorAll<HTMLElement>(".tuning-section-title").forEach((title) => {
-    title.addEventListener("click", () => {
-      const section = title.parentElement;
-      if (section) {
-        section.classList.toggle("collapsed");
-      }
     });
   });
 
