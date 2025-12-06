@@ -54,27 +54,42 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   const targetVy = movement.dirY * state.player.speed;
 
   // Get physics constants from tuning
-  const { playerAcceleration, playerFriction, maxSpeedMultiplier } = getTuning().physics;
+  const { playerAcceleration, playerFriction, maxSpeedMultiplier, momentumPreservation } = getTuning().physics;
 
+  // Calculate velocity difference for responsive acceleration
+  const deltaVx = targetVx - state.player.vx;
+  const deltaVy = targetVy - state.player.vy;
+  const deltaSpeed = Math.hypot(deltaVx, deltaVy);
+  
+  // Dynamic acceleration: faster when changing direction significantly
+  const directionChange = deltaSpeed / (state.player.speed || 1);
+  const dynamicAcceleration = playerAcceleration * (1 + directionChange * 0.3);
+  
   // Calculate acceleration toward target velocity with smooth interpolation
-  const ax = (targetVx - state.player.vx) * playerAcceleration;
-  const ay = (targetVy - state.player.vy) * playerAcceleration;
+  const ax = (targetVx - state.player.vx) * dynamicAcceleration;
+  const ay = (targetVy - state.player.vy) * dynamicAcceleration;
 
   // Apply acceleration to velocity
   state.player.vx += ax * dt;
   state.player.vy += ay * dt;
 
   // Apply friction to velocity (damping effect for space-like feel)
-  const frictionFactor = 1 - playerFriction * dt;
+  // Reduce friction when moving to preserve momentum better
+  const currentSpeed = Math.hypot(state.player.vx, state.player.vy);
+  const speedRatio = Math.min(1, currentSpeed / (state.player.speed || 1));
+  const dynamicFriction = playerFriction * (1 - speedRatio * momentumPreservation);
+  const frictionFactor = 1 - dynamicFriction * dt;
   state.player.vx *= Math.max(0, frictionFactor);
   state.player.vy *= Math.max(0, frictionFactor);
 
-  // Clamp velocity to max speed
-  const currentSpeed = Math.hypot(state.player.vx, state.player.vy);
+  // Clamp velocity to max speed with smooth limiting
   const maxSpeed = state.player.speed * maxSpeedMultiplier;
   if (currentSpeed > maxSpeed) {
-    state.player.vx = (state.player.vx / currentSpeed) * maxSpeed;
-    state.player.vy = (state.player.vy / currentSpeed) * maxSpeed;
+    const limitFactor = maxSpeed / currentSpeed;
+    // Soft speed limit that feels more natural
+    const smoothFactor = 0.95 + limitFactor * 0.05;
+    state.player.vx *= smoothFactor;
+    state.player.vy *= smoothFactor;
   }
 
   // Update position based on velocity

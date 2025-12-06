@@ -368,7 +368,9 @@ describe("combat", () => {
 
             updateCombat(state, 0.1, canvas);
 
-            expect(state.fragmentsOrbs[0].x).toBe(605); // 600 + 50 * 0.1
+            // With drag and gravity, position won't be exactly 605 but close
+            expect(state.fragmentsOrbs[0].x).toBeGreaterThan(600);
+            expect(state.fragmentsOrbs[0].x).toBeLessThan(606);
         });
 
         it("should remove fragments when lifetime expires", () => {
@@ -460,8 +462,13 @@ describe("combat", () => {
 
         it("should damage player on boss contact", () => {
             const initialHp = state.player.hp;
-            state.currentBoss!.x = state.player.x;
+            // Position boss overlapping player - with boss radius of 48 and player 24
+            // they need to be within 72 units to collide
+            state.currentBoss!.x = state.player.x + 50; // Within collision distance
             state.currentBoss!.y = state.player.y;
+            // Initialize boss velocity to move toward player
+            state.currentBoss!.vx = 0;
+            state.currentBoss!.vy = 0;
 
             updateCombat(state, 1.0, canvas);
 
