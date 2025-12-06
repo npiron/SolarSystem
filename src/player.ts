@@ -28,7 +28,7 @@ interface DangerVector {
 }
 
 /**
- * Calculate a danger repulsion vector from nearby enemies.
+ * Calculate a danger repulsion vector from nearby enemies and projectiles.
  * Returns normalized direction away from danger center of mass.
  * @returns Object containing:
  *   - dx: Normalized x-direction away from threats (-1 to 1)
@@ -36,12 +36,18 @@ interface DangerVector {
  *   - threat: Normalized threat level (0 to 1) indicating danger intensity
  */
 export function calculateDangerVector(state: GameState): DangerVector {
-  if (state.enemies.length === 0) return { dx: 0, dy: 0, threat: 0 };
+  if (state.enemies.length === 0 && state.enemyProjectiles.length === 0) {
+    return { dx: 0, dy: 0, threat: 0 };
+  }
 
   const DANGER_RADIUS = 150; // Distance at which enemies become threatening
+  const PROJECTILE_DANGER_RADIUS = 140; // How far ahead to consider projectile paths
+  const PROJECTILE_LOOKAHEAD = 2.2; // Seconds to look ahead for projectile impacts
+
   let threatDx = 0;
   let threatDy = 0;
-  let totalThreat = 0;
+  let enemyThreat = 0;
+  let projectileThreat = 0;
 
   state.enemies.forEach((e) => {
     const dx = e.x - state.player.x;
@@ -57,10 +63,49 @@ export function calculateDangerVector(state: GameState): DangerVector {
 
       threatDx += (dx / dist) * weight;
       threatDy += (dy / dist) * weight;
-      totalThreat += weight;
+      enemyThreat += weight;
     }
   });
 
+  state.enemyProjectiles.forEach((p) => {
+    const relX = p.x - state.player.x;
+    const relY = p.y - state.player.y;
+
+    const speedSq = p.dx * p.dx + p.dy * p.dy;
+    if (speedSq === 0) return;
+
+    const timeToClosest = Math.max(0, -(relX * p.dx + relY * p.dy) / speedSq);
+    if (timeToClosest > PROJECTILE_LOOKAHEAD) return;
+
+    const futureX = relX + p.dx * timeToClosest;
+    const futureY = relY + p.dy * timeToClosest;
+    const futureDist = Math.hypot(futureX, futureY);
+    if (futureDist > PROJECTILE_DANGER_RADIUS) return;
+
+    const distanceFactor = 1 - Math.min(1, futureDist / PROJECTILE_DANGER_RADIUS);
+    const timeFactor = 1 / (1 + timeToClosest * 1.8);
+    const damageFactor = 1 + Math.min(1, p.damage * 0.015);
+    const weight = distanceFactor * distanceFactor * timeFactor * damageFactor;
+
+    const lateralX = -p.dy;
+    const lateralY = p.dx;
+    const lateralMag = Math.hypot(lateralX, lateralY) || 1;
+    const incomingX = -p.dx;
+    const incomingY = -p.dy;
+    const incomingMag = Math.hypot(incomingX, incomingY) || 1;
+    const blendedIncomingX = (lateralX / lateralMag) * 0.65 + (incomingX / incomingMag) * 0.35;
+    const blendedIncomingY = (lateralY / lateralMag) * 0.65 + (incomingY / incomingMag) * 0.35;
+    const blendedMag = Math.hypot(blendedIncomingX, blendedIncomingY) || 1;
+    const useFutureDirection = futureDist > 6;
+    const dirX = useFutureDirection ? futureX / (futureDist || 1) : blendedIncomingX / blendedMag;
+    const dirY = useFutureDirection ? futureY / (futureDist || 1) : blendedIncomingY / blendedMag;
+
+    threatDx += dirX * weight;
+    threatDy += dirY * weight;
+    projectileThreat += weight;
+  });
+
+  const totalThreat = enemyThreat + projectileThreat;
   if (totalThreat === 0) return { dx: 0, dy: 0, threat: 0 };
 
   // Normalize and return the direction away from threats (negative)
@@ -68,7 +113,7 @@ export function calculateDangerVector(state: GameState): DangerVector {
   return {
     dx: -threatDx / mag,
     dy: -threatDy / mag,
-    threat: Math.min(1, totalThreat / 3) // Normalized threat level
+    threat: Math.min(1, (enemyThreat + projectileThreat * 1.2) / 3) // Normalized threat level
   };
 }
 
