@@ -19,10 +19,24 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: oklch(var(--b1, 0.2 0 0) / 90%);
-  backdrop-filter: blur(20px);
+  background: linear-gradient(135deg, oklch(var(--b1, 0.2 0 0) / 90%), oklch(var(--b2, 0.2 0 0) / 75%));
+  backdrop-filter: blur(20px) saturate(120%);
   border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
+  box-shadow:
+    0 6px 30px oklch(0 0 0 / 25%),
+    inset 0 1px 0 oklch(var(--bc, 0.9 0 0) / 10%);
   min-height: var(--header-height);
+  overflow: hidden;
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 20% 50%, oklch(var(--p, 0.6 0.2 260) / 12%), transparent 35%),
+    radial-gradient(circle at 80% 40%, oklch(var(--s, 0.6 0.2 300) / 14%), transparent 40%);
+  opacity: 0.8;
 }
 
 .topbar-left {
