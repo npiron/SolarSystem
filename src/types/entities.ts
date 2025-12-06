@@ -39,6 +39,7 @@ export interface Bullet {
   dy: number;
   life: number;
   pierce: number;
+  damage?: number; // Optional, uses player damage if not set
 }
 
 export type EnemyType = 'weak' | 'normal' | 'strong' | 'elite';

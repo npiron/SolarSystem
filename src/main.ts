@@ -535,7 +535,7 @@ async function bootstrap(): Promise<void> {
     updatePerformanceHud(performanceHudElements, state.performance);
     updateLiveValues(state);
     updateLiveValuesHud(state);
-    renderWeapons(state);
+    // Note: renderWeapons is not called here - it's called once at init and on unlock/upgrade
     gameRender(state, {
       canvasWidth: width,
       canvasHeight: height,

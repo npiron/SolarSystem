@@ -192,11 +192,11 @@ export function render(state: GameState, context: RenderContext): void {
       const fragmentPhase = time + index * 0.3;
       const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.15);
       const fragmentRotation = FRAGMENT_SHAPE.rotation + time * 0.5 + index * 0.1;
-      
+
       // Scale halo based on fragment value for better visibility
       const baseHaloScale = f.value >= 10 ? 2.2 : f.value >= 3 ? 1.9 : 1.6;
-      const fragmentHalo = allowFx 
-        ? { color: ringColor, scale: baseHaloScale + oscillate(fragmentPhase, 2, 0.25) } 
+      const fragmentHalo = allowFx
+        ? { color: ringColor, scale: baseHaloScale + oscillate(fragmentPhase, 2, 0.25) }
         : undefined;
 
       // Subtle floating effect
@@ -221,13 +221,13 @@ export function render(state: GameState, context: RenderContext): void {
       const wobblePhase = time + (e.x + e.y) * 0.01;
       const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
       const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
-      
+
       // Enhanced halo for variants - larger and more visible
       const haloScale = variantHaloColor ? 1.6 + enemyPulse * 0.4 : 1.15 + enemyPulse * 0.3;
       const enemyHalo = allowFx
         ? { color: variantHaloColor ?? enemyColor, scale: haloScale }
         : undefined;
-      
+
       const flash = e.hitThisFrame ? 0.3 : 0;
       const tintedEnemyColor = [
         Math.min(1, enemyColor[0] + flash),
@@ -235,7 +235,7 @@ export function render(state: GameState, context: RenderContext): void {
         Math.min(1, enemyColor[2] + flash * 0.4),
         enemyColor[3]
       ] as const;
-      
+
       renderer.pushCircle({
         x: e.x,
         y: e.y,
@@ -293,6 +293,101 @@ export function render(state: GameState, context: RenderContext): void {
         halo: projHalo
       });
     });
+
+    // Render Lightning bolts
+    state.lightningBolts.forEach((bolt) => {
+      if (bolt.segments.length < 2) return;
+      const alpha = Math.min(1, bolt.life * 5);
+      const lightningColor: readonly [number, number, number, number] = [0.4, 0.9, 1, alpha];
+      const lightningGlow: readonly [number, number, number, number] = [0.2, 0.6, 1, alpha * 0.5];
+
+      for (let i = 0; i < bolt.segments.length - 1; i++) {
+        const seg = bolt.segments[i];
+        const next = bolt.segments[i + 1];
+        // Draw lightning segment as small circles along the path
+        const steps = 3;
+        for (let j = 0; j <= steps; j++) {
+          const t = j / steps;
+          const x = seg.x + (next.x - seg.x) * t;
+          const y = seg.y + (next.y - seg.y) * t;
+          renderer.pushCircle({
+            x,
+            y,
+            radius: 3 + Math.random() * 2,
+            color: lightningColor,
+            sides: 6,
+            rotation: Math.random() * Math.PI,
+            halo: allowFx ? { color: lightningGlow, scale: 2.5 } : undefined
+          });
+        }
+      }
+    });
+
+    // Render Laser beams
+    state.laserBeams.forEach((beam) => {
+      const alpha = Math.min(1, beam.life * 10);
+      const laserColor: readonly [number, number, number, number] = [1, 0.2, 0.2, alpha];
+      const laserGlow: readonly [number, number, number, number] = [1, 0.1, 0.1, alpha * 0.4];
+
+      // Draw laser beam as series of circles along the path
+      const dx = beam.endX - beam.startX;
+      const dy = beam.endY - beam.startY;
+      const dist = Math.hypot(dx, dy);
+      const steps = Math.ceil(dist / 10);
+
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = beam.startX + dx * t;
+        const y = beam.startY + dy * t;
+        // Core beam
+        renderer.pushCircle({
+          x,
+          y,
+          radius: 4,
+          color: laserColor,
+          sides: 8,
+          rotation: 0,
+          halo: allowFx ? { color: laserGlow, scale: 3 } : undefined
+        });
+      }
+    });
+
+    // Render Homing missiles
+    const missileColor: readonly [number, number, number, number] = [1, 0.5, 0.1, 1];
+    const missileTrailColor: readonly [number, number, number, number] = [1, 0.3, 0, 0.6];
+    const missileGlow = allowFx ? { color: [1, 0.4, 0, 0.5] as const, scale: 2.5 } : undefined;
+
+    state.missiles.forEach((m) => {
+      const angle = Math.atan2(m.dy, m.dx);
+
+      // Trail effect
+      if (allowFx) {
+        for (let i = 1; i <= 3; i++) {
+          const trailX = m.x - m.dx * 0.02 * i;
+          const trailY = m.y - m.dy * 0.02 * i;
+          renderer.pushCircle({
+            x: trailX,
+            y: trailY,
+            radius: 3 - i * 0.5,
+            color: [missileTrailColor[0], missileTrailColor[1], missileTrailColor[2], missileTrailColor[3] / i] as const,
+            sides: 3,
+            rotation: angle + Math.PI
+          });
+        }
+      }
+
+      // Missile body (triangle pointing in direction of travel)
+      renderer.pushCircle({
+        x: m.x,
+        y: m.y,
+        radius: 6,
+        color: missileColor,
+        sides: 3,
+        rotation: angle - Math.PI / 2,
+        halo: missileGlow
+      });
+    });
+
 
     // Render floating text using native WebGL2 text renderer
     state.floatingText.forEach((f) => {

@@ -1,10 +1,23 @@
-import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
+import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile, LightningBolt, LaserBeam, HomingMissile } from "../types/index.ts";
 import type { TuningConfig } from "../config/tuning.ts";
 import type { EnemyVariantDefinition } from "../config/enemyVariants.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
+import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
+
+// Helper to check if a weapon is unlocked
+function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
+  const weapon = state.weapons.find(w => w.id === id);
+  return weapon?.unlocked ?? false;
+}
+
+// Helper to get weapon level
+function getWeaponLevel(state: GameState, id: WeaponId): number {
+  const weapon = state.weapons.find(w => w.id === id);
+  return weapon?.level ?? 0;
+}
 
 function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
   let closest: Enemy | { x: number; y: number } | null = null;
@@ -124,8 +137,14 @@ function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): voi
 }
 
 function fire(state: GameState): void {
+  if (!isWeaponUnlocked(state, 'mainGun')) return;
+
+  const level = getWeaponLevel(state, 'mainGun');
+  const def = getWeaponDef('mainGun');
+  const stats = getWeaponStats(def, level);
+
   const target = nearestEnemy(state);
-  const count = Math.max(1, state.player.projectiles);
+  const count = Math.max(1, stats.projectiles ?? state.player.projectiles);
   // Base direction: toward nearest enemy, or forward if no enemies
   const baseAngle = target
     ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
@@ -151,7 +170,8 @@ function fire(state: GameState): void {
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
-      pierce: state.player.pierce
+      pierce: state.player.pierce,
+      damage: stats.damage // Use weapon damage
     };
     state.bullets.push(bullet);
   }
@@ -161,10 +181,16 @@ function fire(state: GameState): void {
  * Orbit weapon: fires projectiles in a circular pattern around the player
  */
 function fireOrbit(state: GameState): void {
+  if (!isWeaponUnlocked(state, 'circularBlast')) return;
+
+  const level = getWeaponLevel(state, 'circularBlast');
+  const def = getWeaponDef('circularBlast');
+  const stats = getWeaponStats(def, level);
+
   const { maxSpeed, maxLifetime } = getTuning().bullet;
   const { maxBullets } = getTuning().fx;
 
-  const count = calculateOrbitProjectiles(state, getTuning().orbit);
+  const count = Math.max(1, stats.projectiles ?? 8);
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
   const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
 
@@ -178,10 +204,312 @@ function fireOrbit(state: GameState): void {
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
-      pierce: state.player.pierce
+      pierce: state.player.pierce,
+      damage: stats.damage
     };
     state.bullets.push(bullet);
   }
+}
+
+/**
+ * Lightning weapon: strikes random enemy and chains to nearby enemies
+ */
+function fireLightning(state: GameState): void {
+  if (!isWeaponUnlocked(state, 'lightning')) return;
+  if (state.enemies.length === 0) return;
+
+  const level = getWeaponLevel(state, 'lightning');
+  const def = getWeaponDef('lightning');
+  const stats = getWeaponStats(def, level);
+
+  const range = stats.range ?? 200;
+  const chainCount = stats.chainCount ?? 2;
+
+  // Find enemies within range
+  const inRange = state.enemies.filter(e => {
+    const dx = e.x - state.player.x;
+    const dy = e.y - state.player.y;
+    return Math.hypot(dx, dy) <= range;
+  });
+
+  if (inRange.length === 0) return;
+
+  // Pick random target
+  const primaryTarget = inRange[Math.floor(Math.random() * inRange.length)];
+  const hitEnemies: Enemy[] = [primaryTarget];
+
+  // Apply damage to primary target
+  primaryTarget.hp -= stats.damage;
+  primaryTarget.hitThisFrame = true;
+
+  // Create lightning bolt visual
+  const segments: { x: number; y: number }[] = [];
+  let lastX = state.player.x;
+  let lastY = state.player.y;
+
+  // Generate zigzag path to primary target
+  const steps = 5;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const baseX = state.player.x + (primaryTarget.x - state.player.x) * t;
+    const baseY = state.player.y + (primaryTarget.y - state.player.y) * t;
+    const offset = i === 0 || i === steps ? 0 : (Math.random() - 0.5) * 30;
+    segments.push({ x: baseX + offset, y: baseY + offset });
+    lastX = baseX;
+    lastY = baseY;
+  }
+
+  // Chain to nearby enemies
+  let currentX = primaryTarget.x;
+  let currentY = primaryTarget.y;
+
+  for (let c = 0; c < chainCount && hitEnemies.length < inRange.length; c++) {
+    // Find nearest un-hit enemy
+    let nearest: Enemy | null = null;
+    let nearestDist = Infinity;
+
+    for (const e of state.enemies) {
+      if (hitEnemies.includes(e)) continue;
+      const dx = e.x - currentX;
+      const dy = e.y - currentY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < nearestDist && dist < range * 0.6) {
+        nearestDist = dist;
+        nearest = e;
+      }
+    }
+
+    if (!nearest) break;
+
+    // Apply chain damage (reduced)
+    const chainDamage = stats.damage * 0.6;
+    nearest.hp -= chainDamage;
+    nearest.hitThisFrame = true;
+    hitEnemies.push(nearest);
+
+    // Add chain segment
+    segments.push({ x: nearest.x, y: nearest.y });
+    currentX = nearest.x;
+    currentY = nearest.y;
+  }
+
+  // Add visual bolt
+  state.lightningBolts.push({
+    startX: state.player.x,
+    startY: state.player.y,
+    segments,
+    life: 0.2
+  });
+
+  addFloatingText(state, "⚡", primaryTarget.x, primaryTarget.y - 10, "#00ffff");
+}
+
+/**
+ * Laser weapon: continuous beam toward nearest enemy
+ */
+function updateLaser(state: GameState, dt: number): void {
+  if (!isWeaponUnlocked(state, 'laser')) return;
+
+  const level = getWeaponLevel(state, 'laser');
+  const def = getWeaponDef('laser');
+  const stats = getWeaponStats(def, level);
+
+  // Clear old beams
+  state.laserBeams = [];
+
+  const target = nearestEnemy(state);
+  if (!target) return;
+
+  const dx = target.x - state.player.x;
+  const dy = target.y - state.player.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist > (stats.range ?? 250)) return;
+
+  // Create laser beam visual
+  state.laserBeams.push({
+    startX: state.player.x,
+    startY: state.player.y,
+    endX: target.x,
+    endY: target.y,
+    life: 0.1
+  });
+
+  // Apply DPS to all enemies on the beam path
+  const beamWidth = 8;
+  const dps = stats.damage;
+
+  for (const enemy of state.enemies) {
+    // Point-to-line distance
+    const ex = enemy.x - state.player.x;
+    const ey = enemy.y - state.player.y;
+    const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (dist * dist)));
+    const closestX = state.player.x + t * dx;
+    const closestY = state.player.y + t * dy;
+    const distToBeam = Math.hypot(enemy.x - closestX, enemy.y - closestY);
+
+    if (distToBeam < beamWidth + enemy.radius) {
+      enemy.hp -= dps * dt;
+      enemy.hitThisFrame = true;
+    }
+  }
+
+  // Also damage boss if on beam
+  if (state.bossActive && state.currentBoss) {
+    const boss = state.currentBoss;
+    const bx = boss.x - state.player.x;
+    const by = boss.y - state.player.y;
+    const t = Math.max(0, Math.min(1, (bx * dx + by * dy) / (dist * dist)));
+    const closestX = state.player.x + t * dx;
+    const closestY = state.player.y + t * dy;
+    const distToBeam = Math.hypot(boss.x - closestX, boss.y - closestY);
+
+    if (distToBeam < beamWidth + boss.radius) {
+      boss.hp -= dps * dt;
+    }
+  }
+}
+
+/**
+ * Missiles weapon: fire homing missiles toward enemies
+ */
+function fireMissiles(state: GameState): void {
+  if (!isWeaponUnlocked(state, 'missiles')) return;
+  if (state.enemies.length === 0 && !state.bossActive) return;
+
+  const level = getWeaponLevel(state, 'missiles');
+  const def = getWeaponDef('missiles');
+  const stats = getWeaponStats(def, level);
+
+  const count = Math.max(1, Math.floor(stats.projectiles ?? 1));
+
+  for (let i = 0; i < count; i++) {
+    // Pick a random target
+    let targetX: number, targetY: number;
+
+    if (state.bossActive && state.currentBoss && Math.random() < 0.5) {
+      targetX = state.currentBoss.x;
+      targetY = state.currentBoss.y;
+    } else if (state.enemies.length > 0) {
+      const target = state.enemies[Math.floor(Math.random() * state.enemies.length)];
+      targetX = target.x;
+      targetY = target.y;
+    } else {
+      continue;
+    }
+
+    const dx = targetX - state.player.x;
+    const dy = targetY - state.player.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    const speed = 150;
+
+    const missile: HomingMissile = {
+      x: state.player.x,
+      y: state.player.y,
+      dx: (dx / dist) * speed,
+      dy: (dy / dist) * speed,
+      targetId: i, // Just an identifier
+      life: 4,
+      damage: stats.damage
+    };
+
+    state.missiles.push(missile);
+  }
+}
+
+/**
+ * Update homing missiles movement and collisions
+ */
+function updateMissiles(state: GameState, dt: number): void {
+  const turnSpeed = 4; // Radians per second for homing
+
+  for (const missile of state.missiles) {
+    // Find nearest enemy to home toward
+    let nearestEnemy: Enemy | null = null;
+    let nearestDist = Infinity;
+
+    for (const e of state.enemies) {
+      const dx = e.x - missile.x;
+      const dy = e.y - missile.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestEnemy = e;
+      }
+    }
+
+    // Also consider boss
+    if (state.bossActive && state.currentBoss) {
+      const dx = state.currentBoss.x - missile.x;
+      const dy = state.currentBoss.y - missile.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestEnemy = null; // Will handle boss separately
+      }
+    }
+
+    // Home toward target
+    let targetX = missile.x + missile.dx;
+    let targetY = missile.y + missile.dy;
+
+    if (nearestEnemy) {
+      targetX = nearestEnemy.x;
+      targetY = nearestEnemy.y;
+    } else if (state.bossActive && state.currentBoss) {
+      targetX = state.currentBoss.x;
+      targetY = state.currentBoss.y;
+    }
+
+    const desiredDx = targetX - missile.x;
+    const desiredDy = targetY - missile.y;
+    const desiredAngle = Math.atan2(desiredDy, desiredDx);
+    const currentAngle = Math.atan2(missile.dy, missile.dx);
+
+    // Interpolate angle
+    let angleDiff = desiredAngle - currentAngle;
+    while (angleDiff > Math.PI) angleDiff -= TAU;
+    while (angleDiff < -Math.PI) angleDiff += TAU;
+
+    const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed * dt);
+    const speed = Math.hypot(missile.dx, missile.dy);
+
+    missile.dx = Math.cos(newAngle) * speed;
+    missile.dy = Math.sin(newAngle) * speed;
+
+    // Move missile
+    missile.x += missile.dx * dt;
+    missile.y += missile.dy * dt;
+    missile.life -= dt;
+
+    // Check collision with enemies
+    for (const enemy of state.enemies) {
+      const dx = enemy.x - missile.x;
+      const dy = enemy.y - missile.y;
+      if (dx * dx + dy * dy < (enemy.radius + 6) ** 2) {
+        enemy.hp -= missile.damage;
+        enemy.hitThisFrame = true;
+        missile.life = -1;
+        addFloatingText(state, "💥", enemy.x, enemy.y - 5, "#ff6600");
+        break;
+      }
+    }
+
+    // Check collision with boss
+    if (state.bossActive && state.currentBoss && missile.life > 0) {
+      const boss = state.currentBoss;
+      const dx = boss.x - missile.x;
+      const dy = boss.y - missile.y;
+      if (dx * dx + dy * dy < (boss.radius + 6) ** 2) {
+        boss.hp -= missile.damage;
+        missile.life = -1;
+        addFloatingText(state, "💥", boss.x, boss.y - 5, "#ff6600");
+      }
+    }
+  }
+
+  // Remove dead missiles
+  state.missiles = state.missiles.filter(m => m.life > 0);
 }
 
 export function updateCombat(state: GameState, dt: number, canvas: Canvas): void {
@@ -224,17 +552,57 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     }
   }
 
-  // Primary weapon: shotgun
-  if (state.player.fireTimer <= 0) {
+  // Primary weapon: Main Gun
+  if (state.player.fireTimer <= 0 && isWeaponUnlocked(state, 'mainGun')) {
+    const def = getWeaponDef('mainGun');
+    const stats = getWeaponStats(def, getWeaponLevel(state, 'mainGun'));
     fire(state);
-    state.player.fireTimer = state.player.fireDelay;
+    state.player.fireTimer = stats.fireDelay;
   }
 
-  // Secondary weapon: orbit
-  if (state.player.orbitTimer <= 0) {
+  // Secondary weapon: Circular Blast (orbit)
+  if (state.player.orbitTimer <= 0 && isWeaponUnlocked(state, 'circularBlast')) {
+    const def = getWeaponDef('circularBlast');
+    const stats = getWeaponStats(def, getWeaponLevel(state, 'circularBlast'));
     fireOrbit(state);
-    state.player.orbitTimer = state.player.orbitDelay;
+    state.player.orbitTimer = stats.fireDelay;
   }
+
+  // Lightning weapon
+  state.lightningTimer -= dt;
+  if (state.lightningTimer <= 0 && isWeaponUnlocked(state, 'lightning')) {
+    const def = getWeaponDef('lightning');
+    const stats = getWeaponStats(def, getWeaponLevel(state, 'lightning'));
+    fireLightning(state);
+    state.lightningTimer = stats.fireDelay;
+  }
+
+  // Laser weapon (continuous)
+  updateLaser(state, dt);
+
+  // Update lightning bolt visuals
+  state.lightningBolts = state.lightningBolts.filter(b => {
+    b.life -= dt;
+    return b.life > 0;
+  });
+
+  // Update laser beam visuals
+  state.laserBeams = state.laserBeams.filter(b => {
+    b.life -= dt;
+    return b.life > 0;
+  });
+
+  // Missiles weapon
+  state.missileTimer -= dt;
+  if (state.missileTimer <= 0 && isWeaponUnlocked(state, 'missiles')) {
+    const def = getWeaponDef('missiles');
+    const stats = getWeaponStats(def, getWeaponLevel(state, 'missiles'));
+    fireMissiles(state);
+    state.missileTimer = stats.fireDelay;
+  }
+
+  // Update homing missiles
+  updateMissiles(state, dt);
 
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.player.regen * dt);
 
