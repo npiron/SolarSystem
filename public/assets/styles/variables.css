@@ -35,6 +35,14 @@
   --tracking-wide: 0.05em;
   --tracking-wider: 0.1em;
   --tracking-widest: 0.15em;
+
+  /* Glass & Icons */
+  --panel-surface: oklch(var(--b2, 0.18 0 0) / 62%);
+  --panel-surface-strong: oklch(var(--b1, 0.2 0 0) / 82%);
+  --panel-border: oklch(var(--bc, 0.9 0 0) / 10%);
+  --panel-blur: 14px;
+  --icon-accent: oklch(var(--p, 0.6 0.2 260));
+  --icon-muted: oklch(var(--bc, 0.9 0 0) / 60%);
 }
 
 /* ===== LAYOUT VARIABLES ===== */
