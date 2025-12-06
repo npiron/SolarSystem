@@ -18,7 +18,7 @@
  * - Zero impact on game logic or canvas FPS
  * 
  * Usage:
- * - Decorations are automatically applied to .hud-card, .live-values-hud, .performance-hud, .stat-block
+ * - Decorations are automatically applied to .hud-card, .merged-run-hud, .performance-hud, .stat-block
  * - Toggle performance mode with the "Perfo" button to disable decorations
  * - The body.performance-mode class is managed by src/main.ts
  */
@@ -82,22 +82,22 @@
   font-size: 0.8em;
 }
 
-/* ===== LIVE VALUES HUD DECORATIONS ===== */
-.live-values-hud {
+/* ===== MERGED RUN HUD DECORATIONS ===== */
+.merged-run-hud {
   position: relative;
   box-shadow: 
     0 4px 20px oklch(0 0 0 / 25%),
-    inset 0 0 30px oklch(var(--in, 0.7 0.15 220) / 10%);
+    inset 0 0 30px oklch(var(--p, 0.6 0.2 260) / 10%);
 }
 
-.live-values-hud::before {
+.merged-run-hud::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 30px;
   height: 30px;
-  border: 2px solid oklch(var(--in, 0.7 0.15 220) / 35%);
+  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 35%);
   border-right: none;
   border-bottom: none;
   border-top-left-radius: 0.75rem;
@@ -105,14 +105,14 @@
   transition: opacity 0.3s ease;
 }
 
-.live-values-hud::after {
+.merged-run-hud::after {
   content: '';
   position: absolute;
   bottom: 0;
   right: 0;
   width: 30px;
   height: 30px;
-  border: 2px solid oklch(var(--in, 0.7 0.15 220) / 35%);
+  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 35%);
   border-left: none;
   border-top: none;
   border-bottom-right-radius: 0.75rem;
@@ -386,8 +386,8 @@
   transition: border-color 0.3s ease;
 }
 
-.live-values-hud:hover {
-  border-color: oklch(var(--in, 0.7 0.15 220) / 35%);
+.merged-run-hud:hover {
+  border-color: oklch(var(--p, 0.6 0.2 260) / 35%);
   transition: border-color 0.3s ease;
 }
 
@@ -404,8 +404,8 @@
 /* ===== PERFORMANCE MODE: DISABLE DECORATIONS ===== */
 body.performance-mode .hud-card::before,
 body.performance-mode .hud-card::after,
-body.performance-mode .live-values-hud::before,
-body.performance-mode .live-values-hud::after,
+body.performance-mode .merged-run-hud::before,
+body.performance-mode .merged-run-hud::after,
 body.performance-mode .performance-hud::before,
 body.performance-mode .performance-hud::after,
 body.performance-mode .stat-block::before,
@@ -429,14 +429,14 @@ body.performance-mode .hud-card .stat-row::after {
 }
 
 body.performance-mode .hud-card,
-body.performance-mode .live-values-hud,
+body.performance-mode .merged-run-hud,
 body.performance-mode .performance-hud,
 body.performance-mode .stat-block {
   box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
 }
 
 body.performance-mode .hud-card:hover,
-body.performance-mode .live-values-hud:hover,
+body.performance-mode .merged-run-hud:hover,
 body.performance-mode .performance-hud:hover,
 body.performance-mode .stat-block:hover {
   border-color: inherit;
