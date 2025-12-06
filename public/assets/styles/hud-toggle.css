@@ -1,0 +1,138 @@
+/* ===== TOGGLEABLE HUD ELEMENTS ===== */
+
+/* HUD Toggle Buttons */
+.hud-toggle-btn {
+  position: fixed;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.5rem;
+  background: oklch(var(--b1, 0.2 0 0) / 90%);
+  backdrop-filter: blur(14px);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 25%);
+}
+
+.hud-toggle-btn:hover {
+  background: oklch(var(--b1, 0.2 0 0));
+  border-color: oklch(var(--p, 0.6 0.2 260) / 40%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px oklch(0 0 0 / 30%);
+}
+
+.hud-toggle-btn.active {
+  background: oklch(var(--p, 0.6 0.2 260) / 20%);
+  border-color: oklch(var(--p, 0.6 0.2 260) / 60%);
+  color: oklch(var(--p, 0.6 0.2 260));
+}
+
+/* Toggle button for Run Stats HUD (bottom-left) */
+#toggleRunStatsBtn {
+  bottom: calc(var(--footer-height) + 1rem);
+  left: 0.75rem;
+}
+
+/* Toggle button for Performance HUD (bottom-right) */
+#togglePerfHudBtn {
+  bottom: calc(var(--footer-height) + 1rem);
+  right: 0.75rem;
+}
+
+/* Toggle button for Upgrade Bar (top-center) */
+#toggleUpgradeBarBtn {
+  top: calc(var(--header-height) + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  padding: 0.5rem 1rem;
+  gap: 0.5rem;
+}
+
+#toggleUpgradeBarBtn:hover {
+  transform: translateX(-50%) translateY(-2px);
+}
+
+/* Collapsible HUD states */
+.merged-run-hud.collapsed {
+  transform: translateY(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.performance-hud.collapsed {
+  transform: translateY(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.upgrade-bar.collapsed {
+  transform: translateY(calc(-100% - 1rem));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Smooth transitions for HUD elements */
+.merged-run-hud,
+.performance-hud,
+.upgrade-bar {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Adjust positioning when HUD elements are hidden */
+#toggleRunStatsBtn.hide-original {
+  left: calc(var(--panel-width) + 1rem);
+}
+
+#togglePerfHudBtn.hide-original {
+  right: calc(var(--panel-width) + 1rem);
+}
+
+/* Performance mode - disable animations */
+body.performance-mode .merged-run-hud,
+body.performance-mode .performance-hud,
+body.performance-mode .upgrade-bar {
+  transition: none;
+}
+
+body.performance-mode .hud-toggle-btn {
+  transition: none;
+  box-shadow: none;
+}
+
+body.performance-mode .hud-toggle-btn:hover {
+  transform: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .hud-toggle-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1rem;
+  }
+
+  #toggleUpgradeBarBtn {
+    padding: 0.4rem 0.875rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .hud-toggle-btn {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.9rem;
+  }
+
+  #toggleUpgradeBarBtn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.7rem;
+  }
+}
