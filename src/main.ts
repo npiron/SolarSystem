@@ -39,6 +39,7 @@ import {
 import { initFloatingBlocks } from "./systems/floatingBlocks.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
 import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud.ts";
+import { initAdditionalHuds, updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds.ts";
 import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI.ts";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
@@ -474,6 +475,9 @@ function initUI(): void {
 
   // Initialize live values HUD
   initLiveValuesHud();
+
+  // Initialize additional HUDs
+  initAdditionalHuds();
 }
 
 async function bootstrap(): Promise<void> {
@@ -539,6 +543,8 @@ async function bootstrap(): Promise<void> {
     updatePerformanceHud(performanceHudElements, state.performance);
     updateLiveValues(state);
     updateLiveValuesHud(state);
+    updateGlobalStatsHud(state);
+    updateWeaponsHud(state);
     // Note: renderWeapons is not called here - it's called once at init and on unlock/upgrade
     gameRender(state, {
       canvasWidth: width,

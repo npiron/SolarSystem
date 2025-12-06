@@ -2,6 +2,7 @@
  * Systems module barrel exports
  * All game logic and state transition systems
  */
+export * from "./additionalHuds.ts";
 export * from "./assist.ts";
 export * from "./combat.ts";
 export * from "./gameState.ts";

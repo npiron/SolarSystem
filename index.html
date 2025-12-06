@@ -45,6 +45,29 @@
   <!-- Fullscreen canvas background -->
   <canvas id="webgl2" class="fullscreen-canvas" width="1920" height="1080"></canvas>
 
+  <!-- Global Stats HUD (bottom-left, top position) -->
+  <div class="hud-card global-stats-hud">
+    <h2><i class="ti ti-trophy"></i> Statistiques globales</h2>
+    <div class="hud-card-content">
+      <div class="stat-row">
+        <span><i class="ti ti-target stat-icon"></i> Meilleure vague</span>
+        <span id="hudBestWave">1</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-skull stat-icon"></i> Kills totaux</span>
+        <span id="hudTotalKills">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-diamond stat-icon"></i> Fragments run</span>
+        <span id="hudRunFragments">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-droplet stat-icon"></i> Essence run</span>
+        <span id="hudRunEssence">0</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Merged Run Status & Calculated Values HUD (bottom-left) -->
   <div class="hud-card merged-run-hud">
     <h2><i class="ti ti-sword"></i> Run en cours</h2>
@@ -110,6 +133,25 @@
       </div>
       <button id="toggleFpsFromHud" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
       <canvas id="fpsGraphHud" class="fps-chart-hud" width="180" height="60"></canvas>
+    </div>
+  </div>
+
+  <!-- Active Weapons HUD (bottom right, below performance) -->
+  <div class="hud-card weapons-hud">
+    <h2><i class="ti ti-swords"></i> Armes actives</h2>
+    <div class="hud-card-content">
+      <div class="stat-row">
+        <span><i class="ti ti-check stat-icon"></i> Débloquées</span>
+        <span id="hudUnlockedWeapons">0</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-bolt stat-icon"></i> Arme principale</span>
+        <span id="hudMainWeapon">--</span>
+      </div>
+      <div class="stat-row">
+        <span><i class="ti ti-shield-checkered stat-icon"></i> Support actifs</span>
+        <span id="hudSupportWeapons">0</span>
+      </div>
     </div>
   </div>
 
