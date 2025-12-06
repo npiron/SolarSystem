@@ -294,3 +294,85 @@ button.small {
   color: oklch(var(--su, 0.7 0.2 145) / 70%);
   cursor: default;
 }
+
+/* ===== WEAPONS BAR (Bottom of screen) ===== */
+.weapons-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: oklch(var(--b1, 0.15 0 0) / 92%);
+  backdrop-filter: blur(16px);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 12%);
+  border-bottom: none;
+  border-radius: 1rem 1rem 0 0;
+  padding: 0.5rem 1rem 0.75rem;
+  box-shadow: 0 -4px 32px oklch(0 0 0 / 40%);
+  pointer-events: auto;
+}
+
+.weapons-bar-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(var(--p, 0.6 0.2 260));
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.weapons-bar-header .currency-hint {
+  font-weight: 400;
+  color: oklch(var(--bc, 0.9 0 0) / 50%);
+  font-size: 0.65rem;
+}
+
+.weapons-bar-grid {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+/* Horizontal weapon card */
+.weapons-bar-grid .weapon-card {
+  min-width: 140px;
+  max-width: 160px;
+  flex-shrink: 0;
+  background: oklch(var(--b2, 0.18 0 0) / 70%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.weapons-bar-grid .weapon-card:hover {
+  background: oklch(var(--b2, 0.18 0 0));
+  border-color: oklch(var(--p, 0.6 0.2 260) / 40%);
+}
+
+.weapons-bar-grid .weapon-card.locked {
+  opacity: 0.6;
+  filter: grayscale(0.3);
+}
+
+/* Stats display in bar */
+.weapon-stats-row {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.6rem;
+  color: oklch(var(--bc, 0.9 0 0) / 70%);
+  margin: 0.25rem 0;
+}
+
+.weapon-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.weapon-stat-icon {
+  opacity: 0.7;
+}

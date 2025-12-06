@@ -7,6 +7,8 @@ import { WEAPONS, getWeaponDef, getWeaponStats, getUpgradeCost, type WeaponId, t
 import { formatNumber } from "./hud.ts";
 
 let gridContainer: HTMLElement | null = null;
+let lastRenderHash = "";
+let currentStateRef: GameState | null = null;
 
 /**
  * Initialize the weapons UI
@@ -16,10 +18,29 @@ export function initWeaponsUI(): void {
 }
 
 /**
- * Render all weapon cards
+ * Generate a hash of the current weapon state for comparison
+ */
+function getStateHash(state: GameState): string {
+    const weaponHash = state.weapons.map(w => `${w.id}:${w.level}:${w.unlocked}`).join("|");
+    const fragmentsHash = Math.floor(state.resources.fragments / 10); // Round to avoid too frequent updates
+    return `${weaponHash}::${fragmentsHash}`;
+}
+
+/**
+ * Render all weapon cards (optimized to only update when state changes)
  */
 export function renderWeapons(state: GameState): void {
     if (!gridContainer) return;
+
+    // Store state reference for event handlers
+    currentStateRef = state;
+
+    // Only re-render if state actually changed
+    const stateHash = getStateHash(state);
+    if (stateHash === lastRenderHash) {
+        return;
+    }
+    lastRenderHash = stateHash;
 
     gridContainer.innerHTML = "";
 
@@ -33,6 +54,16 @@ export function renderWeapons(state: GameState): void {
 
         const card = createWeaponCard(def, weaponState, state);
         gridContainer.appendChild(card);
+    }
+}
+
+/**
+ * Force re-render (call after unlock/upgrade)
+ */
+function forceRender(): void {
+    lastRenderHash = "";
+    if (currentStateRef) {
+        renderWeapons(currentStateRef);
     }
 }
 
@@ -64,13 +95,20 @@ function createWeaponCard(
   `;
     card.appendChild(header);
 
-    // Stats row
+    // Stats row with detailed info
     const statsRow = document.createElement("div");
-    statsRow.className = "weapon-stats";
+    statsRow.className = "weapon-stats-row";
     if (weaponState.unlocked) {
-        statsRow.textContent = `⚔️ ${stats.damage.toFixed(1)} | ⏱️ ${stats.fireDelay.toFixed(2)}s`;
+        const projectilesText = stats.projectiles ? `🎯 ${Math.floor(stats.projectiles)}` : '';
+        const damageText = `⚔️ ${stats.damage.toFixed(0)}`;
+        const delayText = stats.fireDelay > 0 ? `⏱️ ${stats.fireDelay.toFixed(1)}s` : '⏱️ ∞';
+        statsRow.innerHTML = `
+      <span class="weapon-stat"><span class="weapon-stat-icon">${damageText}</span></span>
+      <span class="weapon-stat"><span class="weapon-stat-icon">${delayText}</span></span>
+      ${projectilesText ? `<span class="weapon-stat"><span class="weapon-stat-icon">${projectilesText}</span></span>` : ''}
+    `;
     } else {
-        statsRow.textContent = def.description;
+        statsRow.innerHTML = `<span style="font-size: 0.6rem; color: oklch(var(--bc) / 50%)">${def.description}</span>`;
     }
     card.appendChild(statsRow);
 
@@ -86,7 +124,11 @@ function createWeaponCard(
         btn.className = "unlock-btn";
         btn.disabled = !canAfford;
         btn.innerHTML = `🔓 Débloquer (💎 ${formatNumber(cost)})`;
-        btn.onclick = () => unlockWeapon(state, def.id);
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            unlockWeapon(def.id);
+        });
         actionDiv.appendChild(btn);
     } else if (isMaxLevel) {
         // Max level
@@ -103,7 +145,11 @@ function createWeaponCard(
         btn.className = "upgrade-btn";
         btn.disabled = !canAfford;
         btn.innerHTML = `⬆️ Améliorer (💎 ${formatNumber(cost)})`;
-        btn.onclick = () => upgradeWeapon(state, def.id);
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            upgradeWeapon(def.id);
+        });
         actionDiv.appendChild(btn);
     }
 
@@ -115,37 +161,58 @@ function createWeaponCard(
 /**
  * Unlock a weapon
  */
-function unlockWeapon(state: GameState, id: WeaponId): void {
+function unlockWeapon(id: WeaponId): void {
+    console.log("[WeaponsUI] unlockWeapon called for:", id);
+    console.log("[WeaponsUI] currentStateRef:", currentStateRef);
+
+    if (!currentStateRef) {
+        console.log("[WeaponsUI] No state ref!");
+        return;
+    }
+
     const def = getWeaponDef(id);
-    const weaponState = state.weapons.find(w => w.id === id);
+    const weaponState = currentStateRef.weapons.find(w => w.id === id);
 
-    if (!weaponState || weaponState.unlocked) return;
-    if (state.resources.fragments < def.unlockCost) return;
+    console.log("[WeaponsUI] Weapon state:", weaponState);
+    console.log("[WeaponsUI] Fragments:", currentStateRef.resources.fragments);
+    console.log("[WeaponsUI] Unlock cost:", def.unlockCost);
 
-    state.resources.fragments -= def.unlockCost;
+    if (!weaponState || weaponState.unlocked) {
+        console.log("[WeaponsUI] Already unlocked or not found");
+        return;
+    }
+    if (currentStateRef.resources.fragments < def.unlockCost) {
+        console.log("[WeaponsUI] Not enough fragments");
+        return;
+    }
+
+    console.log("[WeaponsUI] Unlocking weapon!");
+    currentStateRef.resources.fragments -= def.unlockCost;
     weaponState.unlocked = true;
     weaponState.level = 1;
 
-    renderWeapons(state);
+    forceRender();
 }
 
 /**
  * Upgrade a weapon
  */
-function upgradeWeapon(state: GameState, id: WeaponId): void {
+function upgradeWeapon(id: WeaponId): void {
+    if (!currentStateRef) return;
+
     const def = getWeaponDef(id);
-    const weaponState = state.weapons.find(w => w.id === id);
+    const weaponState = currentStateRef.weapons.find(w => w.id === id);
 
     if (!weaponState || !weaponState.unlocked) return;
     if (weaponState.level >= def.maxLevel) return;
 
     const cost = getUpgradeCost(def, weaponState.level);
-    if (state.resources.fragments < cost) return;
+    if (currentStateRef.resources.fragments < cost) return;
 
-    state.resources.fragments -= cost;
+    currentStateRef.resources.fragments -= cost;
     weaponState.level += 1;
 
-    renderWeapons(state);
+    forceRender();
 }
 
 /**
