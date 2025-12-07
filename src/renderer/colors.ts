@@ -14,9 +14,13 @@ function string2hex(hex: string): number {
 }
 
 export const colors = {
-  // Player - Vibrant cyan with electric glow
-  player: string2hex("#00f5ff"),
-  collect: string2hex("#00ff88"),
+  // Player - Black hole aesthetic with fiery accretion disk
+  player: string2hex("#0a0c14"),
+  playerCore: string2hex("#05060d"),
+  playerHorizon: string2hex("#11162a"),
+  accretionInner: string2hex("#ff8a3d"),
+  accretionOuter: string2hex("#ffca6a"),
+  collect: string2hex("#ff9f5a"),
   bulletLow: string2hex("#ffffff"),
   bulletHigh: string2hex("#ffdd00"),
   orbitBullet: string2hex("#bf5fff"),
@@ -64,9 +68,13 @@ export function toVec4(hex: number | string, alpha = 1): [number, number, number
 
 export const webglColors = {
   player: toVec4(colors.player, 1),
-  playerHalo: toVec4(colors.collect, 0.25),
-  playerAura: toVec4(colors.player, 0.18),
-  collectRing: toVec4(colors.collect, 0.3),
+  playerCore: toVec4(colors.playerCore, 1),
+  eventHorizon: toVec4(colors.playerHorizon, 0.9),
+  accretionInner: toVec4(colors.accretionInner, 1),
+  accretionOuter: toVec4(colors.accretionOuter, 0.7),
+  playerHalo: toVec4(colors.accretionOuter, 0.22),
+  playerAura: toVec4(colors.playerHorizon, 0.18),
+  collectRing: toVec4(colors.collect, 0.32),
   bullet: toVec4(colors.bulletHigh, 1),
   bulletLow: toVec4(colors.bulletLow, 1),
   bulletGlow: toVec4(colors.bulletHigh, 0.35),
