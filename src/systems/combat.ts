@@ -25,6 +25,7 @@ function getWeaponLevel(state: GameState, id: WeaponId): number {
  */
 function calculateWeaponDamage(weaponBaseDamage: number, playerDamage: number): number {
   const baseDamage = getTuning().player.damage;
+  if (baseDamage === 0) return weaponBaseDamage; // Fallback to weapon damage if base is invalid
   const playerDamageMultiplier = playerDamage / baseDamage;
   return weaponBaseDamage * playerDamageMultiplier;
 }
