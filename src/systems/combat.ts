@@ -1,6 +1,7 @@
 import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile, LightningBolt, LaserBeam, HomingMissile } from "../types/index.ts";
 import type { TuningConfig } from "../config/tuning.ts";
 import type { EnemyVariantDefinition } from "../config/enemyVariants.ts";
+import type { PlayerStats } from "../types/entities.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
@@ -17,6 +18,19 @@ function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
 function getWeaponLevel(state: GameState, id: WeaponId): number {
   const weapon = state.weapons.find(w => w.id === id);
   return weapon?.level ?? 0;
+}
+
+/**
+ * Calculate final damage for a bullet, applying crit chance and using bullet damage if available
+ */
+function calculateBulletDamage(
+  bulletDamage: number | undefined,
+  playerStats: PlayerStats,
+  playerBaseDamage: number
+): number {
+  const baseDamage = bulletDamage ?? playerBaseDamage;
+  const crit = Math.random() < playerStats.critChance;
+  return crit ? baseDamage * playerStats.critMultiplier : baseDamage;
 }
 
 function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
@@ -828,14 +842,11 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         const dx = enemy.x - b.x;
         const dy = enemy.y - b.y;
         if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
-          const crit = Math.random() < state.player.critChance;
-          // Use bullet's damage (which already includes weapon damage × player multiplier)
-          const dmg = b.damage !== undefined 
-            ? (crit ? b.damage * state.player.critMultiplier : b.damage)
-            : (crit ? state.player.damage * state.player.critMultiplier : state.player.damage);
+          const dmg = calculateBulletDamage(b.damage, state.player, state.player.damage);
           enemy.hp -= dmg;
           enemy.hitThisFrame = true;
           if (!state.visualsLow) {
+            const crit = Math.random() < state.player.critChance;
             if (crit) addFloatingText(state, "CRIT", enemy.x, enemy.y - 4, "#f472b6");
           }
           if (b.pierce > 0) {
@@ -917,13 +928,10 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const dx = boss.x - b.x;
       const dy = boss.y - b.y;
       if (dx * dx + dy * dy < (boss.radius + 4) ** 2) {
-        const crit = Math.random() < state.player.critChance;
-        // Use bullet's damage (which already includes weapon damage × player multiplier)
-        const dmg = b.damage !== undefined 
-          ? (crit ? b.damage * state.player.critMultiplier : b.damage)
-          : (crit ? state.player.damage * state.player.critMultiplier : state.player.damage);
+        const dmg = calculateBulletDamage(b.damage, state.player, state.player.damage);
         boss.hp -= dmg;
         if (!state.visualsLow) {
+          const crit = Math.random() < state.player.critChance;
           if (crit) addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
         }
         if (b.pierce > 0) {
