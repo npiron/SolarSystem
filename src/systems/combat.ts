@@ -21,6 +21,15 @@ function getWeaponLevel(state: GameState, id: WeaponId): number {
 }
 
 /**
+ * Calculate combined weapon damage (weapon base × player multiplier)
+ */
+function calculateWeaponDamage(weaponBaseDamage: number, playerDamage: number): number {
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = playerDamage / baseDamage;
+  return weaponBaseDamage * playerDamageMultiplier;
+}
+
+/**
  * Calculate final damage for a bullet, applying crit chance and using bullet damage if available
  * @returns Object with damage amount and whether a crit occurred
  */
@@ -162,7 +171,8 @@ function fire(state: GameState): void {
   const target = nearestEnemy(state);
   // Combine weapon projectiles with player bonus projectiles
   const weaponProjectiles = Math.floor(stats.projectiles ?? 1);
-  const playerBonusProjectiles = Math.max(0, state.player.projectiles - 1);
+  const baseProjectiles = getTuning().player.projectiles;
+  const playerBonusProjectiles = Math.max(0, state.player.projectiles - baseProjectiles);
   const count = weaponProjectiles + playerBonusProjectiles;
   // Base direction: toward nearest enemy, or forward if no enemies
   const baseAngle = target
@@ -176,9 +186,7 @@ function fire(state: GameState): void {
   const lifetime = Math.min(1.2 * state.player.range, maxLifetime);
 
   // Calculate combined damage: weapon base damage × player damage multiplier
-  const baseDamage = getTuning().player.damage;
-  const playerDamageMultiplier = state.player.damage / baseDamage;
-  const combinedDamage = stats.damage * playerDamageMultiplier;
+  const combinedDamage = calculateWeaponDamage(stats.damage, state.player.damage);
 
   // Shotgun spread: all projectiles fire in a cone toward the target
   const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
@@ -215,7 +223,7 @@ function fireOrbit(state: GameState): void {
   const { maxBullets } = getTuning().fx;
 
   // Combine weapon projectiles with player orbit bonus projectiles
-  const weaponProjectiles = Math.floor(stats.projectiles ?? 8);
+  const weaponProjectiles = Math.floor(stats.projectiles ?? def.baseStats.projectiles ?? 8);
   const baseOrbitProjectiles = getTuning().player.orbitProjectiles;
   const playerBonusProjectiles = Math.max(0, state.player.orbitProjectiles - baseOrbitProjectiles);
   const count = weaponProjectiles + playerBonusProjectiles;
@@ -224,9 +232,7 @@ function fireOrbit(state: GameState): void {
   const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
 
   // Calculate combined damage: weapon base damage × player damage multiplier
-  const baseDamage = getTuning().player.damage;
-  const playerDamageMultiplier = state.player.damage / baseDamage;
-  const combinedDamage = stats.damage * playerDamageMultiplier;
+  const combinedDamage = calculateWeaponDamage(stats.damage, state.player.damage);
 
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= maxBullets) break;
@@ -260,9 +266,7 @@ function fireLightning(state: GameState): void {
   const chainCount = stats.chainCount ?? 2;
 
   // Calculate combined damage: weapon base damage × player damage multiplier
-  const baseDamage = getTuning().player.damage;
-  const playerDamageMultiplier = state.player.damage / baseDamage;
-  const combinedDamage = stats.damage * playerDamageMultiplier;
+  const combinedDamage = calculateWeaponDamage(stats.damage, state.player.damage);
 
   // Find enemies within range
   const inRange = state.enemies.filter(e => {
@@ -375,9 +379,7 @@ function updateLaser(state: GameState, dt: number): void {
   });
 
   // Calculate combined DPS: weapon base DPS × player damage multiplier
-  const baseDamage = getTuning().player.damage;
-  const playerDamageMultiplier = state.player.damage / baseDamage;
-  const dps = stats.damage * playerDamageMultiplier;
+  const dps = calculateWeaponDamage(stats.damage, state.player.damage);
 
   // Apply DPS to all enemies on the beam path
   const beamWidth = 8;
@@ -425,9 +427,7 @@ function fireMissiles(state: GameState): void {
   const stats = getWeaponStats(def, level);
 
   // Calculate combined damage: weapon base damage × player damage multiplier
-  const baseDamage = getTuning().player.damage;
-  const playerDamageMultiplier = state.player.damage / baseDamage;
-  const combinedDamage = stats.damage * playerDamageMultiplier;
+  const combinedDamage = calculateWeaponDamage(stats.damage, state.player.damage);
 
   const count = Math.max(1, Math.floor(stats.projectiles ?? 1));
 
