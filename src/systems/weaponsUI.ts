@@ -4,6 +4,7 @@
  */
 import type { GameState } from "../types/index.ts";
 import { WEAPONS, getWeaponDef, getWeaponStats, getUpgradeCost, type WeaponId, type WeaponState } from "../config/weapons.ts";
+import { icons } from "../config/constants.ts";
 import { formatNumber } from "./hud.ts";
 
 let gridContainer: HTMLElement | null = null;
@@ -68,92 +69,101 @@ function forceRender(): void {
 }
 
 /**
- * Create a weapon card element
+ * Create a weapon card element (Big Clickable Button Style)
  */
 function createWeaponCard(
     def: ReturnType<typeof getWeaponDef>,
     weaponState: WeaponState,
     state: GameState
 ): HTMLElement {
-    const card = document.createElement("div");
-    card.className = `weapon-card${weaponState.unlocked ? "" : " locked"}`;
-    card.dataset.weaponId = def.id;
+    // Determine state
+    const isUnlocked = weaponState.unlocked;
+    const isMaxed = weaponState.level >= def.maxLevel;
+    const cost = isUnlocked ? getUpgradeCost(def, weaponState.level) : def.unlockCost;
+    const canAfford = state.resources.fragments >= cost;
 
-    const isMaxLevel = weaponState.level >= def.maxLevel;
-    const stats = weaponState.unlocked ? getWeaponStats(def, weaponState.level) : def.baseStats;
-
-    // Header with icon, name, and level
-    const header = document.createElement("div");
-    header.className = "weapon-header";
-    header.innerHTML = `
-    <span class="weapon-icon">${def.icon}</span>
-    <span class="weapon-name">${def.name}</span>
-    ${weaponState.unlocked
-            ? `<span class="weapon-level${isMaxLevel ? ' max' : ''}">Lv.${weaponState.level}${isMaxLevel ? ' MAX' : ''}</span>`
-            : '<span class="weapon-level">🔒</span>'
-        }
-  `;
-    card.appendChild(header);
-
-    // Stats row with detailed info
-    const statsRow = document.createElement("div");
-    statsRow.className = "weapon-stats-row";
-    if (weaponState.unlocked) {
-        const projectilesText = stats.projectiles ? `🎯 ${Math.floor(stats.projectiles)}` : '';
-        const damageText = `⚔️ ${stats.damage.toFixed(0)}`;
-        const delayText = stats.fireDelay > 0 ? `⏱️ ${stats.fireDelay.toFixed(1)}s` : '⏱️ ∞';
-        statsRow.innerHTML = `
-      <span class="weapon-stat"><span class="weapon-stat-icon">${damageText}</span></span>
-      <span class="weapon-stat"><span class="weapon-stat-icon">${delayText}</span></span>
-      ${projectilesText ? `<span class="weapon-stat"><span class="weapon-stat-icon">${projectilesText}</span></span>` : ''}
+    // Main Container (Button)
+    const card = document.createElement("button");
+    card.className = `w-full text-left p-2 rounded-xl border transition-all duration-200 flex items-center gap-3 relative group overflow-hidden
+        ${isUnlocked
+            ? 'bg-base-100/60 backdrop-blur border-white/10 hover:border-primary/50 hover:bg-base-100/80 active:scale-98'
+            : 'bg-black/40 border-white/5 hover:border-white/20 hover:bg-black/60'}
+        ${!canAfford && !isMaxed ? 'opacity-70 grayscale-[0.5]' : ''}
     `;
+
+    // Background Progress Bar (Optional visual flair for level?)
+    // For now just keep it clean nicely styled glass
+
+    // 1. Icon (Left, Big)
+    const iconContainer = document.createElement("div");
+    iconContainer.className = `w-10 h-10 rounded-lg flex items-center justify-center text-2xl shadow-inner
+        ${isUnlocked ? 'bg-base-300 text-base-content' : 'bg-base-300/20 text-white/20'}
+    `;
+    iconContainer.innerHTML = def.icon;
+
+    // 2. Info Column (Center)
+    const infoCol = document.createElement("div");
+    infoCol.className = "flex-1 flex flex-col min-w-0";
+
+    // Name Row
+    const nameRow = document.createElement("div");
+    nameRow.className = "flex items-baseline gap-2";
+    nameRow.innerHTML = `
+        <span class="font-bold text-sm truncate ${isUnlocked ? 'text-base-content' : 'text-base-content/50'}">${def.name}</span>
+        ${isUnlocked ? `<span class="text-[10px] font-mono opacity-50">Lvl ${weaponState.level}</span>` : ''}
+    `;
+
+    // Stats / Desc Row
+    const detailsRow = document.createElement("div");
+    detailsRow.className = "text-[10px] opacity-70 leading-tight truncate";
+
+    if (isUnlocked) {
+        const stats = getWeaponStats(def, weaponState.level);
+        const dmg = Math.round(stats.damage);
+        const cd = stats.fireDelay > 0 ? stats.fireDelay.toFixed(1) + 's' : 'Rapid';
+        detailsRow.innerHTML = `<span class="text-error">⚔️${dmg}</span> <span class="text-info ml-1">⏱️${cd}</span>`;
     } else {
-        statsRow.innerHTML = `<span style="font-size: 0.6rem; color: oklch(var(--bc) / 50%)">${def.description}</span>`;
+        detailsRow.textContent = "Verrouillé";
     }
-    card.appendChild(statsRow);
 
-    // Action button
-    const actionDiv = document.createElement("div");
-    actionDiv.className = "weapon-action";
+    infoCol.appendChild(nameRow);
+    infoCol.appendChild(detailsRow);
 
-    if (!weaponState.unlocked) {
-        // Unlock button
-        const cost = def.unlockCost;
-        const canAfford = state.resources.fragments >= cost;
-        const btn = document.createElement("button");
-        btn.className = "unlock-btn";
-        btn.disabled = !canAfford;
-        btn.innerHTML = `🔓 Débloquer (💎 ${formatNumber(cost)})`;
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            unlockWeapon(def.id);
-        });
-        actionDiv.appendChild(btn);
-    } else if (isMaxLevel) {
-        // Max level
-        const btn = document.createElement("button");
-        btn.className = "maxed-btn";
-        btn.disabled = true;
-        btn.textContent = "✓ Niveau Max";
-        actionDiv.appendChild(btn);
+    // 3. Action Column (Right)
+    const actionCol = document.createElement("div");
+    actionCol.className = "flex flex-col items-end shrink-0";
+
+    if (isMaxed) {
+        actionCol.innerHTML = `<span class="badge badge-xs badge-success badge-outline">MAX</span>`;
     } else {
-        // Upgrade button
-        const cost = getUpgradeCost(def, weaponState.level);
-        const canAfford = state.resources.fragments >= cost;
-        const btn = document.createElement("button");
-        btn.className = "upgrade-btn";
-        btn.disabled = !canAfford;
-        btn.innerHTML = `⬆️ Améliorer (💎 ${formatNumber(cost)})`;
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        const costColor = canAfford ? (isUnlocked ? "text-secondary" : "text-warning") : "text-error";
+        const actionLabel = isUnlocked ? "UP" : "UNLOCK";
+        actionCol.innerHTML = `
+            <span class="text-[10px] font-bold opacity-50 mb-[-2px]">${actionLabel}</span>
+            <div class="flex items-center gap-1 font-mono text-xs font-bold ${costColor}">
+                ${icons.fragments} ${formatNumber(cost)}
+            </div>
+        `;
+    }
+
+    card.appendChild(iconContainer);
+    card.appendChild(infoCol);
+    card.appendChild(actionCol);
+
+    // Click Handler
+    card.addEventListener("click", (e) => {
+        if (isMaxed) return;
+        if (!canAfford) return; // Or maybe play "error" sound?
+
+        // Prevent spam
+        if (card.disabled) return;
+
+        if (isUnlocked) {
             upgradeWeapon(def.id);
-        });
-        actionDiv.appendChild(btn);
-    }
-
-    card.appendChild(actionDiv);
+        } else {
+            unlockWeapon(def.id);
+        }
+    });
 
     return card;
 }

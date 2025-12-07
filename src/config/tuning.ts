@@ -157,7 +157,7 @@ export function getDefaultTuning(): TuningConfig {
       critChance: 0.08,
       critMultiplier: 2,
       speed: 95,
-      orbitProjectiles: 4,
+      orbitProjectiles: 8,
       orbitDelay: 1.2,
       initialHp: 120,
       radius: 24

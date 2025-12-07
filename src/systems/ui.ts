@@ -85,34 +85,58 @@ export function renderUpgrades(
   upgrades.forEach((up) => {
     const maxLabel = Number.isFinite(up.max) ? up.max : "∞";
     const reachedCap = Number.isFinite(up.max) && up.level >= up.max;
+
+    // Create main card container
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "flex items-center gap-3 p-3 bg-base-100/40 backdrop-blur-sm border border-white/5 rounded-xl hover:bg-base-100/60 transition-colors group";
 
+    // Content Section (Left)
     const info = document.createElement("div");
-    info.innerHTML = `<h3>${up.name}</h3><p>${up.description}</p><p class="muted">Niveau ${up.level}/${maxLabel}</p>`;
+    info.className = "flex-1 min-w-0 flex flex-col gap-1";
 
+    // Header line: Name + Level
+    const header = document.createElement("div");
+    header.className = "flex justify-between items-baseline";
+    header.innerHTML = `
+      <h3 class="font-bold text-base text-base-content leading-tight group-hover:text-primary transition-colors">${up.name}</h3>
+      <span class="text-[10px] font-mono opacity-50 whitespace-nowrap ml-2">Lvl ${up.level}/${maxLabel}</span>
+    `;
+
+    // Description (Larger as requested)
+    const desc = document.createElement("p");
+    desc.className = "text-sm text-base-content/80 leading-snug";
+    desc.textContent = up.description;
+
+    info.appendChild(header);
+    info.appendChild(desc);
+
+    // Button Section (Right)
+    // "Square" button with just Number + Icon
     const btn = document.createElement("button");
-    btn.innerHTML = `${icons.fragments} Acheter ${formatNumber(up.cost)}`;
-    btn.className = "primary";
+    btn.className = "btn btn-square btn-lg bg-base-300 border-white/10 hover:border-primary/50 hover:bg-base-300 group-hover:shadow-lg transition-all flex flex-col items-center justify-center gap-0 w-16 h-16 shrink-0";
+
+    // Icon and Cost
+    btn.innerHTML = `
+      <span class="text-lg mb-[-2px]">${icons.fragments}</span>
+      <span class="font-mono text-xs font-bold ${resources.fragments >= up.cost ? 'text-secondary' : 'opacity-50'}">${formatNumber(up.cost)}</span>
+    `;
+
     btn.disabled = reachedCap || resources.fragments < up.cost;
-    btn.addEventListener("click", () => {
+
+    if (reachedCap) {
+      btn.innerHTML = `<i class="ti ti-check text-success text-xl"></i>`;
+      btn.classList.add("opacity-50", "cursor-not-allowed");
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent card click if any
       buyUpgrade(up);
       renderUpgrades(container, upgrades, uiRefs, resources, buyUpgrade, saveGame);
       saveGame();
     });
 
-    // If rendering inside the horizontal upgrade bar, layout as description + button stacked
-    if (container.id === "upgradeBar") {
-      const wrap = document.createElement("div");
-      wrap.className = "upgrade-item";
-      wrap.appendChild(info);
-      wrap.appendChild(btn);
-      card.innerHTML = "";
-      card.appendChild(wrap);
-    } else {
-      card.appendChild(info);
-      card.appendChild(btn);
-    }
+    card.appendChild(info);
+    card.appendChild(btn);
 
     container.appendChild(card);
     uiRefs.upgradeButtons.set(up.id, btn);

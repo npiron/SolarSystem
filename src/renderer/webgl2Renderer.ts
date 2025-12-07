@@ -415,7 +415,7 @@ export class WebGL2Renderer {
     for (let x = offsetX - spacing; x >= 0; x -= spacing) {
       lines.push(x, 0, x, this.resolution.height);
     }
-    
+
     // Draw horizontal lines - ensure we cover the entire viewport
     for (let y = offsetY; y <= this.resolution.height; y += spacing) {
       lines.push(0, y, this.resolution.width, y);

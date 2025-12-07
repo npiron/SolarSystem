@@ -10,306 +10,288 @@
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbar-left">
-      <img src="./public/assets/logo.svg" alt="Neo Survivors Idle Logo" class="game-logo" />
-      <div>
-        <p class="eyebrow">Incremental x Survivors</p>
-        <h1>Neo Survivors Idle</h1>
-        <p class="lede">Un auto-battler infini, 100% client-side, qui tourne même quand tu fermes l'onglet.</p>
-      </div>
-    </div>
-    <div class="cta">
-      <button id="resetProgress" class="ghost"><i class="ti ti-refresh"></i> Reset</button>
-      <button id="toggleSound" class="ghost"><i class="ti ti-volume"></i> Son</button>
-      <button id="togglePerf" class="ghost"><i class="ti ti-gauge"></i> Perfo</button>
-      <button id="pause" class="primary"><i class="ti ti-player-pause"></i> Pause</button>
-    </div>
-  </header>
-
-  <!-- HUD Toggle Buttons -->
-  <button id="toggleUpgradeBarBtn" class="hud-toggle-btn active" aria-label="Afficher/Masquer les améliorations" title="Améliorations">
-    <i class="ti ti-arrow-big-up-lines"></i>
-    <span>Améliorations</span>
-  </button>
-  <button id="toggleRunStatsBtn" class="hud-toggle-btn active" aria-label="Afficher/Masquer les statistiques" title="Stats du run">
-    <i class="ti ti-chart-bar"></i>
-  </button>
-  <button id="togglePerfHudBtn" class="hud-toggle-btn active" aria-label="Afficher/Masquer les performances" title="Performance">
-    <i class="ti ti-chart-line"></i>
-  </button>
-
-  <!-- Upgrades horizontal bar -->
-  <div id="upgradeBar" class="upgrade-bar" aria-label="Améliorations fragments"></div>
-
   <!-- Fullscreen canvas background -->
-  <canvas id="webgl2" class="fullscreen-canvas" width="1920" height="1080"></canvas>
-
-  <!-- Global Stats HUD (bottom-left, top position) -->
-  <div class="hud-card global-stats-hud">
-    <h2><i class="ti ti-trophy"></i> Statistiques globales</h2>
-    <div class="hud-card-content">
-      <div class="stat-row">
-        <span><i class="ti ti-target stat-icon"></i> Meilleure vague</span>
-        <span id="hudBestWave">1</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-skull stat-icon"></i> Kills totaux</span>
-        <span id="hudTotalKills">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-diamond stat-icon"></i> Fragments run</span>
-        <span id="hudRunFragments">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-droplet stat-icon"></i> Essence run</span>
-        <span id="hudRunEssence">0</span>
-      </div>
-    </div>
+  <div class="fixed inset-0 z-0">
+    <canvas id="webgl2" class="block w-full h-full"></canvas>
   </div>
 
-  <!-- Merged Run Status & Calculated Values HUD (bottom-left) -->
-  <div class="hud-card merged-run-hud">
-    <h2><i class="ti ti-sword"></i> Run en cours</h2>
-    <div class="hud-card-content">
-      <div class="stat-row"><span><i class="ti ti-wave-square stat-icon"></i> Vague</span><span id="wave">1</span>
-      </div>
-      <div class="stat-row"><span><i class="ti ti-heart stat-icon"></i> Vie</span><span id="hp">100</span></div>
-      <div class="stat-row tooltip" id="damageRow"><span><i class="ti ti-sword stat-icon"></i> Dégâts</span><span
-          id="dps">0</span></div>
-      <div class="stat-row"><span><i class="ti ti-flame stat-icon"></i> Critiques</span><span id="crit">0%</span>
-      </div>
-      <div class="stat-row"><span><i class="ti ti-shield stat-icon"></i> Bouclier</span><span id="shield">0%</span>
-      </div>
-      <div class="stat-row"><span><i class="ti ti-magnet stat-icon"></i> Collecte</span><span id="collect">0</span>
-      </div>
-      <div class="stat-row muted"><span><i class="ti ti-clock stat-icon"></i> Spawn</span><span
-          id="spawnRate">0/s</span></div>
-    </div>
-    <h2><i class="ti ti-calculator"></i> Valeurs calculées</h2>
-    <div class="hud-card-content">
-      <div class="stat-row">
-        <span><i class="ti ti-sword stat-icon"></i> DPS joueur</span>
-        <span id="hudLiveDps">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-clock stat-icon"></i> Spawn actuel</span>
-        <span id="hudLiveSpawnRate">0 /s</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-heart stat-icon"></i> HP ennemis</span>
-        <span id="hudLiveEnemyHp">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-speed stat-icon"></i> Vitesse ennemis</span>
-        <span id="hudLiveEnemySpeed">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-star stat-icon"></i> Chance élite</span>
-        <span id="hudLiveEliteChance">0%</span>
-      </div>
-    </div>
-  </div>
+  <!-- Main UI Container (Pointer events fall through to canvas where possible) -->
+  <div class="relative z-10 flex h-screen w-screen overflow-hidden pointer-events-none">
 
-  <!-- Performance HUD (bottom right) -->
-  <div id="performanceHud" class="performance-hud">
-    <div class="performance-header"><i class="ti ti-chart-line"></i> Performance</div>
-    <div class="performance-content">
-      <div class="perf-row">
-        <span class="perf-label">FPS</span>
-        <span id="hudFpsValue" class="perf-value">--</span>
+    <!-- Sidebar Navigation (Left) -->
+    <nav id="sidebar"
+      class="w-20 bg-base-300/90 backdrop-blur-md flex flex-col items-center py-6 gap-6 pointer-events-auto border-r border-white/5 shadow-2xl">
+      <!-- Logo -->
+      <div class="w-10 h-10 mb-2 text-primary hover:scale-110 transition-transform duration-300">
+        <img src="./public/assets/logo.svg" alt="Logo" class="w-full h-full drop-shadow-glow" />
       </div>
-      <div class="perf-row">
-        <span class="perf-label tooltip" data-tooltip="Temps du dernier rendu complet du jeu">Frame</span>
-        <span id="hudFrameTime" class="perf-value">-- ms</span>
-      </div>
-      <div class="perf-row">
-        <span class="perf-label tooltip" data-tooltip="Moyenne mobile sur les 240 dernières frames">FPS moyen</span>
-        <span id="hudAvgFps" class="perf-value">--</span>
-      </div>
-      <div class="perf-row tooltip" data-tooltip="Consommation mémoire du navigateur (si disponible)">
-        <span class="perf-label">Mémoire</span>
-        <span id="hudMemory" class="perf-value">--</span>
-      </div>
-      <button id="toggleFpsFromHud" class="ghost small"><i class="ti ti-chart-area"></i> Graph</button>
-      <canvas id="fpsGraphHud" class="fps-chart-hud" width="180" height="60"></canvas>
-    </div>
-  </div>
 
-  <!-- Active Weapons HUD (bottom right, below performance) -->
-  <div class="hud-card weapons-hud">
-    <h2><i class="ti ti-swords"></i> Armes actives</h2>
-    <div class="hud-card-content">
-      <div class="stat-row">
-        <span><i class="ti ti-check stat-icon"></i> Débloquées</span>
-        <span id="hudUnlockedWeapons">0</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-bolt stat-icon"></i> Arme principale</span>
-        <span id="hudMainWeapon">--</span>
-      </div>
-      <div class="stat-row">
-        <span><i class="ti ti-shield-checkered stat-icon"></i> Support actifs</span>
-        <span id="hudSupportWeapons">0</span>
-      </div>
-    </div>
-  </div>
+      <!-- Navigation Buttons (Restored) -->
+      <div class="flex flex-col gap-3 w-full px-2" id="navButtons">
+        <button
+          class="btn btn-square btn-ghost w-full h-12 hover:bg-white/10 hover:text-info transition-all group relative"
+          data-target="production">
+          <i class="ti ti-building-factory text-2xl"></i>
+          <span
+            class="absolute left-16 bg-base-300 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 z-50">Production</span>
+        </button>
 
-  <section class="block-workspace" data-block-workspace>
-    <div class="floating-block" data-block-id="resources">
-      <div class="stat-block collapsible">
-        <h2><i class="ti ti-diamonds"></i> Ressources</h2>
-        <div class="stat-row resource-row">
-          <span><i class="ti ti-droplet-filled resource-icon essence"></i> Essence</span>
-          <span id="essence" class="resource-value essence">0</span>
+        <!-- Upgrades Button Removed (Moved to Right Panel) -->
+
+        <button
+          class="btn btn-square btn-ghost w-full h-12 hover:bg-white/10 hover:text-warning transition-all group relative"
+          data-target="talents">
+          <i class="ti ti-bolt text-2xl"></i>
+          <span
+            class="absolute left-16 bg-base-300 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 z-50">Talents</span>
+        </button>
+
+        <div class="divider my-2 opacity-20"></div>
+
+        <button
+          class="btn btn-square btn-ghost w-full h-12 hover:bg-white/10 text-base-content/50 hover:text-base-content transition-all group relative"
+          data-target="tuning">
+          <i class="ti ti-adjustments text-2xl"></i>
+          <span
+            class="absolute left-16 bg-base-300 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 z-50">Tuning</span>
+        </button>
+
+        <button
+          class="btn btn-square btn-ghost w-full h-12 hover:bg-white/10 text-base-content/50 hover:text-base-content transition-all group relative"
+          data-target="guide">
+          <i class="ti ti-book text-2xl"></i>
+          <span
+            class="absolute left-16 bg-base-300 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10 z-50">Guide</span>
+        </button>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="mt-auto flex flex-col gap-2 w-full px-2">
+        <button id="toggleSound"
+          class="btn btn-square btn-sm btn-ghost w-full text-base-content/50 hover:text-base-content">
+          <i class="ti ti-volume"></i>
+        </button>
+        <button id="docBtn" class="btn btn-square btn-sm btn-ghost w-full text-base-content/50 hover:text-base-content">
+          <i class="ti ti-help"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col relative min-w-0">
+
+      <!-- Top Bar: Resources & Global Controls -->
+      <header
+        class="h-16 flex items-center justify-between px-6 bg-base-300/80 backdrop-blur-sm border-b border-white/5 pointer-events-auto">
+        <!-- Resource Display -->
+        <div class="flex items-center gap-8">
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-base-content/40 tracking-wider">ESSENCE</span>
+            <div class="flex items-center gap-2">
+              <i class="ti ti-droplet-filled text-primary text-lg"></i>
+              <span id="essence" class="font-mono text-xl font-bold text-base-content">0</span>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-base-content/40 tracking-wider">FRAGMENTS</span>
+            <div class="flex items-center gap-2">
+              <i class="ti ti-diamond-filled text-secondary text-lg"></i>
+              <span id="fragments" class="font-mono text-xl font-bold text-base-content">0</span>
+            </div>
+          </div>
+          <div class="h-8 w-px bg-white/10 mx-2"></div>
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-base-content/40 tracking-wider">GAIN PASSIF</span>
+            <span id="idleRate" class="font-mono text-base text-base-content/70">0 /s</span>
+          </div>
         </div>
-        <div class="stat-row resource-row">
-          <span><i class="ti ti-diamond-filled resource-icon fragments"></i> Fragments</span>
-          <span id="fragments" class="resource-value fragments">0</span>
+
+        <!-- Right Controls -->
+        <div class="flex items-center gap-3">
+          <div class="flex flex-col items-end mr-4">
+            <span class="text-xs font-bold text-base-content/40 tracking-wider">VAGUE <span id="wave">1</span></span>
+            <span class="text-xs text-error font-mono" id="hudLiveDps">0 DPS</span>
+          </div>
+          <button id="togglePerf" class="btn btn-sm btn-ghost text-xs font-normal opacity-70 hover:opacity-100">
+            <i class="ti ti-gauge"></i> Perf
+          </button>
+          <button id="pause" class="btn btn-sm btn-primary px-6 shadow-lg shadow-primary/20">
+            <i class="ti ti-player-pause"></i> PAUSE
+          </button>
         </div>
-        <div class="stat-row muted">
-          <span><i class="ti ti-clock-hour-4"></i> Gain passif</span>
-          <span id="idleRate">0 /s</span>
+      </header>
+
+      <!-- Top Persistent HUD (Run Stats & Prestige) - Relocated Here -->
+      <div
+        class="absolute top-20 left-6 z-40 pointer-events-auto flex flex-col gap-2 w-64 animate-in fade-in slide-in-from-top-4 duration-500">
+        <!-- Stats Card -->
+        <div class="bg-black/40 backdrop-blur-md border border-white/5 rounded-xl p-3 shadow-lg">
+          <h3 class="text-[10px] font-bold opacity-50 mb-2 uppercase tracking-widest text-base-content/70">Données du
+            Run</h3>
+          <div class="space-y-1 text-xs font-mono">
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-heart-rate-monitor mr-1"></i> Vie</span>
+              <span id="hp" class="text-error font-bold">100</span>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-alien mr-1"></i> Spawn</span>
+              <span id="spawnRate" class="text-warning">0/s</span>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-target mr-1"></i> Critique</span>
+              <span id="crit" class="text-info">0%</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="floating-block" data-block-id="run">
-      <div class="stat-block collapsible">
-        <h2><i class="ti ti-sword"></i> Run en cours</h2>
-        <div class="stat-row muted">Déplacé dans l'overlay de HUD.</div>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="weapons">
-      <div class="stat-block collapsible">
-        <h2><i class="ti ti-swords"></i> Armes</h2>
-        <div id="weaponsGrid" class="weapons-grid"></div>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="generators">
-      <div class="stat-block">
-        <h2><i class="ti ti-building-factory"></i> Production</h2>
-        <div id="generators" class="list"></div>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="quickHelp">
-      <div class="stat-block assist collapsible collapsed">
-        <h2><i class="ti ti-bulb"></i> Aide rapide</h2>
-        <ul id="quickHelpList" class="assist-list"></ul>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="milestones">
-      <div class="stat-block assist collapsible collapsed">
-        <h2><i class="ti ti-target"></i> Jalons</h2>
-        <ul id="milestoneList" class="assist-list milestones"></ul>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="talents">
-      <div class="stat-block collapsible">
-        <h2><i class="ti ti-bolt"></i> Talents</h2>
-        <div id="talents" class="talent-grid"></div>
-        <div class="talent-actions">
-          <p id="talentStatus" class="muted"></p>
-          <button id="resetTalents" class="ghost danger"><i class="ti ti-trash"></i> Reset: 1200</button>
+        <!-- Prestige Actions -->
+        <div class="flex gap-2">
+          <button id="softPrestige"
+            class="btn btn-sm btn-secondary flex-1 shadow-lg shadow-secondary/20 font-bold text-xs"
+            title="Consolider (Prestige)">
+            <i class="ti ti-sparkles"></i>
+          </button>
+          <button id="restartRun"
+            class="btn btn-sm btn-ghost btn-square text-error/50 hover:text-error hover:bg-error/10 border border-white/5"
+            title="Abandonner">
+            <i class="ti ti-skull"></i>
+          </button>
         </div>
       </div>
-    </div>
 
-    <div class="floating-block" data-block-id="upgrades">
-      <div class="stat-block">
-        <h2><i class="ti ti-arrow-big-up-lines"></i> Améliorations</h2>
-        <div id="upgrades" class="list"></div>
+      <!-- Panel Container (This is where the dynamic panels live) -->
+      <div id="panel-container"
+        class="absolute left-4 top-48 bottom-4 w-96 z-50 pointer-events-auto flex flex-col gap-4 hidden">
+
+        <!-- SECTION: Production -->
+        <div id="panel-production" class="panel-section hidden">
+          <!-- Generators injected here -->
+          <div id="generators" class="flex flex-col gap-2"></div>
+        </div>
+
+
+
+        <!-- SECTION: Talents -->
+        <div id="panel-talents" class="panel-section hidden">
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-xs opacity-50" id="talentStatus">0/0 Points</span>
+            <button id="resetTalents" class="btn btn-xs btn-error btn-outline">Reset</button>
+          </div>
+          <div id="talents" class="grid grid-cols-4 gap-2"></div>
+        </div>
+
+
+
+        <!-- SECTION: Tuning -->
+        <div id="panel-tuning" class="panel-section hidden">
+          <div id="tuningPanel"></div>
+        </div>
+
+        <!-- SECTION: Guide -->
+        <div id="panel-guide" class="panel-section hidden">
+          <ul class="steps steps-vertical text-xs w-full">
+            <li class="step step-primary">Investis Essence dans production passives</li>
+            <li class="step step-primary">Fragments pour upgrades de combat</li>
+            <li class="step">Consolidation = boost passif</li>
+          </ul>
+        </div>
+
       </div>
-    </div>
 
-    <div class="floating-block" data-block-id="prestige">
-      <div class="stat-block collapsible">
-        <h2><i class="ti ti-sparkles"></i> Prestige</h2>
-        <button id="softPrestige" class="secondary"><i class="ti ti-stack-2"></i> Consolidation</button>
-        <button id="restartRun" class="ghost"><i class="ti ti-rotate"></i> Relancer</button>
-      </div>
-    </div>
+      <!-- Right Panel: Upgrades -->
+      <div id="right-panel"
+        class="absolute right-4 top-20 bottom-4 w-80 z-40 flex flex-col items-end pointer-events-none">
+        <!-- Toggle/Header -->
+        <div class="pointer-events-auto mb-2 flex justify-end">
+          <button id="toggleRightPanel"
+            class="btn btn-sm btn-ghost bg-base-300/80 backdrop-blur border border-white/5 gap-2 shadow-lg">
+            <span class="text-xs uppercase font-bold opacity-70">Améliorations</span>
+            <i class="ti ti-chevron-down transition-transform" id="rightPanelIcon"></i>
+          </button>
+        </div>
 
-    <div class="floating-block" data-block-id="guide">
-      <div class="stat-block collapsible collapsed">
-        <h2><i class="ti ti-book"></i> Guide</h2>
-        <ul class="guide">
-          <li>> Investis Essence dans production passive</li>
-          <li>> Fragments pour upgrades de combat</li>
-          <li>> Consolidation = boost passif</li>
-          <li>> Tir automatique avec critiques</li>
-          <li>> Élites = + rewards + damage</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="floating-block" data-block-id="debug">
-      <div class="stat-block collapsible collapsed debug">
-        <h2><i class="ti ti-bug"></i> Debug</h2>
-        <div class="debug-grid">
-          <button id="debugGiveEssence" class="ghost">+1M ESS</button>
-          <button id="debugGiveFragments" class="ghost">+1M FRG</button>
-          <button id="debugSkipWave" class="ghost">+10 WAV</button>
-          <button id="debugNuke" class="ghost">NUKE</button>
+        <!-- Content -->
+        <div id="rightPanelContent"
+          class="w-full flex-1 bg-base-200/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl overflow-hidden flex flex-col pointer-events-auto transition-all duration-300 origin-top-right">
+          <div class="p-3 border-b border-white/5 bg-base-300/50 flex justify-between items-center">
+            <span class="text-xs font-bold uppercase opacity-50"><i class="ti ti-arrow-big-up-lines mr-1"></i>
+              Upgrades</span>
+            <div class="badge badge-neutral text-[10px] opacity-70"><i
+                class="ti ti-diamond-filled text-secondary mr-1"></i> Fragments</div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-3 custom-scrollbar">
+            <div id="upgrades" class="flex flex-col gap-2"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="floating-block" data-block-id="tuning">
-      <div class="stat-block collapsible collapsed debug">
-        <h2><i class="ti ti-adjustments"></i> Tuning</h2>
-        <div id="tuningPanel" class="tuning-panel"></div>
+      <!-- Weapons HUD (Persistent Bottom-Left) -->
+      <div id="weapons-hud"
+        class="absolute bottom-20 left-6 z-40 w-80 pointer-events-none flex flex-col-reverse gap-2 max-h-[50vh] overflow-visible">
+        <!-- Weapons Grid (Auto-injected) -->
+        <div id="weaponsGrid" class="flex flex-col-reverse gap-2 pointer-events-auto"></div>
       </div>
-    </div>
-  </section>
 
-  <!-- Bottom status overlay -->
-  <div class="status-overlay">
-    <p class="status" id="statusMessage"></p>
+      <!-- Bottom HUD Area (Persistent Stats) -->
+      <footer class="absolute bottom-6 left-6 right-6 flex justify-between items-end px-4 pointer-events-none">
+
+        <!-- Left: Performance & Debug -->
+        <div class="pointer-events-auto flex flex-col gap-2">
+          <div id="performanceHud" class="bg-black/40 backdrop-blur rounded p-2 text-xs font-mono text-white/50 hidden">
+            <div id="hudFpsValue">FPS: --</div>
+            <div id="hudFrameTime">FT: --</div>
+            <div id="hudMemory">MEM: --</div>
+            <canvas id="fpsGraphHud" width="100" height="30" class="mt-1 opacity-50"></canvas>
+          </div>
+
+          <!-- Quick Debug Buttons (Hidden by default unless in dev) -->
+          <div class="flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+            <button id="debugGiveEssence" class="btn btn-xs btn-ghost font-mono text-[10px]">+ESS</button>
+            <button id="debugGiveFragments" class="btn btn-xs btn-ghost font-mono text-[10px]">+FRG</button>
+            <button id="debugSkipWave" class="btn btn-xs btn-ghost font-mono text-[10px]">+WAV</button>
+            <button id="debugNuke" class="btn btn-xs btn-ghost font-mono text-[10px] text-error">KILL</button>
+          </div>
+        </div>
+
+        <!-- Center: Nothing or Notifications -->
+        <div class="pointer-events-auto">
+          <div id="statusMessage" class="badge badge-lg badge-neutral shadow-lg opacity-0 transition-opacity"></div>
+        </div>
+
+        <!-- Right: Version -->
+        <div class="pointer-events-auto flex items-center gap-2">
+          <div id="versionBadge" class="badge badge-ghost badge-sm text-xs opacity-50">v0.1.0</div>
+          <button id="resetProgress" class="btn btn-xs btn-circle btn-ghost text-error/30 hover:text-error"
+            title="Hard Reset">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+
+      </footer>
+
+    </main>
   </div>
 
-  <footer class="footer">
-    <p>Made for fun · Pas de serveur · Tout reste dans tes cookies</p>
-  </footer>
-
-  <div class="version-container">
-    <button id="docBtn" class="doc-btn" aria-label="Ouvrir la documentation"><i class="ti ti-book-2"></i></button>
-    <div id="versionBadge" class="version-badge"></div>
-  </div>
-  <div id="assistBubbles" class="assist-bubbles"></div>
-
-  <dialog id="docDialog" class="doc-dialog" aria-labelledby="docDialogTitle">
-    <div class="doc-dialog-header">
-      <h2 id="docDialogTitle"><i class="ti ti-book-2"></i> Documentation</h2>
-      <button class="doc-close-btn" aria-label="Fermer"><i class="ti ti-x"></i></button>
+  <!-- Documentation Dialog (Preserved) -->
+  <dialog id="docDialog" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl bg-base-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg"><i class="ti ti-book"></i> Documentation</h3>
+        <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost"><i class="ti ti-x"></i></button></form>
+      </div>
+      <div class="tabs tabs-boxed mb-4" id="docTabs">
+        <a class="tab tab-active" data-tab="code">Code</a>
+        <a class="tab" data-tab="wiki">Wiki</a>
+        <a class="tab" data-tab="changelog">Versions</a>
+      </div>
+      <div id="docContent" class="h-[60vh] overflow-y-auto custom-scrollbar p-2"></div>
     </div>
-    <div class="doc-tabs" id="docTabs">
-      <button class="doc-tab" data-tab="code"><span class="tab-icon"><i class="ti ti-code"></i></span><span
-          class="tab-label">Code</span></button>
-      <button class="doc-tab" data-tab="wiki"><span class="tab-icon"><i class="ti ti-file-text"></i></span><span
-          class="tab-label">Wiki</span></button>
-      <button class="doc-tab" data-tab="changelog"><span class="tab-icon"><i class="ti ti-list-check"></i></span><span
-          class="tab-label">Versions</span></button>
-      <button class="doc-tab" data-tab="roadmap"><span class="tab-icon"><i class="ti ti-map"></i></span><span
-          class="tab-label">Roadmap</span></button>
-    </div>
-    <div class="doc-content" id="docContent" role="region" aria-live="polite"></div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
   </dialog>
-
-  <!-- Weapons Bar (bottom of screen) -->
-  <div id="weaponsBar" class="weapons-bar">
-    <div class="weapons-bar-header">
-      <i class="ti ti-swords"></i> Armes <span class="currency-hint">(💎 Fragments)</span>
-    </div>
-    <div id="weaponsGrid" class="weapons-bar-grid"></div>
-  </div>
-
-  <script type="module" src="./src/main.ts"></script>
+  </dialog>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 
 </html>

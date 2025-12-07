@@ -29,14 +29,12 @@ import {
   updatePerformanceHud,
   type PerformanceHudElements
 } from "./systems/performance.ts";
-import { initCollapsibleSections } from "./systems/collapsible.ts";
-import { initHudToggle } from "./systems/hudToggle.ts";
+import { initSidebarSystem } from "./systems/sidebar.ts";
 import {
   renderGenerators as renderGeneratorsUI,
   renderUpgrades as renderUpgradesUI,
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
-import { initFloatingBlocks } from "./systems/floatingBlocks.ts";
 import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
 import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud";
 import { initAdditionalHuds, updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds";
@@ -51,10 +49,10 @@ import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, Hu
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
-  left: 16,
+  left: 80, // Sidebar width
   right: 16,
-  top: 60,
-  bottom: 32
+  top: 64, // Header height
+  bottom: 0
 };
 
 // Canvas and renderer setup
@@ -104,6 +102,7 @@ const damageRow = document.getElementById("damageRow");
 const spawnRateEl = document.getElementById("spawnRate");
 const statusEl = document.getElementById("statusMessage");
 const generatorsContainer = document.getElementById("generators") as HTMLElement;
+// Fallback to 'upgrades' provided by new HTML
 const upgradesContainer = (document.getElementById("upgradeBar") || document.getElementById("upgrades")) as HTMLElement;
 const talentsContainer = document.getElementById("talents") as HTMLElement | null;
 const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
@@ -165,9 +164,8 @@ const uiRefs = {
 };
 
 function updateUiTopMargin(): void {
-  const headerH = topbarEl?.clientHeight || 60;
-  const barH = upgradeBarEl?.offsetHeight || 0;
-  UI_MARGINS.top = headerH + (barH > 0 ? barH + 8 : 0);
+  // New UI has fixed header size approx 64px
+  UI_MARGINS.top = 64;
 }
 
 
@@ -175,10 +173,10 @@ function resizeCanvas(center = false): void {
   updateUiTopMargin();
   const width = window.innerWidth;
   const height = window.innerHeight;
-  buildBackground(width, height);
-  webgl2Renderer?.resize(width, height);
   webgl2Canvas.width = width;
   webgl2Canvas.height = height;
+  buildBackground(width, height);
+  webgl2Renderer?.resize(width, height);
 
   if (center) {
     // Center in playable area (accounting for UI margins)
@@ -325,7 +323,9 @@ function prestige(): void {
   state.resources.idleMultiplier *= bonus;
   refreshGeneratorRatesLocal();
   softResetLocal();
-  state.prestigeCooldown = 10;
+  refreshGeneratorRatesLocal();
+  softResetLocal();
+  // state.prestigeCooldown = 10; // Disabled for testing
   playPrestige();
   assistUi.recordPrestige();
   saveGameLocal();
@@ -335,7 +335,7 @@ function prestige(): void {
 function initUI(): void {
   const syncSoundToggle = (): void => {
     if (!toggleSoundBtn) return;
-    toggleSoundBtn.textContent = state.audio.enabled ? "🔊 Son ON" : "🔇 Son coupé";
+    toggleSoundBtn.innerHTML = state.audio.enabled ? '<i class="ti ti-volume"></i>' : '<i class="ti ti-volume-off"></i>';
   };
 
   const armAudioUnlock = (): void => {
@@ -349,7 +349,7 @@ function initUI(): void {
 
   pauseBtn?.addEventListener("click", () => {
     state.running = !state.running;
-    if (pauseBtn) pauseBtn.textContent = state.running ? "⏸ Pause" : "▶️ Reprendre";
+    if (pauseBtn) pauseBtn.innerHTML = state.running ? '<i class="ti ti-player-pause"></i> PAUSE' : '<i class="ti ti-player-play"></i> REPRENDRE';
     saveGameLocal();
   });
 
@@ -371,7 +371,7 @@ function initUI(): void {
   });
 
   softPrestigeBtn?.addEventListener("click", () => {
-    if (state.prestigeCooldown > 0) return;
+    // if (state.prestigeCooldown > 0) return; // Disabled for testing
     prestige();
   });
 
@@ -398,7 +398,7 @@ function initUI(): void {
     document.body.classList.toggle("performance-mode", state.visualsLow);
 
     buildBackground(webgl2Canvas.width, webgl2Canvas.height);
-    webgl2Renderer?.setEnabled(!state.visualsLow);
+    // REMOVED: webgl2Renderer?.setEnabled(!state.visualsLow);
     playUiToggle();
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
@@ -444,8 +444,8 @@ function initUI(): void {
   initWeaponsUI();
   renderWeapons(state);
 
-  // Initialize floating workspace controls (drag + resize)
-  initFloatingBlocks();
+  // Initialize Sidebar System (Replacing Floating Blocks)
+  initSidebarSystem();
 
   // After layout, recompute UI top margin and clamp bounds
   updateUiTopMargin();
@@ -467,17 +467,31 @@ function initUI(): void {
     }
   });
 
-  // Initialize collapsible sections with state persistence
-  initCollapsibleSections();
-
-  // Initialize HUD toggle buttons
-  initHudToggle();
-
   // Initialize live values HUD
   initLiveValuesHud();
 
   // Initialize additional HUDs
   initAdditionalHuds();
+
+  // Right Panel Toggle Logic
+  const toggleRightPanelBtn = document.getElementById("toggleRightPanel");
+  const rightPanelContent = document.getElementById("rightPanelContent");
+  const rightPanelIcon = document.getElementById("rightPanelIcon");
+  let rightPanelOpen = true;
+
+  toggleRightPanelBtn?.addEventListener("click", () => {
+    rightPanelOpen = !rightPanelOpen;
+    if (rightPanelContent) {
+      if (rightPanelOpen) {
+        rightPanelContent.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+      } else {
+        rightPanelContent.classList.add("opacity-0", "scale-95", "pointer-events-none");
+      }
+    }
+    if (rightPanelIcon) {
+      rightPanelIcon.style.transform = rightPanelOpen ? "rotate(0deg)" : "rotate(180deg)";
+    }
+  });
 }
 
 async function bootstrap(): Promise<void> {
@@ -504,8 +518,8 @@ async function bootstrap(): Promise<void> {
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
   assistUi = initAssist(state, {
-    quickHelpList,
-    milestoneList,
+    quickHelpList: null, // Removed in UI redesign
+    milestoneList: null, // Removed in UI redesign
     bubbleContainer: assistBubbles,
     anchors: {
       arena: webgl2Canvas,

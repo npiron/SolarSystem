@@ -144,7 +144,15 @@ function fire(state: GameState): void {
   const stats = getWeaponStats(def, level);
 
   const target = nearestEnemy(state);
-  const count = Math.max(1, stats.projectiles ?? state.player.projectiles);
+  // Main weapon count: combine base stats, weapon upgrades, and player bonuses
+  // state.player.projectiles includes base (1) + talents
+  // stats.projectiles includes base (1) + weapon levels
+  // We combine the bonuses from both sources
+  const weaponStatsProjectiles = stats.projectiles ?? 1;
+  const playerBonus = Math.max(0, state.player.projectiles - 1);
+  const weaponBonus = Math.max(0, weaponStatsProjectiles - 1);
+  const count = 1 + playerBonus + weaponBonus;
+
   // Base direction: toward nearest enemy, or forward if no enemies
   const baseAngle = target
     ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
@@ -189,8 +197,11 @@ function fireOrbit(state: GameState): void {
 
   const { maxSpeed, maxLifetime } = getTuning().bullet;
   const { maxBullets } = getTuning().fx;
+  const orbitConfig = getTuning().orbit;
 
-  const count = Math.max(1, stats.projectiles ?? 8);
+  // Use the same calculation as visuals to ensure what you see is what you hit with
+  const count = calculateOrbitProjectiles(state, orbitConfig);
+
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
   const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
 
@@ -631,7 +642,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   const { attractionSpeed, collectDistanceMultiplier } = getTuning().fragments;
   const { maxFragments } = getTuning().fx;
   const { fragmentGravity, fragmentDrag, fragmentBounce } = getTuning().physics;
-  
+
   // Pre-calculate drag factor for better performance (per-frame constant)
   const dragFactor = 1 - (1 - fragmentDrag) * dt * 60;
 
@@ -640,25 +651,25 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const dx = state.player.x - f.x;
     const dy = state.player.y - f.y;
     const dist = Math.hypot(dx, dy) || 1;
-    
+
     // Apply gravity (downward force)
     f.vy += fragmentGravity * dt;
-    
+
     // Apply air drag to slow fragments over time (optimized linear approximation)
     f.vx *= dragFactor;
     f.vy *= dragFactor;
-    
+
     // Attraction force when in collection radius
     if (dist < state.player.collectRadius) {
       const attractionForce = attractionSpeed * dt;
       f.vx += (dx / dist) * attractionForce;
       f.vy += (dy / dist) * attractionForce;
     }
-    
+
     // Update position
     f.x += f.vx * dt;
     f.y += f.vy * dt;
-    
+
     // Ground bounce - prevent fragments from falling off screen
     const groundY = canvas.height - 30;
     if (f.y > groundY) {
@@ -666,7 +677,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       f.vy = -Math.abs(f.vy) * fragmentBounce; // Bounce with energy loss
       f.vx *= 0.9; // Friction on ground contact
     }
-    
+
     // Wall bounces for more dynamic physics
     const leftWall = 30;
     const rightWall = canvas.width - 30;
@@ -677,7 +688,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       f.x = rightWall;
       f.vx = -Math.abs(f.vx) * fragmentBounce;
     }
-    
+
     const collectDist = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
     if (dist < collectDist) {
       registerFragmentGain(state, f.value, f.x, f.y - 6);
@@ -694,12 +705,12 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
 
   const newEnemyProjectiles: EnemyProjectile[] = [];
   const { enemyAcceleration, enemyMaxSpeedRatio } = getTuning().physics;
-  
+
   state.enemies.forEach((e) => {
     // Initialize velocity if not present (for existing enemies)
     if (e.vx === undefined) e.vx = 0;
     if (e.vy === undefined) e.vy = 0;
-    
+
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
     const variantDef = getVariantDefinition(e.variant);
 
@@ -707,15 +718,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const distance = Math.hypot(state.player.x - e.x, state.player.y - e.y);
       const desiredRange = 240;
       const approachDirection = distance > desiredRange ? 1 : -0.65;
-      
+
       // Target velocity for artillery
       const targetVx = Math.cos(angle) * e.speed * approachDirection;
       const targetVy = Math.sin(angle) * e.speed * approachDirection;
-      
+
       // Accelerate towards target velocity
       e.vx += (targetVx - e.vx) * enemyAcceleration * dt;
       e.vy += (targetVy - e.vy) * enemyAcceleration * dt;
-      
+
       // Apply velocity with speed clamping
       const currentSpeed = Math.hypot(e.vx, e.vy);
       const maxSpeed = e.speed * enemyMaxSpeedRatio;
@@ -724,7 +735,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         e.vx *= scale;
         e.vy *= scale;
       }
-      
+
       e.x += e.vx * dt;
       e.y += e.vy * dt;
 
@@ -746,11 +757,11 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       // Standard chasing behavior with acceleration
       const targetVx = Math.cos(angle) * e.speed;
       const targetVy = Math.sin(angle) * e.speed;
-      
+
       // Accelerate towards target velocity for smooth movement
       e.vx += (targetVx - e.vx) * enemyAcceleration * dt;
       e.vy += (targetVy - e.vy) * enemyAcceleration * dt;
-      
+
       // Apply velocity with speed clamping
       const currentSpeed = Math.hypot(e.vx, e.vy);
       const maxSpeed = e.speed * enemyMaxSpeedRatio;
@@ -759,7 +770,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         e.vx *= scale;
         e.vy *= scale;
       }
-      
+
       e.x += e.vx * dt;
       e.y += e.vy * dt;
     }
@@ -841,7 +852,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   // Boss combat logic
   if (state.bossActive && state.currentBoss) {
     const boss = state.currentBoss;
-    
+
     // Initialize velocity if not present
     if (boss.vx === undefined) boss.vx = 0;
     if (boss.vy === undefined) boss.vy = 0;
@@ -850,12 +861,12 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const angle = Math.atan2(state.player.y - boss.y, state.player.x - boss.x);
     const targetVx = Math.cos(angle) * boss.speed;
     const targetVy = Math.sin(angle) * boss.speed;
-    
+
     // Boss has slower acceleration for more imposing movement
     const bossAcceleration = enemyAcceleration * 0.6;
     boss.vx += (targetVx - boss.vx) * bossAcceleration * dt;
     boss.vy += (targetVy - boss.vy) * bossAcceleration * dt;
-    
+
     // Apply velocity
     boss.x += boss.vx * dt;
     boss.y += boss.vy * dt;
