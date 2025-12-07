@@ -22,15 +22,17 @@ function getWeaponLevel(state: GameState, id: WeaponId): number {
 
 /**
  * Calculate final damage for a bullet, applying crit chance and using bullet damage if available
+ * @returns Object with damage amount and whether a crit occurred
  */
 function calculateBulletDamage(
   bulletDamage: number | undefined,
   playerStats: PlayerStats,
   playerBaseDamage: number
-): number {
+): { damage: number; isCrit: boolean } {
   const baseDamage = bulletDamage ?? playerBaseDamage;
-  const crit = Math.random() < playerStats.critChance;
-  return crit ? baseDamage * playerStats.critMultiplier : baseDamage;
+  const isCrit = Math.random() < playerStats.critChance;
+  const damage = isCrit ? baseDamage * playerStats.critMultiplier : baseDamage;
+  return { damage, isCrit };
 }
 
 function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
@@ -842,12 +844,11 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         const dx = enemy.x - b.x;
         const dy = enemy.y - b.y;
         if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
-          const dmg = calculateBulletDamage(b.damage, state.player, state.player.damage);
-          enemy.hp -= dmg;
+          const { damage, isCrit } = calculateBulletDamage(b.damage, state.player, state.player.damage);
+          enemy.hp -= damage;
           enemy.hitThisFrame = true;
-          if (!state.visualsLow) {
-            const crit = Math.random() < state.player.critChance;
-            if (crit) addFloatingText(state, "CRIT", enemy.x, enemy.y - 4, "#f472b6");
+          if (!state.visualsLow && isCrit) {
+            addFloatingText(state, "CRIT", enemy.x, enemy.y - 4, "#f472b6");
           }
           if (b.pierce > 0) {
             b.pierce -= 1;
@@ -928,11 +929,10 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const dx = boss.x - b.x;
       const dy = boss.y - b.y;
       if (dx * dx + dy * dy < (boss.radius + 4) ** 2) {
-        const dmg = calculateBulletDamage(b.damage, state.player, state.player.damage);
-        boss.hp -= dmg;
-        if (!state.visualsLow) {
-          const crit = Math.random() < state.player.critChance;
-          if (crit) addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
+        const { damage, isCrit } = calculateBulletDamage(b.damage, state.player, state.player.damage);
+        boss.hp -= damage;
+        if (!state.visualsLow && isCrit) {
+          addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
         }
         if (b.pierce > 0) {
           b.pierce -= 1;
