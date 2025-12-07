@@ -78,24 +78,29 @@ describe("combat", () => {
 
     describe("orbital weapon", () => {
         it("should fire orbital projectiles when orbitTimer expires", () => {
-            state.player.orbitProjectiles = 3;
+            // circularBlast weapon has 8 base projectiles
+            // player starts with orbitProjectiles = 4 (base value)
+            // Set to 5 to test that bonus projectiles are added
+            state.player.orbitProjectiles = 5;
             state.player.orbitTimer = 0;
             state.player.fireTimer = 100; // Prevent regular fire
 
             updateCombat(state, 0.1, canvas);
 
-            // Should have only orbit fire
-            expect(state.bullets.length).toBe(3);
+            // Should fire: 8 (weapon base) + 1 (player bonus: 5 - 4) = 9
+            expect(state.bullets.length).toBe(9);
         });
 
         it("should distribute orbital projectiles evenly around player", () => {
-            state.player.orbitProjectiles = 4;
+            // circularBlast weapon has 8 base projectiles
+            state.player.orbitProjectiles = 4; // No bonus (base value)
             state.player.orbitTimer = 0;
             state.player.fireTimer = 100; // Prevent regular fire
 
             updateCombat(state, 0.1, canvas);
 
-            expect(state.bullets.length).toBe(4);
+            // Should fire 8 projectiles (weapon base)
+            expect(state.bullets.length).toBe(8);
 
             // Check that angles are distributed
             const angles = state.bullets.map(b => Math.atan2(b.dy, b.dx));
