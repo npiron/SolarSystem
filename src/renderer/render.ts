@@ -12,7 +12,7 @@ import { getEnemyColorWebGL, getFragmentVisuals, getVariantHaloColor } from "./e
 import { formatNumber } from "../systems/hud.ts";
 
 // Shape definitions for different entity types
-const PLAYER_SHAPE = { sides: 6, rotation: Math.PI / 6 };
+const PLAYER_SHAPE = { sides: 24, rotation: 0 };
 const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
 const ORBIT_SHAPE = { sides: 7, rotation: Math.PI / 7 };
@@ -74,9 +74,9 @@ export function render(state: GameState, context: RenderContext): void {
     const playerRotation = PLAYER_SHAPE.rotation + oscillate(time, 1.8, 0.3 * (0.4 + playerMotion * 0.6));
 
     // Enhanced halo colors with stronger glow
-    const auraHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.4 + oscillate(time, 1.2, 0.12) } : undefined;
-    const collectRing = { color: webglColors.collectRing, scale: 1.1 };
-    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.5 + oscillate(time, 2.2, 0.15) } : undefined;
+    const auraHalo = allowFx ? { color: webglColors.eventHorizon, scale: 1.45 + oscillate(time, 1.1, 0.1) } : undefined;
+    const collectRing = { color: webglColors.collectRing, scale: 1.15 };
+    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.55 + oscillate(time, 2.2, 0.15) } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
     const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 2.2 } : undefined;
 
@@ -86,7 +86,7 @@ export function render(state: GameState, context: RenderContext): void {
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: (state.player.radius + 16) * (1 + oscillate(time, 1.1, 0.04)),
+      radius: (state.player.radius + 18) * (1 + oscillate(time, 1.1, 0.05)),
       color: webglColors.playerAura,
       sides: PLAYER_SHAPE.sides,
       rotation: playerRotation,
@@ -161,15 +161,47 @@ export function render(state: GameState, context: RenderContext): void {
       }
     }
 
-    // Render player
+    // Accretion disk layers
+    const diskPulse = 1 + oscillate(time, 2.6, 0.1 + playerMotion * 0.05);
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: state.player.radius * playerScale,
-      color: webglColors.player,
+      radius: state.player.radius * (1.35 * playerScale * diskPulse),
+      color: webglColors.accretionOuter,
       sides: PLAYER_SHAPE.sides,
-      rotation: playerRotation,
+      rotation: -playerRotation * 0.6,
+      halo: allowFx ? { color: webglColors.accretionOuter, scale: 1.8 + playerMotion * 0.4 } : undefined
+    });
+
+    renderer.pushCircle({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.radius * (1.05 * playerScale * diskPulse),
+      color: webglColors.accretionInner,
+      sides: PLAYER_SHAPE.sides,
+      rotation: playerRotation * 0.8,
       halo: playerHalo
+    });
+
+    // Event horizon and singularity core
+    const horizonPulse = 1 + oscillate(time, 1.4, 0.06);
+    renderer.pushCircle({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.radius * playerScale * horizonPulse,
+      color: webglColors.eventHorizon,
+      sides: PLAYER_SHAPE.sides,
+      rotation: -playerRotation * 0.5,
+      halo: allowFx ? { color: webglColors.playerHalo, scale: 1.2 + oscillate(time, 1.7, 0.1) } : undefined
+    });
+
+    renderer.pushCircle({
+      x: state.player.x,
+      y: state.player.y,
+      radius: state.player.radius * 0.6 * playerScale,
+      color: webglColors.playerCore,
+      sides: PLAYER_SHAPE.sides,
+      rotation: playerRotation
     });
 
     // Render bullets
