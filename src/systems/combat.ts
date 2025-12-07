@@ -144,7 +144,10 @@ function fire(state: GameState): void {
   const stats = getWeaponStats(def, level);
 
   const target = nearestEnemy(state);
-  const count = Math.max(1, stats.projectiles ?? state.player.projectiles);
+  // Combine weapon projectiles with player bonus projectiles
+  const weaponProjectiles = Math.floor(stats.projectiles ?? 1);
+  const playerBonusProjectiles = Math.max(0, state.player.projectiles - 1);
+  const count = weaponProjectiles + playerBonusProjectiles;
   // Base direction: toward nearest enemy, or forward if no enemies
   const baseAngle = target
     ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
@@ -155,6 +158,11 @@ function fire(state: GameState): void {
 
   const bulletSpeed = Math.min(state.player.bulletSpeed, maxSpeed);
   const lifetime = Math.min(1.2 * state.player.range, maxLifetime);
+
+  // Calculate combined damage: weapon base damage × player damage multiplier
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = state.player.damage / baseDamage;
+  const combinedDamage = stats.damage * playerDamageMultiplier;
 
   // Shotgun spread: all projectiles fire in a cone toward the target
   const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
@@ -171,7 +179,7 @@ function fire(state: GameState): void {
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
       pierce: state.player.pierce,
-      damage: stats.damage // Use weapon damage
+      damage: combinedDamage
     };
     state.bullets.push(bullet);
   }
@@ -190,9 +198,19 @@ function fireOrbit(state: GameState): void {
   const { maxSpeed, maxLifetime } = getTuning().bullet;
   const { maxBullets } = getTuning().fx;
 
-  const count = Math.max(1, stats.projectiles ?? 8);
+  // Combine weapon projectiles with player orbit bonus projectiles
+  const weaponProjectiles = Math.floor(stats.projectiles ?? 8);
+  const baseOrbitProjectiles = getTuning().player.orbitProjectiles;
+  const playerBonusProjectiles = Math.max(0, state.player.orbitProjectiles - baseOrbitProjectiles);
+  const count = weaponProjectiles + playerBonusProjectiles;
+
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
   const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
+
+  // Calculate combined damage: weapon base damage × player damage multiplier
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = state.player.damage / baseDamage;
+  const combinedDamage = stats.damage * playerDamageMultiplier;
 
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= maxBullets) break;
@@ -205,7 +223,7 @@ function fireOrbit(state: GameState): void {
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
       pierce: state.player.pierce,
-      damage: stats.damage
+      damage: combinedDamage
     };
     state.bullets.push(bullet);
   }
@@ -225,6 +243,11 @@ function fireLightning(state: GameState): void {
   const range = stats.range ?? 200;
   const chainCount = stats.chainCount ?? 2;
 
+  // Calculate combined damage: weapon base damage × player damage multiplier
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = state.player.damage / baseDamage;
+  const combinedDamage = stats.damage * playerDamageMultiplier;
+
   // Find enemies within range
   const inRange = state.enemies.filter(e => {
     const dx = e.x - state.player.x;
@@ -239,7 +262,7 @@ function fireLightning(state: GameState): void {
   const hitEnemies: Enemy[] = [primaryTarget];
 
   // Apply damage to primary target
-  primaryTarget.hp -= stats.damage;
+  primaryTarget.hp -= combinedDamage;
   primaryTarget.hitThisFrame = true;
 
   // Create lightning bolt visual
@@ -282,7 +305,7 @@ function fireLightning(state: GameState): void {
     if (!nearest) break;
 
     // Apply chain damage (reduced)
-    const chainDamage = stats.damage * 0.6;
+    const chainDamage = combinedDamage * 0.6;
     nearest.hp -= chainDamage;
     nearest.hitThisFrame = true;
     hitEnemies.push(nearest);
@@ -335,9 +358,13 @@ function updateLaser(state: GameState, dt: number): void {
     life: 0.1
   });
 
+  // Calculate combined DPS: weapon base DPS × player damage multiplier
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = state.player.damage / baseDamage;
+  const dps = stats.damage * playerDamageMultiplier;
+
   // Apply DPS to all enemies on the beam path
   const beamWidth = 8;
-  const dps = stats.damage;
 
   for (const enemy of state.enemies) {
     // Point-to-line distance
@@ -381,6 +408,11 @@ function fireMissiles(state: GameState): void {
   const def = getWeaponDef('missiles');
   const stats = getWeaponStats(def, level);
 
+  // Calculate combined damage: weapon base damage × player damage multiplier
+  const baseDamage = getTuning().player.damage;
+  const playerDamageMultiplier = state.player.damage / baseDamage;
+  const combinedDamage = stats.damage * playerDamageMultiplier;
+
   const count = Math.max(1, Math.floor(stats.projectiles ?? 1));
 
   for (let i = 0; i < count; i++) {
@@ -410,7 +442,7 @@ function fireMissiles(state: GameState): void {
       dy: (dy / dist) * speed,
       targetId: i, // Just an identifier
       life: 4,
-      damage: stats.damage
+      damage: combinedDamage
     };
 
     state.missiles.push(missile);
@@ -797,7 +829,10 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         const dy = enemy.y - b.y;
         if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
           const crit = Math.random() < state.player.critChance;
-          const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+          // Use bullet's damage (which already includes weapon damage × player multiplier)
+          const dmg = b.damage !== undefined 
+            ? (crit ? b.damage * state.player.critMultiplier : b.damage)
+            : (crit ? state.player.damage * state.player.critMultiplier : state.player.damage);
           enemy.hp -= dmg;
           enemy.hitThisFrame = true;
           if (!state.visualsLow) {
@@ -883,7 +918,10 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const dy = boss.y - b.y;
       if (dx * dx + dy * dy < (boss.radius + 4) ** 2) {
         const crit = Math.random() < state.player.critChance;
-        const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+        // Use bullet's damage (which already includes weapon damage × player multiplier)
+        const dmg = b.damage !== undefined 
+          ? (crit ? b.damage * state.player.critMultiplier : b.damage)
+          : (crit ? state.player.damage * state.player.critMultiplier : state.player.damage);
         boss.hp -= dmg;
         if (!state.visualsLow) {
           if (crit) addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
