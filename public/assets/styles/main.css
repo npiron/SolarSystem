@@ -200,6 +200,79 @@ body {
   gap: 0.5rem;
 }
 
+.topbar {
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.top-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-dropdown {
+  position: relative;
+  background: oklch(var(--b2, 0.16 0 0) / 70%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 12%);
+  border-radius: var(--rounded-btn);
+  box-shadow: 0 4px 20px oklch(var(--b2, 0.16 0 0) / 35%);
+}
+
+.menu-dropdown summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+  font-weight: var(--font-semibold);
+}
+
+.menu-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-dropdown[open] summary {
+  color: oklch(var(--p, 0.6 0.2 260));
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 320px;
+  max-height: 70vh;
+  overflow: auto;
+  background: oklch(var(--b1, 0.2 0 0) / 95%);
+  border: 1px solid oklch(var(--bc, 0.9 0 0) / 12%);
+  border-radius: var(--rounded-box);
+  padding: 0.75rem;
+  box-shadow: 0 10px 40px oklch(var(--b1, 0.2 0 0) / 45%);
+  backdrop-filter: blur(12px);
+  z-index: 120;
+}
+
+.menu-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  color: oklch(var(--bc, 0.9 0 0) / 70%);
+  margin-bottom: 0.5rem;
+}
+
+.menu-panel-header .hint {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.menu-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
 /* ===== BLOCK WORKSPACE ===== */
 .block-workspace {
   position: fixed;
