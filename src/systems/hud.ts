@@ -106,7 +106,7 @@ export function updateHud(state: GameState, { elements, uiRefs, generators, upgr
   if (hpEl) hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
   const avgDamage = state.player.damage * (1 + state.player.critChance * (state.player.critMultiplier - 1));
   const dps = (avgDamage / state.player.fireDelay) * state.player.projectiles;
-  if (dpsEl) dpsEl.textContent = dps.toFixed(1);
+  if (dpsEl) dpsEl.textContent = formatNumber(dps);
   const shotsPerSecond = 1 / state.player.fireDelay;
   const critPercent = Math.round(state.player.critChance * 100);
   if (damageRow) {

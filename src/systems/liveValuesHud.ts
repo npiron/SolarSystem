@@ -5,6 +5,7 @@
 
 import { calculateLiveValues } from "./tuningPanel.ts";
 import type { GameState } from "../types/index.ts";
+import { formatNumber } from "./hud.ts";
 
 interface HudElements {
   dps: HTMLElement | null;
@@ -42,7 +43,7 @@ export function updateLiveValuesHud(state: GameState): void {
   const liveValues = calculateLiveValues(state);
 
   if (hudElements.dps) {
-    hudElements.dps.textContent = liveValues.playerDps.toFixed(1);
+    hudElements.dps.textContent = formatNumber(liveValues.playerDps);
   }
 
   if (hudElements.spawnRate) {

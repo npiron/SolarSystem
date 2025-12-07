@@ -11,6 +11,7 @@ import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
 import { loadTuning } from "./config/tuning.ts";
 import { initAssist } from "./systems/assist.ts";
+import { PanelManager } from "./systems/panelManager.ts";
 import { debugPing, formatNumber, updateHud } from "./systems/hud.ts";
 import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
 import {
@@ -49,7 +50,7 @@ import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, Hu
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
-  left: 80, // Sidebar width
+  left: 0,
   right: 16,
   top: 64, // Header height
   bottom: 0
@@ -444,8 +445,17 @@ function initUI(): void {
   initWeaponsUI();
   renderWeapons(state);
 
-  // Initialize Sidebar System (Replacing Floating Blocks)
-  initSidebarSystem();
+  // Initialize Panel Manager
+  new PanelManager();
+
+  // Wire up Guide button
+  const toggleGuideBtn = document.getElementById("toggle-guide");
+  if (toggleGuideBtn && docDialog) {
+    toggleGuideBtn.addEventListener("click", () => {
+      (docDialog as HTMLDialogElement).showModal();
+      playUiToggle();
+    });
+  }
 
   // After layout, recompute UI top margin and clamp bounds
   updateUiTopMargin();
@@ -470,28 +480,8 @@ function initUI(): void {
   // Initialize live values HUD
   initLiveValuesHud();
 
-  // Initialize additional HUDs
+  // Initialize additional huds
   initAdditionalHuds();
-
-  // Right Panel Toggle Logic
-  const toggleRightPanelBtn = document.getElementById("toggleRightPanel");
-  const rightPanelContent = document.getElementById("rightPanelContent");
-  const rightPanelIcon = document.getElementById("rightPanelIcon");
-  let rightPanelOpen = true;
-
-  toggleRightPanelBtn?.addEventListener("click", () => {
-    rightPanelOpen = !rightPanelOpen;
-    if (rightPanelContent) {
-      if (rightPanelOpen) {
-        rightPanelContent.classList.remove("opacity-0", "scale-95", "pointer-events-none");
-      } else {
-        rightPanelContent.classList.add("opacity-0", "scale-95", "pointer-events-none");
-      }
-    }
-    if (rightPanelIcon) {
-      rightPanelIcon.style.transform = rightPanelOpen ? "rotate(0deg)" : "rotate(180deg)";
-    }
-  });
 }
 
 async function bootstrap(): Promise<void> {

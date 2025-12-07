@@ -6,6 +6,7 @@ import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
 import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
+import { BASE_PLAYER_STATS } from "../config/player.ts";
 
 // Helper to check if a weapon is unlocked
 function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
@@ -148,6 +149,11 @@ function fire(state: GameState): void {
   // state.player.projectiles includes base (1) + talents
   // stats.projectiles includes base (1) + weapon levels
   // We combine the bonuses from both sources
+  // NOTE: getGlobalMultipliers uses state.player.projectiles VS BASE, so let's stick to the existing logic 
+  // which works fine, but we MUST apply damageMult.
+
+  const { damageMult } = getGlobalMultipliers(state);
+
   const weaponStatsProjectiles = stats.projectiles ?? 1;
   const playerBonus = Math.max(0, state.player.projectiles - 1);
   const weaponBonus = Math.max(0, weaponStatsProjectiles - 1);
@@ -179,10 +185,25 @@ function fire(state: GameState): void {
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
       pierce: state.player.pierce,
-      damage: stats.damage // Use weapon damage
+      damage: stats.damage * damageMult // Apply global damage multiplier
     };
     state.bullets.push(bullet);
   }
+}
+
+/**
+ * Helper to get global multipliers from player state upgrades
+ */
+function getGlobalMultipliers(state: GameState) {
+  return {
+    damageMult: state.player.damage / BASE_PLAYER_STATS.damage,
+    rangeMult: state.player.range / BASE_PLAYER_STATS.range,
+    // For cooldown, we want the ratio of current/base (e.g. 0.5/1.0 = 0.5x delay)
+    // Be careful not to divide by zero if base is 0
+    cooldownMult: BASE_PLAYER_STATS.fireDelay > 0 ? state.player.fireDelay / BASE_PLAYER_STATS.fireDelay : 1.0,
+    // Additive projectile bonus
+    extraProjectiles: Math.max(0, state.player.projectiles - BASE_PLAYER_STATS.projectiles)
+  };
 }
 
 /**
@@ -194,12 +215,14 @@ function fireOrbit(state: GameState): void {
   const level = getWeaponLevel(state, 'circularBlast');
   const def = getWeaponDef('circularBlast');
   const stats = getWeaponStats(def, level);
+  const { damageMult } = getGlobalMultipliers(state);
 
   const { maxSpeed, maxLifetime } = getTuning().bullet;
   const { maxBullets } = getTuning().fx;
   const orbitConfig = getTuning().orbit;
 
   // Use the same calculation as visuals to ensure what you see is what you hit with
+  // Note: calculateOrbitProjectiles already uses state.player.projectiles, so scaling is handled there
   const count = calculateOrbitProjectiles(state, orbitConfig);
 
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
@@ -215,8 +238,8 @@ function fireOrbit(state: GameState): void {
       dx: Math.cos(angle) * bulletSpeed,
       dy: Math.sin(angle) * bulletSpeed,
       life: lifetime,
-      pierce: state.player.pierce,
-      damage: stats.damage
+      pierce: state.player.pierce, // Pierce upgrade applies globally
+      damage: stats.damage * damageMult // Apply global damage multiplier
     };
     state.bullets.push(bullet);
   }
@@ -232,9 +255,11 @@ function fireLightning(state: GameState): void {
   const level = getWeaponLevel(state, 'lightning');
   const def = getWeaponDef('lightning');
   const stats = getWeaponStats(def, level);
+  const { damageMult, rangeMult, extraProjectiles } = getGlobalMultipliers(state);
 
-  const range = stats.range ?? 200;
-  const chainCount = stats.chainCount ?? 2;
+  const range = (stats.range ?? 200) * rangeMult;
+  // Extra projectiles increase chain count for lightning
+  const chainCount = (stats.chainCount ?? 2) + extraProjectiles;
 
   // Find enemies within range
   const inRange = state.enemies.filter(e => {
@@ -250,7 +275,7 @@ function fireLightning(state: GameState): void {
   const hitEnemies: Enemy[] = [primaryTarget];
 
   // Apply damage to primary target
-  primaryTarget.hp -= stats.damage;
+  primaryTarget.hp -= stats.damage * damageMult;
   primaryTarget.hitThisFrame = true;
 
   // Create lightning bolt visual
@@ -284,7 +309,7 @@ function fireLightning(state: GameState): void {
       const dx = e.x - currentX;
       const dy = e.y - currentY;
       const dist = Math.hypot(dx, dy);
-      if (dist < nearestDist && dist < range * 0.6) {
+      if (dist < nearestDist && dist < range * 0.8) { // Chain range slightly shorter
         nearestDist = dist;
         nearest = e;
       }
@@ -293,7 +318,7 @@ function fireLightning(state: GameState): void {
     if (!nearest) break;
 
     // Apply chain damage (reduced)
-    const chainDamage = stats.damage * 0.6;
+    const chainDamage = (stats.damage * damageMult) * 0.6;
     nearest.hp -= chainDamage;
     nearest.hitThisFrame = true;
     hitEnemies.push(nearest);
@@ -324,59 +349,95 @@ function updateLaser(state: GameState, dt: number): void {
   const level = getWeaponLevel(state, 'laser');
   const def = getWeaponDef('laser');
   const stats = getWeaponStats(def, level);
+  const { damageMult, rangeMult, extraProjectiles } = getGlobalMultipliers(state);
 
   // Clear old beams
   state.laserBeams = [];
 
-  const target = nearestEnemy(state);
-  if (!target) return;
+  const range = (stats.range ?? 250) * rangeMult;
 
-  const dx = target.x - state.player.x;
-  const dy = target.y - state.player.y;
-  const dist = Math.hypot(dx, dy);
+  // Find multiple targets based on extra projectiles
+  const beamCount = 1 + extraProjectiles;
 
-  if (dist > (stats.range ?? 250)) return;
+  // Get all enemies in range sorted by distance
+  // Optimization: Pre-filter by range square
+  const candidates: { enemy: Enemy, distSq: number }[] = [];
+  const rangeSq = range * range;
 
-  // Create laser beam visual
-  state.laserBeams.push({
-    startX: state.player.x,
-    startY: state.player.y,
-    endX: target.x,
-    endY: target.y,
-    life: 0.1
-  });
-
-  // Apply DPS to all enemies on the beam path
-  const beamWidth = 8;
-  const dps = stats.damage;
-
-  for (const enemy of state.enemies) {
-    // Point-to-line distance
-    const ex = enemy.x - state.player.x;
-    const ey = enemy.y - state.player.y;
-    const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (dist * dist)));
-    const closestX = state.player.x + t * dx;
-    const closestY = state.player.y + t * dy;
-    const distToBeam = Math.hypot(enemy.x - closestX, enemy.y - closestY);
-
-    if (distToBeam < beamWidth + enemy.radius) {
-      enemy.hp -= dps * dt;
-      enemy.hitThisFrame = true;
+  for (const e of state.enemies) {
+    const dx = e.x - state.player.x;
+    const dy = e.y - state.player.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq <= rangeSq) {
+      candidates.push({ enemy: e, distSq });
     }
   }
 
-  // Also damage boss if on beam
+  // Also add boss if in range
   if (state.bossActive && state.currentBoss) {
-    const boss = state.currentBoss;
-    const bx = boss.x - state.player.x;
-    const by = boss.y - state.player.y;
-    const t = Math.max(0, Math.min(1, (bx * dx + by * dy) / (dist * dist)));
-    const closestX = state.player.x + t * dx;
-    const closestY = state.player.y + t * dy;
-    const distToBeam = Math.hypot(boss.x - closestX, boss.y - closestY);
+    const dx = state.currentBoss.x - state.player.x;
+    const dy = state.currentBoss.y - state.player.y;
+    const distSq = dx * dx + dy * dy;
+    if (distSq <= rangeSq) {
+      // Treat boss as a high priority target (hack: dist 0 to always be first)
+      candidates.unshift({ enemy: state.currentBoss as unknown as Enemy, distSq: 0 });
+    }
+  }
 
-    if (distToBeam < beamWidth + boss.radius) {
-      boss.hp -= dps * dt;
+  // Sort by distance (closest first)
+  candidates.sort((a, b) => a.distSq - b.distSq);
+
+  const targets = candidates.slice(0, beamCount).map(c => c.enemy);
+
+  for (const target of targets) {
+    const dx = target.x - state.player.x;
+    const dy = target.y - state.player.y;
+    const dist = Math.sqrt(candidates.find(c => c.enemy === target)?.distSq || 1); // potential slight inefficiency but ok for low counts
+
+    // Create laser beam visual
+    state.laserBeams.push({
+      startX: state.player.x,
+      startY: state.player.y,
+      endX: target.x,
+      endY: target.y,
+      life: 0.1
+    });
+
+    // Apply DPS to all enemies on the beam path
+    const beamWidth = 8;
+    const dps = stats.damage * damageMult;
+
+    for (const enemy of state.enemies) {
+      // Optimization: simple bbox check first
+      if (Math.abs(enemy.x - state.player.x) > range && Math.abs(enemy.y - state.player.y) > range) continue;
+
+      // Point-to-line distance
+      const ex = enemy.x - state.player.x;
+      const ey = enemy.y - state.player.y;
+      const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (dist * dist)));
+      const closestX = state.player.x + t * dx;
+      const closestY = state.player.y + t * dy;
+      const distToBeam = Math.hypot(enemy.x - closestX, enemy.y - closestY);
+
+      if (distToBeam < beamWidth + enemy.radius) {
+        enemy.hp -= dps * dt;
+        enemy.hitThisFrame = true;
+      }
+    }
+
+    // Boss hit check (if active)
+    if (state.bossActive && state.currentBoss) {
+      const boss = state.currentBoss;
+      const bx = boss.x - state.player.x;
+      const by = boss.y - state.player.y;
+      const t = Math.max(0, Math.min(1, (bx * dx + by * dy) / (dist * dist)));
+      const closestX = state.player.x + t * dx;
+      const closestY = state.player.y + t * dy;
+      const distToBeam = Math.hypot(boss.x - closestX, boss.y - closestY);
+
+      if (distToBeam < beamWidth + boss.radius) {
+        boss.hp -= dps * dt;
+      }
     }
   }
 }
@@ -391,8 +452,9 @@ function fireMissiles(state: GameState): void {
   const level = getWeaponLevel(state, 'missiles');
   const def = getWeaponDef('missiles');
   const stats = getWeaponStats(def, level);
+  const { damageMult, extraProjectiles } = getGlobalMultipliers(state);
 
-  const count = Math.max(1, Math.floor(stats.projectiles ?? 1));
+  const count = Math.max(1, Math.floor((stats.projectiles ?? 1) + extraProjectiles));
 
   for (let i = 0; i < count; i++) {
     // Pick a random target
@@ -421,7 +483,7 @@ function fireMissiles(state: GameState): void {
       dy: (dy / dist) * speed,
       targetId: i, // Just an identifier
       life: 4,
-      damage: stats.damage
+      damage: stats.damage * damageMult
     };
 
     state.missiles.push(missile);

@@ -24,6 +24,7 @@ interface SaveData {
   generators?: Array<{ level: number; cost: number }>;
   upgrades?: Array<{ level: number; cost: number } | number>;
   talents?: Array<{ id: string; unlocked: boolean }>;
+  weapons?: Array<{ id: string; level: number; unlocked: boolean }>;
   idleMultiplier?: number;
   assist?: {
     firstShot?: boolean;
@@ -78,21 +79,21 @@ export function loadSave(
 
   try {
     const save: SaveData = JSON.parse(raw);
-    
+
     // Resources
     if (save.resources) {
       Object.assign(state.resources, save.resources);
     }
-    
+
     // Wave
     state.wave = save.wave || state.wave;
-    
+
     // Audio
     state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
-    
+
     // Post-processing addons are intentionally disabled to keep visuals clear
     state.addons = { glow: false, bloom: false, grain: false };
-    
+
     // Player stats
     if (save.player) {
       Object.keys(BASE_PLAYER_STATS).forEach((key) => {
@@ -103,10 +104,10 @@ export function loadSave(
         }
       });
     }
-    
+
     // Idle multiplier
     state.resources.idleMultiplier = save.idleMultiplier || state.resources.idleMultiplier;
-    
+
     // Generators
     save.generators?.forEach((g, idx) => {
       if (context.generators[idx]) {
@@ -115,7 +116,7 @@ export function loadSave(
         context.generators[idx].cost = g.cost || context.generators[idx].cost;
       }
     });
-    
+
     // Upgrades
     save.upgrades?.forEach((entry, idx) => {
       const upgrade = context.upgrades[idx];
@@ -127,16 +128,27 @@ export function loadSave(
         upgrade.cost = entry.cost || upgrade.cost;
       }
     });
-    
+
     // Talents
     talents = hydrateTalents(save.talents);
     context.talents = talents;
     const talentBonuses = computeTalentBonuses(talents);
     state.talents.bonuses = talentBonuses;
-    
+
+    // Weapons
+    if (save.weapons) {
+      save.weapons.forEach((savedWeapon) => {
+        const weaponState = state.weapons.find(w => w.id === savedWeapon.id);
+        if (weaponState) {
+          weaponState.level = savedWeapon.level;
+          weaponState.unlocked = savedWeapon.unlocked;
+        }
+      });
+    }
+
     context.applyProgressionEffects();
     context.refreshGeneratorRates();
-    
+
     // Assist
     state.assist = {
       ...state.assist,
@@ -144,7 +156,7 @@ export function loadSave(
       completed: save.assist?.completed || []
     };
     state.assist.bestWave = Math.max(state.assist.bestWave || 1, state.wave || 1);
-    
+
     // Offline gains
     const now = Date.now();
     if (save.lastSeen) {
@@ -184,6 +196,7 @@ export function saveGame(state: GameState, generators: Generator[], upgrades: Up
     generators: generators.map((g) => ({ level: g.level, cost: g.cost })),
     upgrades: upgrades.map((u) => ({ level: u.level, cost: u.cost })),
     talents: talents.map((talent) => ({ id: talent.id, unlocked: talent.unlocked ?? false })),
+    weapons: state.weapons.map((w) => ({ id: w.id, level: w.level, unlocked: w.unlocked })),
     idleMultiplier: state.resources.idleMultiplier,
     assist: {
       firstShot: state.assist.firstShot,
