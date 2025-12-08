@@ -11,6 +11,8 @@ import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
 import { loadTuning } from "./config/tuning.ts";
 import { initAssist } from "./systems/assist.ts";
+import { playCollect, playSound } from "./systems/sound.ts";
+import { audioManager } from "./systems/audio.ts";
 import { PanelManager } from "./systems/panelManager.ts";
 import { debugPing, formatNumber, updateHud } from "./systems/hud.ts";
 import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
@@ -523,12 +525,23 @@ async function bootstrap(): Promise<void> {
   initUI();
   window.addEventListener("resize", () => resizeCanvas());
   setInterval(saveGameLocal, 5000);
+  // Initialize audio on first user interaction
+  window.addEventListener('click', () => {
+    audioManager.init();
+    audioManager.resume();
+  }, { once: true });
 
-  let lastTime = performance.now();
+  window.addEventListener('keydown', () => {
+    audioManager.init();
+    audioManager.resume();
+  }, { once: true });
+
+  // === Main game loop ===
+  let lastFrameTime = performance.now();
 
   function gameLoop(currentTime: number): void {
-    const frameMs = currentTime - lastTime;
-    lastTime = currentTime;
+    const frameMs = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
 
     recordFpsSample(state.performance, frameMs);
     const dt = Math.min(0.05, frameMs / 1000);

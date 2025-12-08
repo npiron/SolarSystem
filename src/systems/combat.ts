@@ -4,6 +4,7 @@ import type { EnemyVariantDefinition } from "../config/enemyVariants.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
+import { playSound } from "./sound.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
 import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
 import { BASE_PLAYER_STATS } from "../config/player.ts";
@@ -149,6 +150,8 @@ function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): voi
   state.runStats.kills += 1;
   state.runStats.essence += enemy.reward;
 
+  // Play death sound - deep knock
+  playSound('death', { volume: 0.18, pitch: 1.0 });
   const variantDef = getVariantDefinition(enemy.variant);
 
   // Death animation - mini explosion particles
@@ -252,6 +255,7 @@ function fire(state: GameState): void {
     };
     state.bullets.push(bullet);
   }
+  // No sound for basic fire - too spammy
 }
 
 /**
@@ -306,6 +310,7 @@ function fireOrbit(state: GameState): void {
     };
     state.bullets.push(bullet);
   }
+  // No sound for shotgun - too spammy
 }
 
 /**
@@ -401,6 +406,7 @@ function fireLightning(state: GameState): void {
   });
 
   addFloatingText(state, "⚡", primaryTarget.x, primaryTarget.y - 10, "#00ffff");
+  // No sound for lightning - too spammy
 }
 
 /**
@@ -551,6 +557,7 @@ function fireMissiles(state: GameState): void {
 
     state.missiles.push(missile);
   }
+  // No sound for missile - too spammy
 }
 
 /**
@@ -627,6 +634,7 @@ function updateMissiles(state: GameState, dt: number): void {
         enemy.hitThisFrame = true;
         missile.life = -1;
         addFloatingText(state, "💥", enemy.x, enemy.y - 5, "#ff6600");
+        // No sound for missile hit - relies on death sound
         break;
       }
     }
@@ -640,6 +648,7 @@ function updateMissiles(state: GameState, dt: number): void {
         boss.hp -= missile.damage;
         missile.life = -1;
         addFloatingText(state, "💥", boss.x, boss.y - 5, "#ff6600");
+        // No sound for boss missile hit
       }
     }
   }
@@ -863,6 +872,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     // Collection quand le fragment arrive près du héros (rayon raisonnable)
     const pickupRadius = state.player.radius + 50; // Rayon de ~74px - collecte plus facile
     if (dist < pickupRadius) {
+      // Ultra-subtle musical note
+      playSound('collect', { volume: 0.10, pitch: 1.0 });
       registerFragmentGain(state, f.value, f.x, f.y - 6);
       f.life = -1;
     }
@@ -983,11 +994,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
           const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
           enemy.hp -= dmg;
           enemy.hitThisFrame = true;
-          if (!state.visualsLow) {
-            if (crit) {
+
+          // Metallic clink on critical
+          if (crit) {
+            playSound('critical', { volume: 0.18, pitch: 1.0 });
+            if (!state.visualsLow) {
               addFloatingText(state, `💥 ${Math.round(dmg)}`, enemy.x, enemy.y - 4, "#f472b6", 2.2);
             }
           }
+          // No sound for normal hits - too spammy
           if (b.pierce > 0) {
             b.pierce -= 1;
           } else {

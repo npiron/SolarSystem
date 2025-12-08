@@ -179,6 +179,26 @@ export function isAudioEnabled(): boolean {
   return soundState.enabled;
 }
 
+import { SoundSynth } from "./soundSynth.ts";
+
+let lastCollectTime = 0;
+const COLLECT_THROTTLE_MS = 150; // Aggressive throttle to avoid spam
+
+/**
+ * Play a sound effect (convenience wrapper)
+ */
+export function playSound(type: 'laser' | 'hit' | 'critical' | 'death' | 'collect' | 'wave' | 'damage' | 'click', options?: { volume?: number; pitch?: number }): void {
+  // Throttle collect sounds to avoid spam
+  if (type === 'collect') {
+    const now = performance.now();
+    if (now - lastCollectTime < COLLECT_THROTTLE_MS) return;
+    lastCollectTime = now;
+  }
+
+  SoundSynth.play(type, options);
+}
+
+// Keep existing playCollect function for compatibility
 export function playCollect(): void {
   if (!canPlay() || shouldThrottle("collect", 0.08)) return;
   playTone({
