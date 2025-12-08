@@ -9,7 +9,7 @@
  */
 import type { GameState, Generator, TalentBonuses, AssistUi } from "./types/index.ts";
 import { updateSpawn, shouldSpawnBoss, spawnBoss } from "./systems/spawn.ts";
-import { updateCombat } from "./systems/combat.ts";
+import { updateCombat } from "./systems/combat/index.ts";
 import { updateFloatingText } from "./systems/hud.ts";
 import { calculatePlayerMovement, clampPlayerToBounds } from "./player.ts";
 import { computeIdleRate, computePassiveGains } from "./systems/economy.ts";
@@ -60,11 +60,11 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
   const deltaVx = targetVx - state.player.vx;
   const deltaVy = targetVy - state.player.vy;
   const deltaSpeed = Math.hypot(deltaVx, deltaVy);
-  
+
   // Dynamic acceleration: faster when changing direction significantly
   const directionChange = deltaSpeed / (state.player.speed || 1);
   const dynamicAcceleration = playerAcceleration * (1 + directionChange * 0.3);
-  
+
   // Calculate acceleration toward target velocity with smooth interpolation
   const ax = (targetVx - state.player.vx) * dynamicAcceleration;
   const ay = (targetVy - state.player.vy) * dynamicAcceleration;

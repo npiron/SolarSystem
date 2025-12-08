@@ -4,7 +4,7 @@
  */
 export * from "./additionalHuds";
 export * from "./assist";
-export * from "./combat";
+export * from "./combat/index";
 export * from "./gameState";
 export * from "./hud";
 export * from "./movement";
