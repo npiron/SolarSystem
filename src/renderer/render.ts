@@ -10,10 +10,11 @@ import * as renderer from "./index.ts";
 import { webglColors, hexStringToVec4 } from "./colors.ts";
 import { getEnemyColorWebGL, getFragmentVisuals, getVariantHaloColor } from "./entityColors.ts";
 import { formatNumber } from "../systems/hud.ts";
+import { getTuning } from "../config/tuning.ts";
 
 // Shape definitions for different entity types
 const PLAYER_SHAPE = { sides: 24, rotation: 0 };
-const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 };
+const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 }; // Diamond shape to differentiate from enemies
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
 const ORBIT_SHAPE = { sides: 7, rotation: Math.PI / 7 };
 const BOSS_SHAPE = { sides: 8, rotation: 0 };
@@ -93,11 +94,13 @@ export function render(state: GameState, context: RenderContext): void {
       halo: auraHalo
     });
 
-    // Render collect radius indicator
+    // Render collect radius indicator (match actual collection distance)
+    const { collectDistanceMultiplier } = getTuning().fragments;
+    const actualCollectRadius = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: state.player.collectRadius * 0.45,
+      radius: actualCollectRadius,
       color: webglColors.transparent,
       sides: PLAYER_SHAPE.sides,
       rotation: playerRotation,

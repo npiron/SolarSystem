@@ -1,6 +1,7 @@
 /**
  * Panel Manager System
- * Handles mutual exclusivity of UI panels (Upgrades, Tuning, etc.)
+ * Handles mutual exclusivity of left panels (Production, Talents, Tuning, Guide)
+ * Separate from right panel (Upgrades/Weapons)
  */
 import { playUiToggle } from "./sound.ts";
 
@@ -11,33 +12,33 @@ export class PanelManager {
     private toggles: Map<string, HTMLElement> = new Map();
 
     constructor() {
-        this.container = document.getElementById("right-panel");
+        this.container = document.getElementById("panel-container");
         this.init();
     }
 
     private init(): void {
-        if (!this.container) return;
-
-        // Register panels
-        this.registerPanel("production", "panel-content-production", "toggle-production");
-        this.registerPanel("upgrades", "panel-content-upgrades", "toggle-upgrades");
-        this.registerPanel("tuning", "panel-content-tuning", "toggle-tuning");
-        // Guide is special (dialog), handled separately usually, but we can hook it if needed.
-        // For now, guide button opens the dialog directly in main.ts or here.
+        // Register left-side panels (using sidebar buttons)
+        this.registerPanel("production", "panel-production");
+        this.registerPanel("talents", "panel-talents");
+        this.registerPanel("tuning", "panel-tuning");
+        this.registerPanel("guide", "panel-guide");
 
         // Open production by default
         this.togglePanel("production");
     }
 
-    private registerPanel(id: string, contentId: string, toggleId: string): void {
-        const content = document.getElementById(contentId);
-        const toggle = document.getElementById(toggleId);
+    private registerPanel(id: string, panelId: string): void {
+        const panel = document.getElementById(panelId);
 
-        if (content && toggle) {
-            this.panels.set(id, content);
-            this.toggles.set(id, toggle);
+        if (panel) {
+            this.panels.set(id, panel);
+        }
 
-            toggle.addEventListener("click", () => {
+        // Look for sidebar buttons with data-target attribute
+        const sidebarButton = document.querySelector(`button[data-target="${id}"]`) as HTMLElement;
+        if (sidebarButton) {
+            this.toggles.set(id, sidebarButton);
+            sidebarButton.addEventListener("click", () => {
                 this.togglePanel(id);
                 playUiToggle();
             });
@@ -52,15 +53,14 @@ export class PanelManager {
         }
 
         // Otherwise, close others and open this one
-        this.closeAll(false); // Don't animate out if switching? Or yes? Let's just update state.
+        this.closeAll(false);
 
-        // Show container if hidden (translate logic)
+        // Show container
         if (this.container) {
-            this.container.style.transform = "translate(0%)";
-            this.container.style.pointerEvents = "auto";
+            this.container.classList.remove("hidden");
         }
 
-        // Show specific panel content
+        // Show specific panel
         const panel = this.panels.get(id);
         const toggle = this.toggles.get(id);
         if (panel) {
@@ -73,7 +73,7 @@ export class PanelManager {
     }
 
     public closeAll(hideContainer = true): void {
-        // Hide all contents
+        // Hide all panel contents
         this.panels.forEach(p => p.classList.add("hidden"));
 
         // Reset buttons
@@ -84,8 +84,7 @@ export class PanelManager {
         this.activePanelId = null;
 
         if (hideContainer && this.container) {
-            this.container.style.transform = "translate(120%)";
-            this.container.style.pointerEvents = "none";
+            this.container.classList.add("hidden");
         }
     }
 }

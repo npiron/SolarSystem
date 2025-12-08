@@ -752,8 +752,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     f.vx *= dragFactor;
     f.vy *= dragFactor;
 
-    // Attraction force when in collection radius
-    if (dist < state.player.collectRadius) {
+    // Attraction force when in collection radius (use same radius as actual collection)
+    const attractCollectDist = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
+    if (dist < attractCollectDist) {
       const attractionForce = attractionSpeed * dt;
       f.vx += (dx / dist) * attractionForce;
       f.vy += (dy / dist) * attractionForce;
