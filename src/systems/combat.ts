@@ -70,7 +70,31 @@ function applyExplosionDamage(
 
   const scaledDamage = damage * (1 + state.wave * 0.025) * (1 - state.player.damageReduction);
   state.player.hp -= scaledDamage;
-  addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#fb7185");
+  addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#ff1f1f");
+  applyExplosionImpulse(state, enemy.x, enemy.y, radius);
+}
+
+function applyExplosionImpulse(state: GameState, originX: number, originY: number, radius: number): void {
+  const strength = 140;
+
+  const applyKnockback = (target: { x: number; y: number; vx?: number; vy?: number; radius?: number }, scale = 1): void => {
+    const dx = target.x - originX;
+    const dy = target.y - originY;
+    const dist = Math.hypot(dx, dy) || 1;
+    if (dist > radius + (target.radius ?? 0)) return;
+
+    const falloff = 1 - Math.min(dist / radius, 1);
+    const impulse = strength * falloff * scale;
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    target.vx = (target.vx ?? 0) + nx * impulse;
+    target.vy = (target.vy ?? 0) + ny * impulse;
+  };
+
+  applyKnockback(state.player, 0.6);
+  state.enemies.forEach((other) => applyKnockback(other, other.elite ? 0.9 : 1));
+  state.fragmentsOrbs.forEach((fragment) => applyKnockback(fragment, 0.4));
 }
 
 function spawnSplitChildren(
@@ -85,6 +109,10 @@ function spawnSplitChildren(
   const generation = (enemy.generation ?? 0) + 1;
   if (generation > split.maxGenerations) return;
 
+  if (!state.visualsLow) {
+    addFloatingText(state, "✨", enemy.x, enemy.y - enemy.radius, "#c084fc", 1.4);
+  }
+
   for (let i = 0; i < split.count; i++) {
     const angle = Math.random() * TAU;
     const offset = split.spread * (0.8 + Math.random() * 0.6);
@@ -94,9 +122,12 @@ function spawnSplitChildren(
     const radius = Math.max(4, enemy.radius * split.radiusScale);
     const reward = Math.max(0.5, enemy.reward * split.rewardScale);
 
+    const launchSpeed = 90;
     const child: Enemy = {
       x: childX,
       y: childY,
+      vx: Math.cos(angle) * launchSpeed,
+      vy: Math.sin(angle) * launchSpeed,
       radius,
       hp,
       maxHp: hp,
