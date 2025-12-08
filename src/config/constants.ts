@@ -7,7 +7,7 @@ export const VERSION = "v0.1.0";
 export const MAX_OFFLINE_SECONDS = 60 * 60 * 3;
 
 export const FX_BUDGET: FxBudget = {
-  floatingText: 80,
+  floatingText: 9999, // Quasi-illimité pour afficher tous les textes
   bullets: 520,
   fragments: 200
 };

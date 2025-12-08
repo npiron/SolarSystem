@@ -56,29 +56,32 @@ const LOW_THRESHOLD = 3;
 const HIGH_THRESHOLD = 10;
 
 /**
- * Get visual properties for a fragment orb based on its value.
- * Higher value fragments are larger and have brighter colors.
+ * Get visual properties for a fragment as a mini black hole.
+ * Higher value fragments have larger event horizons and brighter accretion disks.
  * @param value - Fragment value
  * @returns Object with color, ringColor, and radius
  */
 export function getFragmentVisuals(value: number): FragmentVisuals {
   if (value < LOW_THRESHOLD) {
+    // Small black hole - blue accretion disk
     return {
-      color: webglColors.fragmentLow,
-      ringColor: webglColors.fragmentRingLow,
-      radius: 4.5
+      color: [0.02, 0.02, 0.08, 1] as const, // Ultra dark blue core
+      ringColor: [0.3, 0.6, 1, 0.7] as const, // Blue glow
+      radius: 3.5 // Smaller
     };
   } else if (value >= HIGH_THRESHOLD) {
+    // Large black hole - purple/magenta accretion disk
     return {
-      color: webglColors.fragmentHigh,
-      ringColor: webglColors.fragmentRingHigh,
-      radius: 10
+      color: [0.05, 0.02, 0.08, 1] as const, // Ultra dark purple core
+      ringColor: [0.7, 0.3, 1, 0.8] as const, // Purple glow
+      radius: 7 // Smaller
     };
   } else {
+    // Medium black hole - cyan accretion disk
     return {
-      color: webglColors.fragmentMedium,
-      ringColor: webglColors.fragmentRingMedium,
-      radius: 7
+      color: [0.02, 0.05, 0.08, 1] as const, // Ultra dark cyan core
+      ringColor: [0.4, 0.8, 1, 0.75] as const, // Cyan glow
+      radius: 5.5 // Smaller
     };
   }
 }

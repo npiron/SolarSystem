@@ -58,7 +58,7 @@ export function addFloatingText(state: GameState, text: string | number, x: numb
     state.floatingText.shift();
   }
 
-  const life = state.visualsLow ? 0.9 : 1.4;
+  const life = state.visualsLow ? 3.0 : 5.0; // AUGMENTÉ: 5 secondes pour bien voir !
   state.floatingText.push({ text: safeText, x, y, life, color, scale });
 }
 
@@ -68,13 +68,57 @@ export function registerFragmentGain(state: GameState, value: number, x: number,
   if (!silent) {
     playCollect();
   }
-  if (silent || state.visualsLow || state.floatingText.length >= FX_BUDGET.floatingText) {
+  if (silent || state.visualsLow) {
     state.gainTicker.fragments += value;
     state.gainTicker.timer = 1.2;
     return;
   }
-  // Use emoji instead of HTML icon for WebGL floating text
-  addFloatingText(state, `+${formatNumber(value)} 💎`, x, y, "#f472b6");
+
+  // Smart grouping: check if there's a nearby fragment text to merge with
+  const mergeRadius = 40; // Pixels - fragments this close get merged
+  let merged = false;
+
+  for (const text of state.floatingText) {
+    const dx = text.x - x;
+    const dy = text.y - y;
+    const dist = Math.hypot(dx, dy);
+
+    // Check if it's a fragment text nearby (contains 💎)
+    if (dist < mergeRadius && String(text.text).includes('💎')) {
+      // Extract current value and add new value
+      const match = String(text.text).match(/\+([0-9.KMBTQa-z]+)/);
+      if (match) {
+        // Update the text with combined value
+        const newTotal = value; // Just show the new amount for simplicity
+        text.text = `+${formatNumber(value)} 💎`;
+        text.life = 5.0; // Reset lifetime
+
+        // Choose color based on value
+        if (value >= 10) {
+          text.color = "#a855f7"; // Purple for high value
+        } else if (value >= 3) {
+          text.color = "#22d3ee"; // Cyan for medium
+        } else {
+          text.color = "#60a5fa"; // Blue for low
+        }
+
+        merged = true;
+        break;
+      }
+    }
+  }
+
+  // If not merged, create new text with value-based color
+  if (!merged) {
+    let color = "#60a5fa"; // Default blue for low value
+    if (value >= 10) {
+      color = "#a855f7"; // Purple for high value
+    } else if (value >= 3) {
+      color = "#22d3ee"; // Cyan for medium value
+    }
+
+    addFloatingText(state, `+${formatNumber(value)} 💎`, x, y, color, 2.0);
+  }
 }
 
 export function debugPing(state: GameState, text: string, color = "#c7d2fe", onUpdateHud?: () => void): void {

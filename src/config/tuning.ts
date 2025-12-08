@@ -203,10 +203,10 @@ export function getDefaultTuning(): TuningConfig {
     },
     enemy: {
       baseHp: 25,
-      hpWaveScale: 6,
+      hpWaveScale: 12, // Augmenté de 6 à 12 - ennemis plus résistants avec les vagues
       hpVariance: 0.3,
       baseSpeed: 45,
-      speedWaveScale: 1.5,
+      speedWaveScale: 0.5, // Réduit de 1.5 à 0.5 - vitesse augmente beaucoup moins vite
       baseReward: 2.5,
       rewardWaveScale: 0.6,
       baseFireDelay: 4.2,
@@ -225,7 +225,7 @@ export function getDefaultTuning(): TuningConfig {
       progressionSpeed: 0.15
     },
     fx: {
-      maxFloatingText: 80,
+      maxFloatingText: 9999, // Quasi-illimité pour afficher tous les textes
       maxBullets: 520,
       maxFragments: 200
     },
@@ -235,7 +235,7 @@ export function getDefaultTuning(): TuningConfig {
       offscreenPadding: 120
     },
     fragments: {
-      attractionSpeed: 120,
+      attractionSpeed: 600, // Encore augmenté pour aspiration ultra rapide
       collectDistanceMultiplier: 0.15,
       orbitLifetime: 12
     },

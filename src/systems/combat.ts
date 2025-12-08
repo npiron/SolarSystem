@@ -145,15 +145,36 @@ function spawnSplitChildren(
 }
 
 function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): void {
-  const variantDef = getVariantDefinition(enemy.variant);
-  applyExplosionDamage(state, enemy, variantDef);
-  spawnSplitChildren(state, enemy, variantDef, spawned);
-
-  const fragReward = enemy.reward * 0.35;
   state.resources.essence += enemy.reward;
   state.runStats.kills += 1;
   state.runStats.essence += enemy.reward;
+
+  const variantDef = getVariantDefinition(enemy.variant);
+
+  // Death animation - mini explosion particles
+  if (!state.visualsLow) {
+    const particleCount = enemy.elite ? 8 : 5;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 * i) / particleCount;
+      const color = enemy.elite ? "#fbbf24" : "#94a3b8";
+      addFloatingText(
+        state,
+        "★",
+        enemy.x + Math.cos(angle) * 5,
+        enemy.y + Math.sin(angle) * 5,
+        color,
+        1.2
+      );
+    }
+  }
+
+  // Handle variant death effects
+  applyExplosionDamage(state, enemy, variantDef);
+  spawnSplitChildren(state, enemy, variantDef, spawned);
+
+  // Drop fragment orb with 35% of reward
   const { maxFragments } = getTuning().fx;
+  const fragReward = enemy.reward * 0.35;
   if (state.fragmentsOrbs.length < maxFragments) {
     state.fragmentsOrbs.push({
       x: enemy.x,
@@ -165,6 +186,17 @@ function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): voi
     });
   } else {
     registerFragmentGain(state, fragReward, enemy.x, enemy.y, true);
+  }
+
+  // Add floating text for essence gain
+  if (!state.visualsLow) {
+    const gainText = `+${Math.round(enemy.reward)}`;
+    addFloatingText(state, gainText, enemy.x, enemy.y - 10, "#84cc16", 1.6);
+  }
+
+  // High-value enemies show special effects
+  if (enemy.elite && !state.visualsLow) {
+    addFloatingText(state, "⭐ ELITE", enemy.x, enemy.y + 8, "#fbbf24", 2.0);
   }
 }
 
@@ -739,7 +771,45 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   // Pre-calculate drag factor for better performance (per-frame constant)
   const dragFactor = 1 - (1 - fragmentDrag) * dt * 60;
 
-  state.fragmentsOrbs.forEach((f) => {
+  // Black hole fusion - fragments merge when very close
+  const fusionRadius = 20; // Radius for fusion
+  const fusedFragments = new Set<number>();
+
+  for (let i = 0; i < state.fragmentsOrbs.length; i++) {
+    if (fusedFragments.has(i)) continue;
+    const f1 = state.fragmentsOrbs[i];
+
+    for (let j = i + 1; j < state.fragmentsOrbs.length; j++) {
+      if (fusedFragments.has(j)) continue;
+      const f2 = state.fragmentsOrbs[j];
+
+      const dx = f2.x - f1.x;
+      const dy = f2.y - f1.y;
+      const dist = Math.hypot(dx, dy);
+
+      // Fusion - merge into larger black hole!
+      if (dist < fusionRadius) {
+        f1.value += f2.value; // Combine mass
+        // Transfer momentum (conservation)
+        const totalMass = 2;
+        f1.vx = (f1.vx + f2.vx) / totalMass;
+        f1.vy = (f1.vy + f2.vy) / totalMass;
+        fusedFragments.add(j);
+
+        // Visual effect for fusion
+        if (!state.visualsLow) {
+          addFloatingText(state, "⚫", (f1.x + f2.x) / 2, (f1.y + f2.y) / 2 - 10, "#a855f7", 1.5);
+        }
+      }
+    }
+  }
+
+  state.fragmentsOrbs.forEach((f, index) => {
+    if (fusedFragments.has(index)) {
+      f.life = -1; // Mark absorbed fragments for deletion
+      return;
+    }
+
     f.life -= dt;
     const dx = state.player.x - f.x;
     const dy = state.player.y - f.y;
@@ -752,10 +822,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     f.vx *= dragFactor;
     f.vy *= dragFactor;
 
-    // Attraction force when in collection radius (use same radius as actual collection)
+    // Attraction force when in collection radius - TOUJOURS actif pour voir les fragments arriver
     const attractCollectDist = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
     if (dist < attractCollectDist) {
-      const attractionForce = attractionSpeed * dt;
+      // Courbe d'accélération progressive - effet "trou noir"
+      // Plus le fragment est proche, plus il accélère fort !
+      const distanceRatio = dist / attractCollectDist; // 1.0 = loin, 0.0 = très proche
+      const accelerationCurve = 1 + (1 - distanceRatio) ** 2.5 * 4; // Accélération exponentielle
+
+      const attractionForce = attractionSpeed * accelerationCurve * dt;
       f.vx += (dx / dist) * attractionForce;
       f.vy += (dy / dist) * attractionForce;
     }
@@ -783,8 +858,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       f.vx = -Math.abs(f.vx) * fragmentBounce;
     }
 
-    const collectDist = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
-    if (dist < collectDist) {
+    // Collection quand le fragment arrive près du héros (rayon raisonnable)
+    const pickupRadius = state.player.radius + 50; // Rayon de ~74px - collecte plus facile
+    if (dist < pickupRadius) {
       registerFragmentGain(state, f.value, f.x, f.y - 6);
       f.life = -1;
     }
@@ -906,7 +982,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
           enemy.hp -= dmg;
           enemy.hitThisFrame = true;
           if (!state.visualsLow) {
-            if (crit) addFloatingText(state, "CRIT", enemy.x, enemy.y - 4, "#f472b6");
+            if (crit) {
+              addFloatingText(state, `💥 ${Math.round(dmg)}`, enemy.x, enemy.y - 4, "#f472b6", 2.2);
+            }
           }
           if (b.pierce > 0) {
             b.pierce -= 1;
@@ -991,7 +1069,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
         boss.hp -= dmg;
         if (!state.visualsLow) {
-          if (crit) addFloatingText(state, "CRIT", boss.x, boss.y - 4, "#f472b6");
+          if (crit) {
+            addFloatingText(state, `💥 ${Math.round(dmg)}`, boss.x, boss.y - 4, "#f472b6", 2.2);
+          }
         }
         if (b.pierce > 0) {
           b.pierce -= 1;

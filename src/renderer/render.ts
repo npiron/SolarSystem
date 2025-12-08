@@ -14,7 +14,7 @@ import { getTuning } from "../config/tuning.ts";
 
 // Shape definitions for different entity types
 const PLAYER_SHAPE = { sides: 24, rotation: 0 };
-const FRAGMENT_SHAPE = { sides: 4, rotation: Math.PI / 4 }; // Diamond shape to differentiate from enemies
+const FRAGMENT_SHAPE = { sides: 6, rotation: 0 }; // Hexagonal coin/token shape
 const BULLET_SHAPE = { sides: 5, rotation: -Math.PI / 2 };
 const ORBIT_SHAPE = { sides: 7, rotation: Math.PI / 7 };
 const BOSS_SHAPE = { sides: 8, rotation: 0 };
@@ -220,31 +220,44 @@ export function render(state: GameState, context: RenderContext): void {
       })
     );
 
-    // Render fragments with value-based colors, sizes and animations
+    // Render fragments as mini black holes with accretion disks
     state.fragmentsOrbs.forEach((f, index) => {
       const { color, ringColor, radius } = getFragmentVisuals(f.value);
-      // Staggered pulse effect based on fragment index
       const fragmentPhase = time + index * 0.3;
-      const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.15);
-      const fragmentRotation = FRAGMENT_SHAPE.rotation + time * 0.5 + index * 0.1;
-
-      // Scale halo based on fragment value for better visibility
-      const baseHaloScale = f.value >= 10 ? 2.2 : f.value >= 3 ? 1.9 : 1.6;
-      const fragmentHalo = allowFx
-        ? { color: ringColor, scale: baseHaloScale + oscillate(fragmentPhase, 2, 0.25) }
-        : undefined;
-
-      // Subtle floating effect
+      const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.08);
+      const fragmentRotation = time * 3 + index * 0.8;
       const floatY = oscillate(fragmentPhase, 2, 2);
 
+      // Layer 1: Accretion disk (compact halo)
+      const haloScale = f.value >= 10 ? 2.2 : f.value >= 3 ? 1.8 : 1.5;
       renderer.pushCircle({
         x: f.x,
         y: f.y + floatY,
-        radius: radius * fragmentPulse,
-        color,
+        radius: radius * fragmentPulse * 0.9,
+        color: [ringColor[0] * 0.4, ringColor[1] * 0.4, ringColor[2] * 0.4, 0.5] as const,
         sides: FRAGMENT_SHAPE.sides,
         rotation: fragmentRotation,
-        halo: fragmentHalo
+        halo: allowFx ? { color: ringColor, scale: haloScale + oscillate(fragmentPhase, 2, 0.3) } : undefined
+      });
+
+      // Layer 2: Event horizon (dark core)
+      renderer.pushCircle({
+        x: f.x,
+        y: f.y + floatY,
+        radius: radius * fragmentPulse * 0.5,
+        color: color,
+        sides: FRAGMENT_SHAPE.sides * 2,
+        rotation: -fragmentRotation * 0.5
+      });
+
+      // Layer 3: Singularity (pure black center)
+      renderer.pushCircle({
+        x: f.x,
+        y: f.y + floatY,
+        radius: radius * fragmentPulse * 0.25,
+        color: [0, 0, 0, 1] as const, // Pure black
+        sides: 24,
+        rotation: 0
       });
     });
 
