@@ -94,20 +94,33 @@ export function render(state: GameState, context: RenderContext): void {
       halo: auraHalo
     });
 
-    // Render collect radius indicator (match actual collection distance)
-    const { collectDistanceMultiplier } = getTuning().fragments;
+    // Render collection radius indicator with animated gradient effect
+    const collectDistanceMultiplier = getTuning().fragments.collectDistanceMultiplier;
     const actualCollectRadius = state.player.radius + 6 + state.player.collectRadius * collectDistanceMultiplier;
+
+    // Pulsing animation for collection radius
+    const collectPulse = 1 + oscillate(time, 2.5, 0.08);
+
+    // Outer ring - subtle glow
     renderer.pushCircle({
       x: state.player.x,
       y: state.player.y,
-      radius: actualCollectRadius,
-      color: webglColors.transparent,
-      sides: PLAYER_SHAPE.sides,
-      rotation: playerRotation,
-      halo: collectRing
+      radius: actualCollectRadius * collectPulse,
+      color: [0.3, 0.7, 1, 0.08] as const, // Cyan très transparent
+      sides: 64, // Cercle très lisse
+      rotation: time * 0.3,
+      halo: allowFx ? { color: [0.4, 0.8, 1, 0.15] as const, scale: 1.5 } : undefined
     });
 
-    // Render orbital orbs with enhanced glow
+    // Inner ring - accent
+    renderer.pushCircle({
+      x: state.player.x,
+      y: state.player.y,
+      radius: actualCollectRadius * collectPulse * 0.95,
+      color: [0.5, 0.9, 1, 0.12] as const, // Cyan plus visible
+      sides: 48,
+      rotation: -time * 0.2
+    });
     const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.orbitBullet;
     const orbitalHalo = allowFx ? { color: webglColors.orbitGlow, scale: 2.0 + oscillate(time, 3, 0.15) } : undefined;
     state.orbitalOrbs.forEach((orb) => {

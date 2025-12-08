@@ -173,8 +173,8 @@ export function getDefaultTuning(): TuningConfig {
     },
     orbit: {
       baseDistance: 35,
-      maxDistance: 120,
-      ringSpacing: 16,
+      maxDistance: 240, // Augmenté pour contenir plus d'anneaux sans chevauchement
+      ringSpacing: 25, // Espacement optimal : visible mais sans déborder
       maxOrbsPerRing: 6,
       ringAngleOffset: 0.35,
       spinSpeedBase: 1.2,

@@ -139,7 +139,7 @@ export function createUpgrades(): Upgrade[] {
     {
       id: "collect",
       name: "Rayon de collecte",
-      description: "+10% portée d'aspiration des fragments",
+      description: "+5% portée d'aspiration des fragments",
       cost: 120,
       baseCost: 120,
       growth: 1.17,
@@ -147,7 +147,7 @@ export function createUpgrades(): Upgrade[] {
       max: Number.POSITIVE_INFINITY,
       apply: (state: { player: PlayerStats }, level: number) => {
         const effectiveLevel = scaleLevel(level, 30, 0.85);
-        state.player.collectRadius *= Math.pow(1.1, effectiveLevel);
+        state.player.collectRadius *= Math.pow(1.05, effectiveLevel); // Augmenté à 5%
       }
     },
     {

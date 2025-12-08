@@ -274,7 +274,7 @@ export class WebGL2Renderer {
     this.background.render(this.resolution.width, this.resolution.height, time);
 
     if (this.gridEnabled) {
-      this.renderGrid();
+      // this.renderGrid(); // Grille désactivée - remplacée par fond spatial
     }
 
     this.renderCircles();

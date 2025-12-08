@@ -665,7 +665,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   // Update orbital orbs visual positions
   state.orbitalOrbs = [];
   if (orbitCount > 0) {
-    const orbitBaseDistance = Math.min(orbitTuning.baseDistance * state.player.range, orbitTuning.maxDistance);
+    // Cap the range influence to prevent orbs from going too far
+    const cappedRange = Math.min(state.player.range, 1.5); // Limite à 1.5x max
+    const orbitBaseDistance = Math.min(orbitTuning.baseDistance * cappedRange, orbitTuning.maxDistance);
     const orbsPerRing = Math.max(1, Math.floor(orbitTuning.maxOrbsPerRing));
     const ringCount = Math.ceil(orbitCount / orbsPerRing);
 
