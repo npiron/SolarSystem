@@ -4,18 +4,7 @@ import { initWebGL2, resizeCanvas } from "./webgl2Context.ts";
 import { WebGL2TextRenderer, type TextInstance } from "./webgl2Text.ts";
 import { WebGL2PostProcessing } from "./webgl2PostProcessing.ts";
 import { WebGL2Background } from "./webgl2Background.ts";
-import {
-  gridVertexShader,
-  gridFragmentShader,
-  circlesVertexShader,
-  circlesFragmentShader,
-  healthVertexShader,
-  healthFragmentShader
-} from "./webgl2Shaders.ts";
-
-const GRID_SPACING = 64;
-// Cyan/turquoise grid for cyberpunk aesthetic
-const GRID_COLOR = [0 / 255, 220 / 255, 255 / 255, 0.06] as const;
+import { circlesVertexShader, circlesFragmentShader, healthVertexShader, healthFragmentShader } from "./webgl2Shaders.ts";
 
 export type ShapeInstance = {
   x: number;
@@ -45,8 +34,8 @@ const HEALTH_BAR_HEIGHT = 6;
 const HEALTH_BAR_OFFSET = 12;
 
 /**
- * Unified WebGL2 renderer that combines grid and circles rendering
- * into a single canvas using WebGL2.
+ * Unified WebGL2 renderer that draws shapes, health bars, text, and
+ * post-processing effects into a single canvas using WebGL2.
  */
 export class WebGL2Renderer {
   static create(canvas: HTMLCanvasElement) {
@@ -59,17 +48,6 @@ export class WebGL2Renderer {
   private readonly dpr: number;
   private resolution = { width: 0, height: 0 };
   private enabled = true;
-  private gridEnabled = true;
-
-  // Grid rendering resources
-  private gridProgram: WebGLProgram;
-  private gridVao: WebGLVertexArrayObject | null;
-  private gridBuffer: WebGLBuffer | null;
-  private gridVertexCount = 0;
-  private gridNeedsRebuild = true;
-  private gridUniforms: { resolution: WebGLUniformLocation | null; color: WebGLUniformLocation | null };
-  private readonly cellSize = GRID_SPACING;
-  private playerPos = { x: 0, y: 0 };
 
   // Circles rendering resources
   private circlesProgram: WebGLProgram;
@@ -110,23 +88,6 @@ export class WebGL2Renderer {
   private constructor(private canvas: HTMLCanvasElement, gl: WebGL2RenderingContext, dpr: number) {
     this.gl = gl;
     this.dpr = dpr;
-
-    // Initialize grid program
-    this.gridProgram = createProgram(gl, gridVertexShader, gridFragmentShader);
-    this.gridVao = gl.createVertexArray();
-    this.gridBuffer = gl.createBuffer();
-    this.gridUniforms = {
-      resolution: gl.getUniformLocation(this.gridProgram, "u_resolution"),
-      color: gl.getUniformLocation(this.gridProgram, "u_color")
-    };
-
-    gl.useProgram(this.gridProgram);
-    gl.bindVertexArray(this.gridVao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.gridBuffer);
-
-    const gridPositionLoc = gl.getAttribLocation(this.gridProgram, "a_position");
-    gl.enableVertexAttribArray(gridPositionLoc);
-    gl.vertexAttribPointer(gridPositionLoc, 2, gl.FLOAT, false, 0, 0);
 
     // Initialize circles program
     this.circlesProgram = createProgram(gl, circlesVertexShader, circlesFragmentShader);
@@ -188,10 +149,6 @@ export class WebGL2Renderer {
     }
   }
 
-  setGridEnabled(enabled: boolean) {
-    this.gridEnabled = enabled;
-  }
-
   resize(width: number, height: number) {
     if (!this.enabled) return;
     const { width: pixelWidth, height: pixelHeight } = resizeCanvas(this.gl, this.canvas, width, height, this.dpr);
@@ -200,7 +157,6 @@ export class WebGL2Renderer {
     }
 
     this.resolution = { width: pixelWidth, height: pixelHeight };
-    this.gridNeedsRebuild = true;
     this.postProcessing.resize(width, height);
   }
 
@@ -256,15 +212,9 @@ export class WebGL2Renderer {
     this.textRenderer.pushText(text);
   }
 
-  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number, playerPos?: { x: number; y: number }) {
+  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number) {
     if (!this.enabled) return;
     const gl = this.gl;
-
-    // Update player position and mark grid for rebuild if it changed
-    if (playerPos && (playerPos.x !== this.playerPos.x || playerPos.y !== this.playerPos.y)) {
-      this.playerPos = { x: playerPos.x, y: playerPos.y };
-      this.gridNeedsRebuild = true;
-    }
 
     gl.viewport(0, 0, this.resolution.width, this.resolution.height);
     gl.clearColor(0, 0, 0, 1);
@@ -272,10 +222,6 @@ export class WebGL2Renderer {
 
     // Render animated space background first
     this.background.render(this.resolution.width, this.resolution.height, time);
-
-    if (this.gridEnabled) {
-      // this.renderGrid(); // Grille désactivée - remplacée par fond spatial
-    }
 
     this.renderCircles();
     this.renderHealthBars();
@@ -300,11 +246,6 @@ export class WebGL2Renderer {
     // Dispose text renderer
     this.textRenderer.dispose();
 
-    // Clean up grid resources
-    if (this.gridVao) gl.deleteVertexArray(this.gridVao);
-    if (this.gridBuffer) gl.deleteBuffer(this.gridBuffer);
-    if (this.gridProgram) gl.deleteProgram(this.gridProgram);
-
     // Clean up circles resources
     if (this.circlesVao) gl.deleteVertexArray(this.circlesVao);
     if (this.circlesQuadBuffer) gl.deleteBuffer(this.circlesQuadBuffer);
@@ -316,27 +257,6 @@ export class WebGL2Renderer {
     if (this.healthQuadBuffer) gl.deleteBuffer(this.healthQuadBuffer);
     if (this.healthInstanceBuffer) gl.deleteBuffer(this.healthInstanceBuffer);
     if (this.healthProgram) gl.deleteProgram(this.healthProgram);
-  }
-
-  private renderGrid() {
-    if (this.gridNeedsRebuild) {
-      this.buildGrid();
-    }
-
-    if (!this.gridVertexCount) return;
-
-    const gl = this.gl;
-    gl.useProgram(this.gridProgram);
-    gl.bindVertexArray(this.gridVao);
-
-    if (this.gridUniforms.resolution) {
-      gl.uniform2f(this.gridUniforms.resolution, this.resolution.width, this.resolution.height);
-    }
-    if (this.gridUniforms.color) {
-      gl.uniform4f(this.gridUniforms.color, ...GRID_COLOR);
-    }
-
-    gl.drawArrays(gl.LINES, 0, this.gridVertexCount);
   }
 
   private renderCircles() {
@@ -390,46 +310,6 @@ export class WebGL2Renderer {
       gl.uniform1i(this.healthUniforms.fillMode, 1);
     }
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.healthCount);
-  }
-
-  private buildGrid() {
-    const gl = this.gl;
-    if (!this.gridBuffer) return;
-
-    const spacing = this.cellSize * this.dpr;
-    const lines: number[] = [];
-
-    // Center grid around player position (in pixel coordinates)
-    const playerPixelX = this.playerPos.x * this.dpr;
-    const playerPixelY = this.playerPos.y * this.dpr;
-
-    // Calculate the offset to align grid lines with player position
-    // This creates a scrolling effect as the player moves
-    const offsetX = playerPixelX % spacing;
-    const offsetY = playerPixelY % spacing;
-
-    // Draw vertical lines - ensure we cover the entire viewport
-    for (let x = offsetX; x <= this.resolution.width; x += spacing) {
-      lines.push(x, 0, x, this.resolution.height);
-    }
-    for (let x = offsetX - spacing; x >= 0; x -= spacing) {
-      lines.push(x, 0, x, this.resolution.height);
-    }
-
-    // Draw horizontal lines - ensure we cover the entire viewport
-    for (let y = offsetY; y <= this.resolution.height; y += spacing) {
-      lines.push(0, y, this.resolution.width, y);
-    }
-    for (let y = offsetY - spacing; y >= 0; y -= spacing) {
-      lines.push(0, y, this.resolution.width, y);
-    }
-
-    this.gridVertexCount = lines.length / 2;
-    const vertices = new Float32Array(lines);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.gridBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    this.gridNeedsRebuild = false;
   }
 
   private ensureCirclesCapacity(targetInstances: number) {
