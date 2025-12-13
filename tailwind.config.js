@@ -7,7 +7,10 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [require("daisyui")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("daisyui")
+  ],
   daisyui: {
     themes: ["night", "dark", "synthwave", "cyberpunk"],
     darkTheme: "night",
