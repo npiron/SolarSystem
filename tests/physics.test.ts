@@ -43,7 +43,10 @@ describe("Enhanced Physics System", () => {
       },
       assistUi: {
         recordShot: () => {},
-        trackWave: () => {}
+        trackWave: () => {},
+        recordPurchase: () => {},
+        recordPrestige: () => {},
+        refreshMilestones: () => {}
       }
     };
   });

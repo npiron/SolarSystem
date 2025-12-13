@@ -51,6 +51,10 @@ class AudioManager {
      * Must be called after user interaction (browser requirement)
      */
     init(): void {
+        if (typeof window === "undefined") {
+            this.settings.enabled = false;
+            return;
+        }
         if (this.context) return; // Already initialized
 
         try {

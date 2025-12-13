@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "../src/renderer/render.ts";
 import * as renderer from "../src/renderer/index.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
+import type { WebGL2Renderer } from "../src/renderer/webgl2Renderer.ts";
 
 describe("render", () => {
   afterEach(() => {
@@ -13,7 +14,7 @@ describe("render", () => {
     const pushCircleSpy = vi.spyOn(renderer, "pushCircle").mockImplementation(() => {});
 
     const state = createInitialState(800, 600);
-    const context = { canvasWidth: 800, canvasHeight: 600, webgl2Renderer: {} as unknown as WebGL2RenderingContext } as const;
+    const context = { canvasWidth: 800, canvasHeight: 600, webgl2Renderer: {} as WebGL2Renderer } as const;
 
     render(state, context);
 
