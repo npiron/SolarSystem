@@ -69,6 +69,11 @@ export interface TuningConfig {
     eliteHpMultiplier: number;
     eliteSpeedMultiplier: number;
     eliteRewardMultiplier: number;
+    crowdSoftCap: number;
+    crowdHardCap: number;
+    crowdCooldownBonus: number;
+    crowdPackDampen: number;
+    crowdWavePadding: number;
   };
 
   // Enemy parameters
@@ -199,7 +204,12 @@ export function getDefaultTuning(): TuningConfig {
       maxEliteChance: 0.55,
       eliteHpMultiplier: 2.5,
       eliteSpeedMultiplier: 0.85,
-      eliteRewardMultiplier: 2.5
+      eliteRewardMultiplier: 2.5,
+      crowdSoftCap: 18,
+      crowdHardCap: 32,
+      crowdCooldownBonus: 0.85,
+      crowdPackDampen: 0.65,
+      crowdWavePadding: 1.5
     },
     enemy: {
       baseHp: 25,
@@ -449,7 +459,12 @@ export const tuningMeta: TuningMetaMap = {
       maxEliteChance: { label: "Chance élite max", min: 0.1, max: 1, step: 0.05, unit: "%" },
       eliteHpMultiplier: { label: "Multiplicateur PV élite", min: 1, max: 10, step: 0.5 },
       eliteSpeedMultiplier: { label: "Multiplicateur vitesse élite", min: 0.5, max: 2, step: 0.05 },
-      eliteRewardMultiplier: { label: "Multiplicateur récomp. élite", min: 1, max: 10, step: 0.5 }
+      eliteRewardMultiplier: { label: "Multiplicateur récomp. élite", min: 1, max: 10, step: 0.5 },
+      crowdSoftCap: { label: "Seuil mou population", min: 6, max: 60, step: 1 },
+      crowdHardCap: { label: "Seuil dur population", min: 10, max: 80, step: 1 },
+      crowdCooldownBonus: { label: "Pause surpopulation", min: 0.1, max: 3, step: 0.05, unit: "s" },
+      crowdPackDampen: { label: "Réduction pack surpopulation", min: 0, max: 1, step: 0.05 },
+      crowdWavePadding: { label: "Tolérance par vague", min: 0, max: 5, step: 0.1 }
     }
   },
   enemy: {
