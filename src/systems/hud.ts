@@ -3,6 +3,42 @@ import { FX_BUDGET } from "../config/constants.ts";
 import { packSize, spawnRate } from "./spawn.ts";
 import { playCollect } from "./sound.ts";
 
+type AnimatedHudValue = "essence" | "fragments" | "idleRate" | "wave";
+
+const hudValueCache: Record<AnimatedHudValue, number> = {
+  essence: 0,
+  fragments: 0,
+  idleRate: 0,
+  wave: 0
+};
+
+const pulseClasses = ["animate-in", "fade-in", "zoom-in-95", "duration-300", "ease-out"];
+const statusClasses = ["animate-in", "fade-in", "slide-in-from-bottom-2", "duration-300", "ease-out"];
+
+function triggerHudAnimation(el: HTMLElement | null): void {
+  if (!el) return;
+  el.classList.remove(...pulseClasses);
+  // Force reflow to restart the animation
+  void el.offsetWidth;
+  el.classList.add(...pulseClasses);
+  el.addEventListener(
+    "animationend",
+    () => {
+      el.classList.remove(...pulseClasses);
+    },
+    { once: true }
+  );
+}
+
+function updateAnimatedValue(key: AnimatedHudValue, value: number, el: HTMLElement | null): void {
+  if (!el) return;
+  const previous = hudValueCache[key];
+  if (value > previous) {
+    triggerHudAnimation(el);
+  }
+  hudValueCache[key] = value;
+}
+
 export function formatNumber(value: number): string {
   const suffixes = [
     "",
@@ -143,10 +179,25 @@ export function updateFloatingText(state: GameState, dt: number): void {
 export function updateHud(state: GameState, { elements, uiRefs, generators, upgrades, talents, computeIdleRate, canUnlockTalent }: HudContext): void {
   const { essenceEl, fragmentsEl, idleRateEl, waveEl, hpEl, dpsEl, damageRow, spawnRateEl, pauseBtn, softPrestigeBtn, statusEl } = elements;
 
-  if (essenceEl) essenceEl.textContent = formatNumber(state.resources.essence);
-  if (fragmentsEl) fragmentsEl.textContent = formatNumber(state.resources.fragments);
-  if (idleRateEl) idleRateEl.textContent = `${formatNumber(computeIdleRate())} /s`;
-  if (waveEl) waveEl.textContent = state.wave.toFixed(1);
+  const essence = state.resources.essence;
+  const fragments = state.resources.fragments;
+  const idleRate = computeIdleRate();
+  if (essenceEl) {
+    essenceEl.textContent = formatNumber(essence);
+    updateAnimatedValue("essence", essence, essenceEl);
+  }
+  if (fragmentsEl) {
+    fragmentsEl.textContent = formatNumber(fragments);
+    updateAnimatedValue("fragments", fragments, fragmentsEl);
+  }
+  if (idleRateEl) {
+    idleRateEl.textContent = `${formatNumber(idleRate)} /s`;
+    updateAnimatedValue("idleRate", idleRate, idleRateEl);
+  }
+  if (waveEl) {
+    waveEl.textContent = state.wave.toFixed(1);
+    updateAnimatedValue("wave", state.wave, waveEl);
+  }
   if (hpEl) hpEl.textContent = `${state.player.hp.toFixed(0)} / ${state.player.maxHp}`;
   const avgDamage = state.player.damage * (1 + state.player.critChance * (state.player.critMultiplier - 1));
   const dps = (avgDamage / state.player.fireDelay) * state.player.projectiles;
@@ -199,9 +250,20 @@ export function updateHud(state: GameState, { elements, uiRefs, generators, upgr
     if (state.dead) {
       statusEl.textContent = "Vous êtes hors service. Relancez la run pour reprendre.";
       statusEl.classList.add("visible");
+      statusEl.classList.remove(...statusClasses);
+      void statusEl.offsetWidth;
+      statusEl.classList.add(...statusClasses);
+      statusEl.addEventListener(
+        "animationend",
+        () => {
+          statusEl.classList.remove(...statusClasses);
+        },
+        { once: true }
+      );
     } else {
       statusEl.textContent = "";
       statusEl.classList.remove("visible");
+      statusEl.classList.remove(...statusClasses);
     }
   }
 }
