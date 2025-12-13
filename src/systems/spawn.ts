@@ -218,7 +218,22 @@ export function updateSpawn(state: GameState, dt: number, canvas: Canvas): void 
 
   const rate = spawnRate(state);
   const pack = packSize(state);
-  const chance = eliteChance(state, pack);
+  const spawnConfig = getTuning().spawn;
+
+  const wavePadding = Math.sqrt(Math.max(0, state.wave - 1)) * spawnConfig.crowdWavePadding;
+  const softCap = spawnConfig.crowdSoftCap + wavePadding;
+  const hardCap = spawnConfig.crowdHardCap + wavePadding;
+  const existingEnemies = state.enemies.length;
+
+  // If the arena is saturated, pause spawning to let the player recover
+  if (existingEnemies >= hardCap) {
+    state.spawnTimer = (1 / rate) + spawnConfig.crowdCooldownBonus;
+    return;
+  }
+
+  const pressure = Math.max(0, existingEnemies - softCap) / Math.max(1, hardCap - softCap);
+  const adjustedPack = Math.max(1, Math.round(pack * (1 - pressure * spawnConfig.crowdPackDampen)));
+  const chance = eliteChance(state, adjustedPack);
 
   // Choose a primary spawn side for this pack - all enemies in pack spawn from same general area
   const primarySide = chooseSpawnSide(
@@ -228,13 +243,14 @@ export function updateSpawn(state: GameState, dt: number, canvas: Canvas): void 
     canvas.height
   );
 
-  for (let i = 0; i < pack; i++) {
+  for (let i = 0; i < adjustedPack; i++) {
     // 70% chance to spawn from primary side, 30% chance to spawn from random side
     const usePrimarySide = Math.random() < 0.7;
     const side = usePrimarySide ? primarySide : Math.floor(Math.random() * 4);
-    spawnEnemy(state, canvas, chance, i, pack, side);
+    spawnEnemy(state, canvas, chance, i, adjustedPack, side);
   }
-  state.spawnTimer = 1 / rate;
+  const cooldown = (1 / rate) * (1 + pressure) + pressure * spawnConfig.crowdCooldownBonus;
+  state.spawnTimer = cooldown;
 }
 
 /**

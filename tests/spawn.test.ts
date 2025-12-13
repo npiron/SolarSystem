@@ -1,16 +1,18 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   chooseSpawnSide,
   calculateSpawnPosition,
   spawnRate,
   packSize,
   spawnEnemy,
+  updateSpawn,
   shouldSpawnBoss,
   spawnBoss
 } from "../src/systems/spawn.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
 import { BOSS_WAVE_INTERVAL, BOSS_RADIUS, BOSS_HP_MULTIPLIER } from "../src/config/constants.ts";
 import { getTuning } from "../src/config/tuning.ts";
+import type { Enemy } from "../src/types/index.ts";
 
 describe("spawn", () => {
   describe("chooseSpawnSide", () => {
@@ -137,6 +139,72 @@ describe("spawn", () => {
       const state = createInitialState(800, 600);
       state.wave = 1000;
       expect(packSize(state)).toBe(5);
+    });
+  });
+
+  describe("crowd control spawning", () => {
+    const canvas = { width: 800, height: 600 };
+
+    function addDummyEnemy(state: ReturnType<typeof createInitialState>): void {
+      const enemy: Enemy = {
+        x: 0,
+        y: 0,
+        radius: 10,
+        hp: 10,
+        maxHp: 10,
+        speed: 20,
+        reward: 1,
+        fireTimer: 0,
+        fireDelay: 2,
+        elite: false,
+        type: "normal",
+        variant: "chaser"
+      };
+      state.enemies.push(enemy);
+    }
+
+    it("should slow down spawn timer when soft cap is exceeded", () => {
+      const state = createInitialState(800, 600);
+      state.wave = 20;
+      state.spawnTimer = 0;
+
+      const baseCooldown = 1 / spawnRate(state);
+      const spawnConfig = getTuning().spawn;
+      const wavePadding = Math.sqrt(Math.max(0, state.wave - 1)) * spawnConfig.crowdWavePadding;
+      const softCap = spawnConfig.crowdSoftCap + wavePadding;
+
+      while (state.enemies.length <= softCap + 1) {
+        addDummyEnemy(state);
+      }
+
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+      updateSpawn(state, 0, canvas);
+      randomSpy.mockRestore();
+
+      expect(state.spawnTimer).toBeGreaterThan(baseCooldown);
+    });
+
+    it("should pause spawning when the hard cap is hit", () => {
+      const state = createInitialState(800, 600);
+      state.wave = 5;
+      state.spawnTimer = 0;
+
+      const spawnConfig = getTuning().spawn;
+      const wavePadding = Math.sqrt(Math.max(0, state.wave - 1)) * spawnConfig.crowdWavePadding;
+      const hardCap = spawnConfig.crowdHardCap + wavePadding;
+
+      while (state.enemies.length <= hardCap) {
+        addDummyEnemy(state);
+      }
+      const enemyCountBefore = state.enemies.length;
+
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+      updateSpawn(state, 0, canvas);
+      randomSpy.mockRestore();
+
+      expect(state.enemies.length).toBe(enemyCountBefore);
+      const baseCooldown = 1 / spawnRate(state);
+      expect(state.spawnTimer).toBeGreaterThan(baseCooldown);
     });
   });
 
