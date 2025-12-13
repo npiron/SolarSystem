@@ -21,8 +21,8 @@ export function beginFrame() {
   renderer?.beginFrame();
 }
 
-export function render(addons?: { glow: boolean; bloom: boolean; grain: boolean }, time?: number, playerPos?: { x: number; y: number }) {
-  renderer?.render(addons ?? { glow: false, bloom: false, grain: false }, time ?? 0, playerPos);
+export function render(addons?: { glow: boolean; bloom: boolean; grain: boolean }, time?: number) {
+  renderer?.render(addons ?? { glow: false, bloom: false, grain: false }, time ?? 0);
 }
 
 export function pushCircle(options: ShapeInstance) {
