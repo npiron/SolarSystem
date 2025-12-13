@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { updateCombat } from "../src/systems/combat.ts";
+import { updateCombat } from "../src/systems/combat/index.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
 import type { GameState, Canvas } from "../src/types/index.ts";
 import { spawnEnemy } from "../src/systems/spawn.ts";
@@ -323,9 +323,10 @@ describe("combat", () => {
         });
 
         it("should attract fragments within collection radius", () => {
-            state.player.collectRadius = 100;
+            // Increase collection radius so attraction kicks in before pickup
+            state.player.collectRadius = 400;
             state.fragmentsOrbs.push({
-                x: 450, // 50 units away
+                x: 480, // Between attraction and pickup thresholds
                 y: 300,
                 value: 10,
                 vx: 0,
@@ -336,8 +337,9 @@ describe("combat", () => {
             updateCombat(state, 0.1, canvas);
 
             const fragment = state.fragmentsOrbs[0];
+            expect(fragment).toBeDefined();
             // Fragment should have gained velocity toward player
-            expect(fragment.vx).toBeLessThan(0); // Moving left toward player
+            expect(fragment!.vx).toBeLessThan(0); // Moving left toward player
         });
 
         it("should collect fragments when player is close enough", () => {

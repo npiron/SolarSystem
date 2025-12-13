@@ -32,7 +32,6 @@ import {
   updatePerformanceHud,
   type PerformanceHudElements
 } from "./systems/performance.ts";
-import { initSidebarSystem } from "./systems/sidebar.ts";
 import {
   renderGenerators as renderGeneratorsUI,
   renderUpgrades as renderUpgradesUI,

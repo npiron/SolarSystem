@@ -77,7 +77,7 @@ describe("config factories", () => {
     expect(state.player.critMultiplier).toBeCloseTo(2.2);
     expect(state.player.damageReduction).toBeCloseTo(0.72);
     expect(state.player.pierce).toBe(1);
-    expect(state.player.collectRadius).toBeCloseTo(55);
+    expect(state.player.collectRadius).toBeCloseTo(52.5);
     expect(state.player.speed).toBeCloseTo(106);
   });
 

@@ -10,6 +10,7 @@ import {
 } from "../src/systems/spawn.ts";
 import { createInitialState } from "../src/systems/gameState.ts";
 import { BOSS_WAVE_INTERVAL, BOSS_RADIUS, BOSS_HP_MULTIPLIER } from "../src/config/constants.ts";
+import { getTuning } from "../src/config/tuning.ts";
 
 describe("spawn", () => {
   describe("chooseSpawnSide", () => {
@@ -306,7 +307,8 @@ describe("spawn", () => {
       spawnBoss(state, canvas);
       
       const waveScale = 1 + state.wave * 0.02;
-      const baseHp = (25 + state.wave * 6) * waveScale;
+      const enemyConfig = getTuning().enemy;
+      const baseHp = (enemyConfig.baseHp + state.wave * enemyConfig.hpWaveScale) * waveScale;
       const expectedHp = baseHp * BOSS_HP_MULTIPLIER;
       expect(state.currentBoss!.hp).toBe(expectedHp);
       expect(state.currentBoss!.maxHp).toBe(expectedHp);
