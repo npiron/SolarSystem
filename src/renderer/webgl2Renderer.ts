@@ -48,6 +48,7 @@ export class WebGL2Renderer {
   private readonly dpr: number;
   private resolution = { width: 0, height: 0 };
   private enabled = true;
+  private gridEnabled = true;
 
   // Circles rendering resources
   private circlesProgram: WebGLProgram;
@@ -149,6 +150,14 @@ export class WebGL2Renderer {
     }
   }
 
+  setGridEnabled(enabled: boolean) {
+    if (this.gridEnabled === enabled) return;
+    this.gridEnabled = enabled;
+    if (!enabled) {
+      this.clear();
+    }
+  }
+
   resize(width: number, height: number) {
     if (!this.enabled) return;
     const { width: pixelWidth, height: pixelHeight } = resizeCanvas(this.gl, this.canvas, width, height, this.dpr);
@@ -221,7 +230,9 @@ export class WebGL2Renderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Render animated space background first
-    this.background.render(this.resolution.width, this.resolution.height, time);
+    if (this.gridEnabled) {
+      this.background.render(this.resolution.width, this.resolution.height, time);
+    }
 
     this.renderCircles();
     this.renderHealthBars();
