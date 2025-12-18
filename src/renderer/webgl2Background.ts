@@ -85,11 +85,34 @@ void addStarLayer(
   vec2 starId = floor(starUV);
   float starRand = hash(starId);
   vec2 local = fract(starUV) - 0.5;
+  local.x *= u_resolution.x / u_resolution.y;
   float starDist = length(local);
   float starShape = smoothstep(falloff, 0.0, starDist);
   float twinkle = 0.7 + 0.3 * sin(u_time * twinkleSpeed + starRand * 6.2831);
   float visible = step(threshold, starRand);
   color += tint * starShape * twinkle * visible * intensity;
+}
+
+void addDistantGalaxies(inout vec3 color, vec2 uv) {
+  vec2 galaxyGrid = uv * 3.6;
+  vec2 id = floor(galaxyGrid);
+  vec2 local = fract(galaxyGrid) - 0.5;
+  float rand = hash(id * 1.7 + 3.1);
+  float present = step(0.965, rand);
+
+  float angle = rand * 6.2831;
+  mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+  vec2 oriented = rot * local;
+  oriented.x *= 0.45 + rand * 0.25;
+
+  float radius = length(oriented);
+  float swirl = sin(atan(oriented.y, oriented.x) * 3.5 + radius * 12.0 + rand * 6.0);
+  float core = exp(-radius * radius * 32.0);
+  float arms = swirl * smoothstep(0.22, 0.05, radius);
+  float brightness = (core * 0.9 + arms * 0.12) * present;
+
+  vec3 tint = mix(vec3(0.6, 0.72, 1.0), vec3(1.0, 0.85, 0.9), rand);
+  color += tint * brightness * 0.22;
 }
 
 void main() {
@@ -112,10 +135,13 @@ void main() {
   vec3 galaxyColor = vec3(0.08, 0.06, 0.12) * (0.12 + galaxyNoise * 0.12);
   color += galaxyColor * galaxyBand;
 
+  // Distant galaxy clusters
+  addDistantGalaxies(color, parallaxUV(correctUV, 0.14));
+
   // Star layers with parallax
-  addStarLayer(color, parallaxUV(correctUV, 0.02), 140.0, 0.975, 0.32, 0.35, vec3(0.9, 0.95, 1.0), 0.45);
-  addStarLayer(color, parallaxUV(correctUV, 0.06), 90.0, 0.94, 0.28, 0.22, vec3(1.0, 0.96, 0.9), 0.65);
-  addStarLayer(color, parallaxUV(correctUV, 0.09), 36.0, 0.9, 0.24, 0.16, vec3(1.0, 0.98, 0.95), 1.0);
+  addStarLayer(color, parallaxUV(correctUV, 0.02), 180.0, 0.975, 0.26, 0.35, vec3(0.9, 0.95, 1.0), 0.4);
+  addStarLayer(color, parallaxUV(correctUV, 0.06), 120.0, 0.94, 0.22, 0.22, vec3(1.0, 0.96, 0.9), 0.6);
+  addStarLayer(color, parallaxUV(correctUV, 0.09), 48.0, 0.9, 0.18, 0.16, vec3(1.0, 0.98, 0.95), 0.95);
 
   // Dust / faint nebula wisps
   vec2 dustUV = parallaxUV(correctUV * 1.4, 0.12);
