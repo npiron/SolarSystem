@@ -79,6 +79,7 @@ const toggleSoundBtn = document.getElementById("toggleSound");
 const softPrestigeBtn = document.getElementById("softPrestige");
 const restartRunBtn = document.getElementById("restartRun");
 const togglePerfBtn = document.getElementById("togglePerf");
+const toggleParallaxBtn = document.getElementById("toggleParallax");
 const versionBadge = document.getElementById("versionBadge");
 const docDialog = document.getElementById("docDialog");
 const docTabs = document.getElementById("docTabs");
@@ -340,6 +341,16 @@ function initUI(): void {
     toggleSoundBtn.innerHTML = state.audio.enabled ? '<i class="ti ti-volume"></i>' : '<i class="ti ti-volume-off"></i>';
   };
 
+  const syncParallaxToggle = (): void => {
+    if (!toggleParallaxBtn) return;
+    toggleParallaxBtn.innerHTML = state.visualsParallax
+      ? '<i class="ti ti-photo"></i> Fond réaliste'
+      : '<i class="ti ti-photo-off"></i> Fond simple';
+    toggleParallaxBtn.title = state.visualsLow
+      ? "Fond désactivé en mode perfo"
+      : "Activer/désactiver le fond réaliste";
+  };
+
   const armAudioUnlock = (): void => {
     const unlock = () => resumeAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -348,6 +359,7 @@ function initUI(): void {
 
   armAudioUnlock();
   syncSoundToggle();
+  syncParallaxToggle();
 
   pauseBtn?.addEventListener("click", () => {
     state.running = !state.running;
@@ -398,6 +410,7 @@ function initUI(): void {
 
     // Toggle CSS class for performance mode decorations
     document.body.classList.toggle("performance-mode", state.visualsLow);
+    syncParallaxToggle();
 
     buildBackground(webgl2Canvas.width, webgl2Canvas.height);
     // REMOVED: webgl2Renderer?.setEnabled(!state.visualsLow);
@@ -405,6 +418,13 @@ function initUI(): void {
     debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
       updateHud(state, hudContext)
     );
+  });
+
+  toggleParallaxBtn?.addEventListener("click", () => {
+    state.visualsParallax = !state.visualsParallax;
+    syncParallaxToggle();
+    playUiToggle();
+    saveGameLocal();
   });
 
   toggleFpsBtn?.addEventListener("click", () => {
@@ -505,6 +525,7 @@ async function bootstrap(): Promise<void> {
 
   // Initialize performance mode CSS class
   document.body.classList.toggle("performance-mode", state.visualsLow);
+  buildBackground(webgl2Canvas.width, webgl2Canvas.height);
 
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);

@@ -25,6 +25,8 @@ out vec4 fragColor;
 
 uniform float u_time;
 uniform vec2 u_resolution;
+uniform vec2 u_camera;
+uniform float u_parallaxStrength;
 
 // Hash function for pseudo-random values
 float hash(vec2 p) {
@@ -33,99 +35,95 @@ float hash(vec2 p) {
   return fract(p.x * p.y);
 }
 
-void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution;
-  
-  // Force 16:9 aspect ratio for background (matches 1920x1080)
-  vec2 correctUV = uv;
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash(i);
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+vec2 correctAspect(vec2 uv) {
+  vec2 corrected = uv;
   float targetAspect = 1920.0 / 1080.0; // 16:9
   float currentAspect = u_resolution.x / u_resolution.y;
-  
+
   if (currentAspect > targetAspect) {
-    // Screen is wider than 16:9 - crop horizontally
     float scale = currentAspect / targetAspect;
-    correctUV.x = (correctUV.x - 0.5) * scale + 0.5;
+    corrected.x = (corrected.x - 0.5) * scale + 0.5;
   } else {
-    // Screen is taller than 16:9 - crop vertically
     float scale = targetAspect / currentAspect;
-    correctUV.y = (correctUV.y - 0.5) * scale + 0.5;
+    corrected.y = (corrected.y - 0.5) * scale + 0.5;
   }
-  
-  // Deep black space - almost pure black
+  return corrected;
+}
+
+vec2 parallaxUV(vec2 uv, float depth) {
+  float maxRes = max(u_resolution.x, u_resolution.y);
+  vec2 cameraOffset = (u_camera - 0.5 * u_resolution) / max(maxRes, 1.0);
+  vec2 drift = vec2(
+    sin(u_time * (0.07 + depth * 0.05)),
+    cos(u_time * (0.05 + depth * 0.08))
+  ) * 0.003 * depth;
+  return uv - cameraOffset * depth * u_parallaxStrength + drift;
+}
+
+void addStarLayer(
+  inout vec3 color,
+  vec2 uv,
+  float scale,
+  float threshold,
+  float falloff,
+  float twinkleSpeed,
+  vec3 tint,
+  float intensity
+) {
+  vec2 starUV = uv * scale;
+  vec2 starId = floor(starUV);
+  float starRand = hash(starId);
+  vec2 local = fract(starUV) - 0.5;
+  float starDist = length(local);
+  float starShape = smoothstep(falloff, 0.0, starDist);
+  float twinkle = 0.7 + 0.3 * sin(u_time * twinkleSpeed + starRand * 6.2831);
+  float visible = step(threshold, starRand);
+  color += tint * starShape * twinkle * visible * intensity;
+}
+
+void main() {
+  vec2 uv = v_uv;
+  vec2 correctUV = correctAspect(uv);
+
+  // Deep black space base
   vec3 color = vec3(0.0, 0.0, 0.01);
-  
-  // === Very distant Milky Way (extremely subtle) ===
-  vec2 galaxyUV = correctUV * 2.0 - 1.0;
-  galaxyUV.x *= targetAspect;
-  
-  // Rotate slightly
+
+  // Milky Way / nebula background
+  vec2 galaxyUV = parallaxUV(correctUV, 0.12) * 2.0 - 1.0;
+  galaxyUV.x *= 1920.0 / 1080.0;
   float angle = 0.25;
   mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
   galaxyUV = rot * galaxyUV;
-  
-  // Very subtle band
   float galaxyBand = 1.0 - abs(galaxyUV.y * 2.0);
-  galaxyBand = smoothstep(0.3, 0.9, galaxyBand);
-  galaxyBand = pow(galaxyBand, 6.0); // Very soft falloff
-  
-  // Extremely faint galaxy glow
-  vec3 galaxyColor = vec3(0.08, 0.06, 0.12) * 0.15; // Very faint purple
+  galaxyBand = smoothstep(0.25, 0.9, galaxyBand);
+  galaxyBand = pow(galaxyBand, 6.0);
+  float galaxyNoise = noise(galaxyUV * 1.5 + u_time * 0.02);
+  vec3 galaxyColor = vec3(0.08, 0.06, 0.12) * (0.12 + galaxyNoise * 0.12);
   color += galaxyColor * galaxyBand;
-  
-  // === Sharp, twinkling stars ===
-  // Small distant stars (very far)
-  vec2 starUV = correctUV * 120.0;
-  vec2 starId = floor(starUV);
-  float starRand = hash(starId);
-  
-  if(starRand > 0.97) {
-    vec2 starPos = fract(starUV);
-    float starDist = length(starPos - 0.5);
-    
-    // Very slow, gentle twinkle
-    float twinkle = 0.6 + 0.4 * sin(u_time * 0.2 + starRand * 6.28);
-    
-    // Sharp star point
-    float star = smoothstep(0.3, 0.0, starDist) * twinkle;
-    color += vec3(0.9, 0.95, 1.0) * star * 0.4;
-  }
-  
-  // Medium stars (far)
-  vec2 medStarUV = correctUV * 60.0;
-  vec2 medStarId = floor(medStarUV);
-  float medStarRand = hash(medStarId + vec2(0.5));
-  
-  if(medStarRand > 0.95) {
-    vec2 medStarPos = fract(medStarUV);
-    float medStarDist = length(medStarPos - 0.5);
-    
-    // Slower twinkle
-    float medTwinkle = 0.7 + 0.3 * sin(u_time * 0.15 + medStarRand * 6.28);
-    
-    // Sharper, brighter star
-    float medStar = smoothstep(0.25, 0.0, medStarDist) * medTwinkle;
-    vec3 starColor = mix(vec3(1.0, 0.95, 0.9), vec3(0.9, 0.95, 1.0), medStarRand);
-    color += starColor * medStar * 0.6;
-  }
-  
-  // Rare bright stars
-  vec2 brightStarUV = correctUV * 25.0;
-  vec2 brightStarId = floor(brightStarUV);
-  float brightStarRand = hash(brightStarId + vec2(1.0));
-  
-  if(brightStarRand > 0.92) {
-    vec2 brightStarPos = fract(brightStarUV);
-    float brightStarDist = length(brightStarPos - 0.5);
-    
-    // Very slow twinkle
-    float brightTwinkle = 0.8 + 0.2 * sin(u_time * 0.1 + brightStarRand * 6.28);
-    
-    // Sharp bright star
-    float brightStar = smoothstep(0.22, 0.0, brightStarDist) * brightTwinkle;
-    vec3 starColor = mix(vec3(1.0, 0.98, 0.95), vec3(0.95, 0.98, 1.0), brightStarRand);
-    color += starColor * brightStar * 1.0;
-  }
-  
+
+  // Star layers with parallax
+  addStarLayer(color, parallaxUV(correctUV, 0.02), 140.0, 0.975, 0.32, 0.35, vec3(0.9, 0.95, 1.0), 0.45);
+  addStarLayer(color, parallaxUV(correctUV, 0.06), 90.0, 0.94, 0.28, 0.22, vec3(1.0, 0.96, 0.9), 0.65);
+  addStarLayer(color, parallaxUV(correctUV, 0.09), 36.0, 0.9, 0.24, 0.16, vec3(1.0, 0.98, 0.95), 1.0);
+
+  // Dust / faint nebula wisps
+  vec2 dustUV = parallaxUV(correctUV * 1.4, 0.12);
+  float dustNoise = noise(dustUV * 3.0 + vec2(0.0, u_time * 0.01));
+  float dust = smoothstep(0.6, 1.0, dustNoise);
+  vec3 dustColor = vec3(0.2, 0.18, 0.3);
+  color += dustColor * dust * 0.08;
+
   fragColor = vec4(color, 1.0);
 }
 `;
@@ -136,6 +134,8 @@ export class WebGL2Background {
   private uniforms: {
     time: WebGLUniformLocation | null;
     resolution: WebGLUniformLocation | null;
+    camera: WebGLUniformLocation | null;
+    parallaxStrength: WebGLUniformLocation | null;
   };
 
   constructor(private gl: WebGL2RenderingContext) {
@@ -145,6 +145,8 @@ export class WebGL2Background {
     this.uniforms = {
       time: gl.getUniformLocation(this.program, "u_time"),
       resolution: gl.getUniformLocation(this.program, "u_resolution"),
+      camera: gl.getUniformLocation(this.program, "u_camera"),
+      parallaxStrength: gl.getUniformLocation(this.program, "u_parallaxStrength"),
     };
 
     // Set up fullscreen quad
@@ -162,7 +164,13 @@ export class WebGL2Background {
     gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
   }
 
-  render(width: number, height: number, time: number) {
+  render(
+    width: number,
+    height: number,
+    time: number,
+    camera: { x: number; y: number },
+    parallaxStrength: number
+  ) {
     const gl = this.gl;
 
     gl.useProgram(this.program);
@@ -173,6 +181,12 @@ export class WebGL2Background {
     }
     if (this.uniforms.resolution) {
       gl.uniform2f(this.uniforms.resolution, width, height);
+    }
+    if (this.uniforms.camera) {
+      gl.uniform2f(this.uniforms.camera, camera.x, camera.y);
+    }
+    if (this.uniforms.parallaxStrength) {
+      gl.uniform1f(this.uniforms.parallaxStrength, parallaxStrength);
     }
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

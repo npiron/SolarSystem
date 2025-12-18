@@ -465,7 +465,13 @@ export function render(state: GameState, context: RenderContext): void {
       });
     });
 
-    renderer.render(state.addons, state.time);
+    const parallaxEnabled = state.visualsParallax && !state.visualsLow;
+    renderer.render(
+      state.addons,
+      state.time,
+      { x: state.player.x, y: state.player.y },
+      parallaxEnabled
+    );
   }
 
   // Render HUD text overlay

@@ -89,6 +89,7 @@ export interface GameState {
   prestigeCooldown: number;
   dead: boolean;
   visualsLow: boolean;
+  visualsParallax: boolean;
   audio: AudioState;
   performance: PerformanceState;
   addons: Addons;
