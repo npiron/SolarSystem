@@ -22,9 +22,7 @@ export class PanelManager {
         this.registerPanel("talents", "panel-talents");
         this.registerPanel("tuning", "panel-tuning");
         this.registerPanel("guide", "panel-guide");
-
-        // Open production by default
-        this.togglePanel("production");
+        this.closeAll();
     }
 
     private registerPanel(id: string, panelId: string): void {
@@ -38,6 +36,7 @@ export class PanelManager {
         const sidebarButton = document.querySelector(`button[data-target="${id}"]`) as HTMLElement;
         if (sidebarButton) {
             this.toggles.set(id, sidebarButton);
+            sidebarButton.setAttribute("aria-expanded", "false");
             sidebarButton.addEventListener("click", () => {
                 this.togglePanel(id);
                 playUiToggle();
@@ -69,6 +68,7 @@ export class PanelManager {
         }
         if (toggle) {
             toggle.classList.add("text-primary", "border-primary", "bg-primary/10");
+            toggle.setAttribute("aria-expanded", "true");
         }
     }
 
@@ -79,6 +79,7 @@ export class PanelManager {
         // Reset buttons
         this.toggles.forEach(t => {
             t.classList.remove("text-primary", "border-primary", "bg-primary/10");
+            t.setAttribute("aria-expanded", "false");
         });
 
         this.activePanelId = null;

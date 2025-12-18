@@ -169,35 +169,66 @@
 
         <!-- SECTION: Production -->
         <div id="panel-production" class="panel-section hidden">
-          <!-- Generators injected here -->
-          <div id="generators" class="flex flex-col gap-2"></div>
+          <div class="menu-panel">
+            <div class="menu-panel__header">
+              <span class="menu-panel__title"><i class="ti ti-building-factory"></i> Production</span>
+              <span class="menu-panel__meta">Ressources passives</span>
+            </div>
+            <div class="menu-panel__body">
+              <!-- Generators injected here -->
+              <div id="generators" class="flex flex-col gap-2"></div>
+            </div>
+          </div>
         </div>
 
 
 
         <!-- SECTION: Talents -->
         <div id="panel-talents" class="panel-section hidden">
-          <div class="flex justify-between items-center mb-4">
-            <span class="text-xs opacity-50" id="talentStatus">0/0 Points</span>
-            <button id="resetTalents" class="btn btn-xs btn-error btn-outline">Reset</button>
+          <div class="menu-panel">
+            <div class="menu-panel__header">
+              <span class="menu-panel__title"><i class="ti ti-bolt"></i> Talents</span>
+              <div class="flex items-center gap-3">
+                <span class="menu-panel__meta" id="talentStatus">0/0 Points</span>
+                <button id="resetTalents" class="btn btn-xs btn-error btn-outline">Reset</button>
+              </div>
+            </div>
+            <div class="menu-panel__body">
+              <div id="talents" class="grid grid-cols-4 gap-2"></div>
+            </div>
           </div>
-          <div id="talents" class="grid grid-cols-4 gap-2"></div>
         </div>
 
 
 
         <!-- SECTION: Tuning -->
         <div id="panel-tuning" class="panel-section hidden">
-          <div id="tuningPanel"></div>
+          <div class="menu-panel">
+            <div class="menu-panel__header">
+              <span class="menu-panel__title"><i class="ti ti-adjustments"></i> Réglages</span>
+              <span class="menu-panel__meta">Valeurs en direct</span>
+            </div>
+            <div class="menu-panel__body">
+              <div id="tuningPanel"></div>
+            </div>
+          </div>
         </div>
 
         <!-- SECTION: Guide -->
         <div id="panel-guide" class="panel-section hidden">
-          <ul class="steps steps-vertical text-xs w-full">
-            <li class="step step-primary">Investis Essence dans production passives</li>
-            <li class="step step-primary">Fragments pour upgrades de combat</li>
-            <li class="step">Consolidation = boost passif</li>
-          </ul>
+          <div class="menu-panel">
+            <div class="menu-panel__header">
+              <span class="menu-panel__title"><i class="ti ti-book"></i> Guide</span>
+              <span class="menu-panel__meta">Conseils rapides</span>
+            </div>
+            <div class="menu-panel__body">
+              <ul class="steps steps-vertical text-xs w-full">
+                <li class="step step-primary">Investis Essence dans production passives</li>
+                <li class="step step-primary">Fragments pour upgrades de combat</li>
+                <li class="step">Consolidation = boost passif</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
       </div>
