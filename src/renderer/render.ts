@@ -55,6 +55,7 @@ export function render(state: GameState, context: RenderContext): void {
   const { canvasWidth, canvasHeight, webgl2Renderer } = context;
   const allowFx = !state.visualsLow;
   const time = state.time;
+  const bulletTuning = getTuning().bullet;
 
   if (webgl2Renderer) {
     renderer.resize(canvasWidth, canvasHeight);
@@ -79,7 +80,7 @@ export function render(state: GameState, context: RenderContext): void {
     const collectRing = { color: webglColors.collectRing, scale: 1.15 };
     const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.55 + oscillate(time, 2.2, 0.15) } : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
-    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 2.2 } : undefined;
+    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 2.4 } : undefined;
 
     renderer.beginFrame();
 
@@ -220,18 +221,53 @@ export function render(state: GameState, context: RenderContext): void {
       rotation: playerRotation
     });
 
-    // Render bullets
-    state.bullets.forEach((b) =>
+    // Render bullets with additional trails and muzzle flash
+    state.bullets.forEach((b) => {
+      const bulletSpeed = Math.hypot(b.dx, b.dy) || 1;
+      const speedRatio = Math.min(1, bulletSpeed / bulletTuning.maxSpeed);
+      const angle = Math.atan2(b.dy, b.dx);
+      const pulse = 1 + oscillate(time + (b.x + b.y) * 0.02, 8, 0.08 + speedRatio * 0.05);
+
+      if (allowFx) {
+        // Jet-like trail
+        for (let i = 1; i <= 3; i++) {
+          const backtrack = 0.01 * i;
+          const fade = 0.45 - i * 0.1;
+          renderer.pushCircle({
+            x: b.x - b.dx * backtrack,
+            y: b.y - b.dy * backtrack,
+            radius: 4.2 - i * 0.7,
+            color: [bulletColor[0], bulletColor[1], bulletColor[2], Math.max(0, fade)] as const,
+            sides: BULLET_SHAPE.sides,
+            rotation: angle,
+            halo: { color: webglColors.bulletGlow, scale: 1.6 + i * 0.25 }
+          });
+        }
+
+        // Radial flash when bullet is fresh
+        if (b.life > bulletTuning.maxLifetime * 0.6) {
+          renderer.pushCircle({
+            x: b.x,
+            y: b.y,
+            radius: 6.5 * pulse,
+            color: [bulletColor[0], bulletColor[1], bulletColor[2], 0.28] as const,
+            sides: 10,
+            rotation: angle,
+            halo: { color: webglColors.bulletGlow, scale: 2.8 }
+          });
+        }
+      }
+
       renderer.pushCircle({
         x: b.x,
         y: b.y,
-        radius: 4,
+        radius: 4.3 * pulse,
         color: bulletColor,
         sides: BULLET_SHAPE.sides,
-        rotation: BULLET_SHAPE.rotation,
+        rotation: angle,
         halo: bulletHalo
-      })
-    );
+      });
+    });
 
     // Render fragments as mini black holes with accretion disks
     state.fragmentsOrbs.forEach((f, index) => {
@@ -297,6 +333,38 @@ export function render(state: GameState, context: RenderContext): void {
         enemyColor[3]
       ] as const;
 
+      if (allowFx) {
+        const speed = Math.hypot(e.vx ?? 0, e.vy ?? 0);
+        const direction = Math.atan2(e.vy ?? 0, e.vx ?? 0);
+        const thrustLength = Math.min(3, 1 + speed * 0.02);
+
+        // Motion streaks behind mobile enemies
+        for (let i = 1; i <= thrustLength; i++) {
+          const offset = 0.012 * i;
+          const fade = 0.28 - i * 0.08;
+          renderer.pushCircle({
+            x: e.x - (e.vx ?? 0) * offset,
+            y: e.y - (e.vy ?? 0) * offset,
+            radius: e.radius * (0.75 - i * 0.12) * enemyPulse,
+            color: [enemyColor[0], enemyColor[1], enemyColor[2], Math.max(0, fade)] as const,
+            sides: enemyShape.sides,
+            rotation: enemyRotation - i * 0.05,
+            halo: { color: enemyColor, scale: 1.05 + i * 0.1 }
+          });
+
+          renderer.pushCircle({
+            x: e.x - (e.vx ?? 0) * offset,
+            y: e.y - (e.vy ?? 0) * offset,
+            radius: e.radius * 0.45,
+            color: [variantHaloColor?.[0] ?? enemyColor[0], variantHaloColor?.[1] ?? enemyColor[1], variantHaloColor?.[2] ?? enemyColor[2],
+              Math.max(0, fade * 0.8)] as const,
+            sides: enemyShape.sides,
+            rotation: direction + Math.PI / 2,
+            halo: variantHaloColor ? { color: variantHaloColor, scale: 1.2 } : undefined
+          });
+        }
+      }
+
       renderer.pushCircle({
         x: e.x,
         y: e.y,
@@ -305,6 +373,16 @@ export function render(state: GameState, context: RenderContext): void {
         sides: enemyShape.sides,
         rotation: enemyRotation,
         halo: enemyHalo
+      });
+
+      // Inner core for added depth
+      renderer.pushCircle({
+        x: e.x,
+        y: e.y,
+        radius: e.radius * 0.55,
+        color: [tintedEnemyColor[0], tintedEnemyColor[1], tintedEnemyColor[2], 0.9] as const,
+        sides: enemyShape.sides,
+        rotation: enemyRotation * 1.2,
       });
 
       // Render health bars
