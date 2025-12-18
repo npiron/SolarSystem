@@ -198,7 +198,7 @@ function renderWiki(): string {
   const accordion = wikiPages
     .map(
       (page, index) => `
-        <details class="wiki-entry" ${index < 2 ? "open" : ""}>
+        <details class="wiki-entry">
           <summary>${escapeHtml(page.title)}</summary>
           <div class="wiki-body">${page.content}</div>
         </details>
