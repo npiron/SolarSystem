@@ -234,7 +234,8 @@ function fire(state: GameState): void {
   const { maxBullets } = getTuning().fx;
 
   const bulletSpeed = Math.min(state.player.bulletSpeed, maxSpeed);
-  const lifetime = Math.min(1.2 * state.player.range, maxLifetime);
+  const rangeFactor = (stats.range ?? 1) * state.player.range;
+  const lifetime = Math.min(1.2 * rangeFactor, maxLifetime);
 
   // Shotgun spread: all projectiles fire in a cone toward the target
   const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
@@ -293,7 +294,8 @@ function fireOrbit(state: GameState): void {
   const count = calculateOrbitProjectiles(state, orbitConfig);
 
   const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
-  const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
+  const rangeFactor = (stats.range ?? 1) * state.player.range;
+  const lifetime = Math.min(1.5 * rangeFactor, maxLifetime);
 
   for (let i = 0; i < count; i++) {
     if (state.bullets.length >= maxBullets) break;
@@ -544,6 +546,8 @@ function fireMissiles(state: GameState): void {
     const dy = targetY - state.player.y;
     const dist = Math.hypot(dx, dy) || 1;
     const speed = 150;
+    const maxRange = stats.range ?? 300;
+    const lifetime = Math.min((maxRange / speed) * 1.5, 6);
 
     const missile: HomingMissile = {
       x: state.player.x,
@@ -551,7 +555,7 @@ function fireMissiles(state: GameState): void {
       dx: (dx / dist) * speed,
       dy: (dy / dist) * speed,
       targetId: i, // Just an identifier
-      life: 4,
+      life: lifetime,
       damage: stats.damage * damageMult
     };
 
@@ -699,12 +703,14 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     }
   }
 
+  const { cooldownMult } = getGlobalMultipliers(state);
+
   // Primary weapon: Main Gun
   if (state.player.fireTimer <= 0 && isWeaponUnlocked(state, 'mainGun')) {
     const def = getWeaponDef('mainGun');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'mainGun'));
     fire(state);
-    state.player.fireTimer = stats.fireDelay;
+    state.player.fireTimer = stats.fireDelay * cooldownMult;
   }
 
   // Secondary weapon: Circular Blast (orbit)
@@ -712,7 +718,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('circularBlast');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'circularBlast'));
     fireOrbit(state);
-    state.player.orbitTimer = stats.fireDelay;
+    state.player.orbitTimer = stats.fireDelay * cooldownMult;
   }
 
   // Lightning weapon
@@ -721,7 +727,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('lightning');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'lightning'));
     fireLightning(state);
-    state.lightningTimer = stats.fireDelay;
+    state.lightningTimer = stats.fireDelay * cooldownMult;
   }
 
   // Laser weapon (continuous)
@@ -745,7 +751,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('missiles');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'missiles'));
     fireMissiles(state);
-    state.missileTimer = stats.fireDelay;
+    state.missileTimer = stats.fireDelay * cooldownMult;
   }
 
   // Update homing missiles
