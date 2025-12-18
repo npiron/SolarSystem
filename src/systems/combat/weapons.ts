@@ -49,7 +49,8 @@ export function fire(state: GameState): void {
     const { maxBullets } = getTuning().fx;
 
     const bulletSpeed = Math.min(state.player.bulletSpeed, maxSpeed);
-    const lifetime = Math.min(1.2 * state.player.range, maxLifetime);
+    const rangeFactor = (stats.range ?? 1) * state.player.range;
+    const lifetime = Math.min(1.2 * rangeFactor, maxLifetime);
 
     const spreadAngle = Math.PI / 4;
 
@@ -87,7 +88,8 @@ export function fireOrbit(state: GameState): void {
 
     const count = calculateOrbitProjectiles(state, orbitConfig);
     const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
-    const lifetime = Math.min(1.5 * state.player.range, maxLifetime);
+    const rangeFactor = (stats.range ?? 1) * state.player.range;
+    const lifetime = Math.min(1.5 * rangeFactor, maxLifetime);
 
     for (let i = 0; i < count; i++) {
         if (state.bullets.length >= maxBullets) break;
@@ -221,6 +223,8 @@ export function fireMissiles(state: GameState): void {
         const dy = targetY - state.player.y;
         const dist = Math.hypot(dx, dy) || 1;
         const speed = 150;
+        const maxRange = stats.range ?? 300;
+        const lifetime = Math.min((maxRange / speed) * 1.5, 6);
 
         const missile: HomingMissile = {
             x: state.player.x,
@@ -228,7 +232,7 @@ export function fireMissiles(state: GameState): void {
             dx: (dx / dist) * speed,
             dy: (dy / dist) * speed,
             targetId: i,
-            life: 4,
+            life: lifetime,
             damage: stats.damage * damageMult
         };
 
