@@ -56,6 +56,13 @@ export function render(state: GameState, context: RenderContext): void {
   const allowFx = !state.visualsLow;
   const time = state.time;
   const bulletTuning = getTuning().bullet;
+  const entityLoadScore =
+    state.bullets.length * 0.6 +
+    state.enemies.length * 1.4 +
+    state.enemyProjectiles.length * 0.8 +
+    state.lightningBolts.length * 2 +
+    state.missiles.length * 0.5;
+  const fxIntensity = allowFx ? Math.max(0, 1 - Math.min(1, entityLoadScore / 260)) : 0;
 
   if (webgl2Renderer) {
     renderer.resize(canvasWidth, canvasHeight);
@@ -76,11 +83,18 @@ export function render(state: GameState, context: RenderContext): void {
     const playerRotation = PLAYER_SHAPE.rotation + oscillate(time, 1.8, 0.3 * (0.4 + playerMotion * 0.6));
 
     // Enhanced halo colors with stronger glow
-    const auraHalo = allowFx ? { color: webglColors.eventHorizon, scale: 1.45 + oscillate(time, 1.1, 0.1) } : undefined;
+    const haloScaleFactor = 0.7 + fxIntensity * 0.6;
+    const auraHalo = allowFx && fxIntensity > 0
+      ? { color: webglColors.eventHorizon, scale: (1.45 + oscillate(time, 1.1, 0.1)) * haloScaleFactor }
+      : undefined;
     const collectRing = { color: webglColors.collectRing, scale: 1.15 };
-    const playerHalo = allowFx ? { color: webglColors.playerHalo, scale: 1.55 + oscillate(time, 2.2, 0.15) } : undefined;
+    const playerHalo = allowFx && fxIntensity > 0
+      ? { color: webglColors.playerHalo, scale: (1.55 + oscillate(time, 2.2, 0.15)) * haloScaleFactor }
+      : undefined;
     const bulletColor = state.visualsLow ? webglColors.bulletLow : webglColors.bullet;
-    const bulletHalo = allowFx ? { color: webglColors.bulletGlow, scale: 2.4 } : undefined;
+    const bulletHalo = allowFx && fxIntensity > 0
+      ? { color: webglColors.bulletGlow, scale: 1.8 + fxIntensity * 0.9 }
+      : undefined;
 
     renderer.beginFrame();
 
@@ -123,14 +137,16 @@ export function render(state: GameState, context: RenderContext): void {
       rotation: -time * 0.2
     });
     const orbitalOrbColor = state.visualsLow ? webglColors.bulletLow : webglColors.orbitBullet;
-    const orbitalHalo = allowFx ? { color: webglColors.orbitGlow, scale: 2.0 + oscillate(time, 3, 0.15) } : undefined;
+    const orbitalHalo = allowFx && fxIntensity > 0
+      ? { color: webglColors.orbitGlow, scale: (2.0 + oscillate(time, 3, 0.15)) * (0.7 + fxIntensity * 0.6) }
+      : undefined;
     state.orbitalOrbs.forEach((orb) => {
       const orbX = state.player.x + Math.cos(orb.angle) * orb.distance;
       const orbY = state.player.y + Math.sin(orb.angle) * orb.distance;
       const orbPulse = 1 + oscillate(time + orb.angle, 4, 0.1);
 
       // Trail effect for orbital orbs
-      if (allowFx) {
+      if (allowFx && fxIntensity > 0.25) {
         const trailAngle = orb.angle - 0.3;
         const trailX = state.player.x + Math.cos(trailAngle) * orb.distance;
         const trailY = state.player.y + Math.sin(trailAngle) * orb.distance;
@@ -157,15 +173,16 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     // Motion trail effect - multiple trailing afterimages
-    if (allowFx && playerMotion > 0.1) {
+    if (allowFx && playerMotion > 0.1 && fxIntensity > 0.15) {
       const trailColors = [
         [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.4] as const,
         [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.25] as const,
         [webglColors.playerAura[0], webglColors.playerAura[1], webglColors.playerAura[2], 0.12] as const,
       ];
       const trailOffsets = [0.06, 0.12, 0.2];
+      const trailCount = fxIntensity > 0.75 ? 3 : fxIntensity > 0.45 ? 2 : 1;
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < trailCount; i++) {
         renderer.pushCircle({
           x: state.player.x - state.player.vx * trailOffsets[i],
           y: state.player.y - state.player.vy * trailOffsets[i],
@@ -228,11 +245,13 @@ export function render(state: GameState, context: RenderContext): void {
       const angle = Math.atan2(b.dy, b.dx);
       const pulse = 1 + oscillate(time + (b.x + b.y) * 0.02, 8, 0.08 + speedRatio * 0.05);
 
-      if (allowFx) {
-        // Jet-like trail
-        for (let i = 1; i <= 3; i++) {
+      if (allowFx && fxIntensity > 0) {
+        // Jet-like trail with adaptive density
+        const trailLayers = fxIntensity > 0.75 ? 3 : fxIntensity > 0.4 ? 2 : 1;
+        const fadeScale = 1 / Math.max(fxIntensity, 0.35);
+        for (let i = 1; i <= trailLayers; i++) {
           const backtrack = 0.01 * i;
-          const fade = 0.45 - i * 0.1;
+          const fade = 0.45 - i * 0.1 * fadeScale;
           renderer.pushCircle({
             x: b.x - b.dx * backtrack,
             y: b.y - b.dy * backtrack,
@@ -240,20 +259,20 @@ export function render(state: GameState, context: RenderContext): void {
             color: [bulletColor[0], bulletColor[1], bulletColor[2], Math.max(0, fade)] as const,
             sides: BULLET_SHAPE.sides,
             rotation: angle,
-            halo: { color: webglColors.bulletGlow, scale: 1.6 + i * 0.25 }
+            halo: { color: webglColors.bulletGlow, scale: 1.6 + i * 0.25 * fxIntensity }
           });
         }
 
         // Radial flash when bullet is fresh
-        if (b.life > bulletTuning.maxLifetime * 0.6) {
+        if (fxIntensity > 0.15 && b.life > bulletTuning.maxLifetime * 0.6) {
           renderer.pushCircle({
             x: b.x,
             y: b.y,
             radius: 6.5 * pulse,
-            color: [bulletColor[0], bulletColor[1], bulletColor[2], 0.28] as const,
+            color: [bulletColor[0], bulletColor[1], bulletColor[2], 0.28 * fxIntensity] as const,
             sides: 10,
             rotation: angle,
-            halo: { color: webglColors.bulletGlow, scale: 2.8 }
+            halo: { color: webglColors.bulletGlow, scale: 2.8 * fxIntensity }
           });
         }
       }
@@ -286,7 +305,9 @@ export function render(state: GameState, context: RenderContext): void {
         color: [ringColor[0] * 0.4, ringColor[1] * 0.4, ringColor[2] * 0.4, 0.5] as const,
         sides: FRAGMENT_SHAPE.sides,
         rotation: fragmentRotation,
-        halo: allowFx ? { color: ringColor, scale: haloScale + oscillate(fragmentPhase, 2, 0.3) } : undefined
+        halo: allowFx && fxIntensity > 0
+          ? { color: ringColor, scale: (haloScale + oscillate(fragmentPhase, 2, 0.3)) * (0.7 + fxIntensity * 0.6) }
+          : undefined
       });
 
       // Layer 2: Event horizon (dark core)
@@ -321,8 +342,8 @@ export function render(state: GameState, context: RenderContext): void {
 
       // Enhanced halo for variants - larger and more visible
       const haloScale = variantHaloColor ? 1.6 + enemyPulse * 0.4 : 1.15 + enemyPulse * 0.3;
-      const enemyHalo = allowFx
-        ? { color: variantHaloColor ?? enemyColor, scale: haloScale }
+      const enemyHalo = allowFx && fxIntensity > 0
+        ? { color: variantHaloColor ?? enemyColor, scale: haloScale * (0.7 + fxIntensity * 0.6) }
         : undefined;
 
       const flash = e.hitThisFrame ? 0.3 : 0;
@@ -333,13 +354,14 @@ export function render(state: GameState, context: RenderContext): void {
         enemyColor[3]
       ] as const;
 
-      if (allowFx) {
+      if (allowFx && fxIntensity > 0) {
         const speed = Math.hypot(e.vx ?? 0, e.vy ?? 0);
         const direction = Math.atan2(e.vy ?? 0, e.vx ?? 0);
         const thrustLength = Math.min(3, 1 + speed * 0.02);
+        const streakLayers = fxIntensity > 0.6 ? thrustLength : fxIntensity > 0.3 ? Math.min(2, thrustLength) : 1;
 
         // Motion streaks behind mobile enemies
-        for (let i = 1; i <= thrustLength; i++) {
+        for (let i = 1; i <= streakLayers; i++) {
           const offset = 0.012 * i;
           const fade = 0.28 - i * 0.08;
           renderer.pushCircle({
@@ -440,13 +462,13 @@ export function render(state: GameState, context: RenderContext): void {
       const lightningColor: readonly [number, number, number, number] = [0.4, 0.9, 1, alpha];
       const lightningGlow: readonly [number, number, number, number] = [0.2, 0.6, 1, alpha * 0.5];
 
+      const lightningSteps = fxIntensity > 0.5 ? 3 : fxIntensity > 0.2 ? 2 : 1;
       for (let i = 0; i < bolt.segments.length - 1; i++) {
         const seg = bolt.segments[i];
         const next = bolt.segments[i + 1];
         // Draw lightning segment as small circles along the path
-        const steps = 3;
-        for (let j = 0; j <= steps; j++) {
-          const t = j / steps;
+        for (let j = 0; j <= lightningSteps; j++) {
+          const t = j / lightningSteps;
           const x = seg.x + (next.x - seg.x) * t;
           const y = seg.y + (next.y - seg.y) * t;
           renderer.pushCircle({
@@ -472,7 +494,8 @@ export function render(state: GameState, context: RenderContext): void {
       const dx = beam.endX - beam.startX;
       const dy = beam.endY - beam.startY;
       const dist = Math.hypot(dx, dy);
-      const steps = Math.ceil(dist / 10);
+      const stepSize = fxIntensity > 0.5 ? 10 : 16;
+      const steps = Math.max(1, Math.ceil(dist / stepSize));
 
       for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -500,8 +523,9 @@ export function render(state: GameState, context: RenderContext): void {
       const angle = Math.atan2(m.dy, m.dx);
 
       // Trail effect
-      if (allowFx) {
-        for (let i = 1; i <= 3; i++) {
+      if (allowFx && fxIntensity > 0) {
+        const trailLayers = fxIntensity > 0.6 ? 3 : fxIntensity > 0.3 ? 2 : 1;
+        for (let i = 1; i <= trailLayers; i++) {
           const trailX = m.x - m.dx * 0.02 * i;
           const trailY = m.y - m.dy * 0.02 * i;
           renderer.pushCircle({
