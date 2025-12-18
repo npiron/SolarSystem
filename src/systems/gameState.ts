@@ -68,6 +68,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     prestigeCooldown: 0,
     dead: false,
     visualsLow: false,
+    visualsParallax: true,
     audio: {
       enabled: false,
     },

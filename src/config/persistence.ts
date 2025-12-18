@@ -34,6 +34,10 @@ interface SaveData {
     completed?: string[];
   };
   lastSeen?: number;
+  visuals?: {
+    low?: boolean;
+    parallax?: boolean;
+  };
 }
 
 interface SaveContext {
@@ -90,6 +94,10 @@ export function loadSave(
 
     // Audio
     state.audio.enabled = save.audio?.enabled ?? state.audio.enabled;
+
+    // Visuals
+    state.visualsLow = save.visuals?.low ?? state.visualsLow;
+    state.visualsParallax = save.visuals?.parallax ?? state.visualsParallax;
 
     // Post-processing addons are intentionally disabled to keep visuals clear
     state.addons = { glow: false, bloom: false, grain: false };
@@ -179,6 +187,7 @@ export function saveGame(state: GameState, generators: Generator[], upgrades: Up
     resources: state.resources,
     wave: state.wave,
     audio: { enabled: state.audio.enabled },
+    visuals: { low: state.visualsLow, parallax: state.visualsParallax },
     player: {
       damage: state.player.damage,
       fireDelay: state.player.fireDelay,

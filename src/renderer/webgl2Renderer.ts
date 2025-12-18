@@ -221,7 +221,12 @@ export class WebGL2Renderer {
     this.textRenderer.pushText(text);
   }
 
-  render(addons: { glow: boolean; bloom: boolean; grain: boolean }, time: number) {
+  render(
+    addons: { glow: boolean; bloom: boolean; grain: boolean },
+    time: number,
+    camera: { x: number; y: number },
+    parallaxEnabled: boolean
+  ) {
     if (!this.enabled) return;
     const gl = this.gl;
 
@@ -231,7 +236,15 @@ export class WebGL2Renderer {
 
     // Render animated space background first
     if (this.gridEnabled) {
-      this.background.render(this.resolution.width, this.resolution.height, time);
+      const parallaxStrength = parallaxEnabled ? 1 : 0;
+      const cameraPx = { x: camera.x * this.dpr, y: camera.y * this.dpr };
+      this.background.render(
+        this.resolution.width,
+        this.resolution.height,
+        time,
+        cameraPx,
+        parallaxStrength
+      );
     }
 
     this.renderCircles();
