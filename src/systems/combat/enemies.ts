@@ -103,7 +103,8 @@ export function spawnSplitChildren(
             elite: false,
             type: enemy.type === "weak" ? "weak" : "normal",
             variant: enemy.variant,
-            generation
+            generation,
+            spawnAge: 0  // Initialize spawn age for spawn animation
         };
         spawned.push(child);
     }

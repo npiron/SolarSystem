@@ -62,6 +62,7 @@ export interface Enemy {
   variant: EnemyVariant;
   generation?: number;
   hitThisFrame?: boolean;
+  spawnAge?: number;  // Age in seconds since spawn (for spawn animation)
 }
 
 export interface FragmentOrb {

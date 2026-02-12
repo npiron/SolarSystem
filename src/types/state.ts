@@ -13,6 +13,8 @@ import type {
   HomingMissile,
 } from './entities';
 import type { WeaponState } from '../config/weapons';
+import type { ScreenShake } from '../renderer/screenShake';
+import type { DeathParticle } from '../renderer/deathParticles';
 
 export interface RunStats {
   kills: number;
@@ -106,4 +108,7 @@ export interface GameState {
   lightningTimer: number;
   laserTimer: number;
   missileTimer: number;
+  // Visual effects
+  screenShake: ScreenShake;
+  deathParticles: DeathParticle[];
 }

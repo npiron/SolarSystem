@@ -204,7 +204,8 @@ export function spawnEnemy(
     elite,
     type,
     variant: variantDef.variant,
-    generation: 0
+    generation: 0,
+    spawnAge: 0  // Initialize spawn age for spawn animation
   };
   state.enemies.push(enemy);
 }
