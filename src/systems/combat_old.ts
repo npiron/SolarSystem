@@ -917,6 +917,11 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     // Initialize velocity if not present (for existing enemies)
     if (e.vx === undefined) e.vx = 0;
     if (e.vy === undefined) e.vy = 0;
+    
+    // Update spawn age for spawn animation
+    if (e.spawnAge !== undefined) {
+      e.spawnAge += dt;
+    }
 
     const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
     const variantDef = getVariantDefinition(e.variant);

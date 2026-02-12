@@ -354,6 +354,40 @@ export function render(state: GameState, context: RenderContext): void {
       const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
       const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
 
+      // Spawn animation - expanding portal ring
+      const spawnDuration = 0.3;  // Animation duration in seconds
+      const isSpawning = e.spawnAge !== undefined && e.spawnAge < spawnDuration;
+      let spawnScale = 1;
+      
+      if (isSpawning && allowFx) {
+        const spawnProgress = (e.spawnAge ?? 0) / spawnDuration;  // 0 to 1
+        spawnScale = 0.3 + spawnProgress * 0.7;  // Scale from 0.3 to 1.0
+        
+        // Expanding portal ring (implodes inward)
+        const ringRadius = e.radius * (3 - spawnProgress * 2.5);  // Shrinks from 3x to 0.5x
+        const ringAlpha = (1 - spawnProgress) * 0.7;  // Fades out
+        
+        renderer.pushCircle({
+          x: ex,
+          y: ey,
+          radius: ringRadius,
+          color: [enemyColor[0], enemyColor[1], enemyColor[2], ringAlpha] as const,
+          sides: 32,  // Smooth circle
+          rotation: time * 2,
+          halo: { color: enemyColor, scale: 1.5 }
+        });
+        
+        // Inner ring for depth
+        renderer.pushCircle({
+          x: ex,
+          y: ey,
+          radius: ringRadius * 0.7,
+          color: [1, 1, 1, ringAlpha * 0.5] as const,  // White inner ring
+          sides: 24,
+          rotation: -time * 2.5
+        });
+      }
+
       // Enhanced halo for variants - larger and more visible
       const haloScale = variantHaloColor ? 1.6 + enemyPulse * 0.4 : 1.15 + enemyPulse * 0.3;
       const enemyHalo = allowFx && fxIntensity > 0
@@ -404,7 +438,7 @@ export function render(state: GameState, context: RenderContext): void {
       renderer.pushCircle({
         x: ex,
         y: ey,
-        radius: e.radius * enemyPulse,
+        radius: e.radius * enemyPulse * spawnScale,
         color: tintedEnemyColor,
         sides: enemyShape.sides,
         rotation: enemyRotation,
@@ -415,7 +449,7 @@ export function render(state: GameState, context: RenderContext): void {
       renderer.pushCircle({
         x: ex,
         y: ey,
-        radius: e.radius * 0.55,
+        radius: e.radius * 0.55 * spawnScale,
         color: [tintedEnemyColor[0], tintedEnemyColor[1], tintedEnemyColor[2], 0.9] as const,
         sides: enemyShape.sides,
         rotation: enemyRotation * 1.2,
