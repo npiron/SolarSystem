@@ -4,6 +4,7 @@
 import type { GameState, TalentBonuses } from "../types/index.ts";
 import { getPlayerStatsFromTuning, getInitialHP, getPlayerRadius } from "../config/player.ts";
 import { createInitialWeaponStates } from "../config/weapons.ts";
+import { createScreenShake } from "../renderer/screenShake.ts";
 
 export function createInitialTalentBonuses(): TalentBonuses {
   return {
@@ -100,6 +101,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     lightningTimer: 0,
     laserTimer: 0,
     missileTimer: 0,
+    // Visual effects
+    screenShake: createScreenShake(),
   };
 }
 
@@ -135,4 +138,6 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.lightningTimer = 0;
   state.laserTimer = 0;
   state.missileTimer = 0;
+  // Reset visual effects
+  state.screenShake = createScreenShake();
 }

@@ -11,6 +11,7 @@ import { webglColors, hexStringToVec4 } from "./colors.ts";
 import { getEnemyColorWebGL, getFragmentVisuals, getVariantHaloColor } from "./entityColors.ts";
 import { formatNumber } from "../systems/hud.ts";
 import { getTuning } from "../config/tuning.ts";
+import { getShakeOffset } from "./screenShake.ts";
 
 // Shape definitions for different entity types
 const PLAYER_SHAPE = { sides: 24, rotation: 0 };
@@ -64,6 +65,9 @@ export function render(state: GameState, context: RenderContext): void {
     state.missiles.length * 0.5;
   const fxIntensity = allowFx ? Math.max(0, 1 - Math.min(1, entityLoadScore / 260)) : 0;
 
+  // Get screen shake offset
+  const shakeOffset = getShakeOffset(state.screenShake);
+
   if (webgl2Renderer) {
     renderer.resize(canvasWidth, canvasHeight);
   }
@@ -98,10 +102,14 @@ export function render(state: GameState, context: RenderContext): void {
 
     renderer.beginFrame();
 
-    // Render player aura
+    // Apply screen shake to player position
+    const playerX = state.player.x + shakeOffset.x;
+    const playerY = state.player.y + shakeOffset.y;
+
+    // Render player aura (with screen shake)
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: (state.player.radius + 18) * (1 + oscillate(time, 1.1, 0.05)),
       color: webglColors.playerAura,
       sides: PLAYER_SHAPE.sides,
@@ -118,8 +126,8 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Outer ring - subtle glow
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: actualCollectRadius * collectPulse,
       color: [0.3, 0.7, 1, 0.08] as const, // Cyan très transparent
       sides: 64, // Cercle très lisse
@@ -129,8 +137,8 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Inner ring - accent
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: actualCollectRadius * collectPulse * 0.95,
       color: [0.5, 0.9, 1, 0.12] as const, // Cyan plus visible
       sides: 48,
@@ -141,15 +149,15 @@ export function render(state: GameState, context: RenderContext): void {
       ? { color: webglColors.orbitGlow, scale: (2.0 + oscillate(time, 3, 0.15)) * (0.7 + fxIntensity * 0.6) }
       : undefined;
     state.orbitalOrbs.forEach((orb) => {
-      const orbX = state.player.x + Math.cos(orb.angle) * orb.distance;
-      const orbY = state.player.y + Math.sin(orb.angle) * orb.distance;
+      const orbX = playerX + Math.cos(orb.angle) * orb.distance;
+      const orbY = playerY + Math.sin(orb.angle) * orb.distance;
       const orbPulse = 1 + oscillate(time + orb.angle, 4, 0.1);
 
       // Trail effect for orbital orbs
       if (allowFx && fxIntensity > 0.25) {
         const trailAngle = orb.angle - 0.3;
-        const trailX = state.player.x + Math.cos(trailAngle) * orb.distance;
-        const trailY = state.player.y + Math.sin(trailAngle) * orb.distance;
+        const trailX = playerX + Math.cos(trailAngle) * orb.distance;
+        const trailY = playerY + Math.sin(trailAngle) * orb.distance;
         renderer.pushCircle({
           x: trailX,
           y: trailY,
@@ -184,8 +192,8 @@ export function render(state: GameState, context: RenderContext): void {
 
       for (let i = 0; i < trailCount; i++) {
         renderer.pushCircle({
-          x: state.player.x - state.player.vx * trailOffsets[i],
-          y: state.player.y - state.player.vy * trailOffsets[i],
+          x: playerX - state.player.vx * trailOffsets[i],
+          y: playerY - state.player.vy * trailOffsets[i],
           radius: state.player.radius * (0.9 - i * 0.15 + playerMotion * 0.3),
           color: trailColors[i],
           sides: PLAYER_SHAPE.sides,
@@ -198,8 +206,8 @@ export function render(state: GameState, context: RenderContext): void {
     // Accretion disk layers
     const diskPulse = 1 + oscillate(time, 2.6, 0.1 + playerMotion * 0.05);
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: state.player.radius * (1.35 * playerScale * diskPulse),
       color: webglColors.accretionOuter,
       sides: PLAYER_SHAPE.sides,
@@ -208,8 +216,8 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: state.player.radius * (1.05 * playerScale * diskPulse),
       color: webglColors.accretionInner,
       sides: PLAYER_SHAPE.sides,
@@ -220,8 +228,8 @@ export function render(state: GameState, context: RenderContext): void {
     // Event horizon and singularity core
     const horizonPulse = 1 + oscillate(time, 1.4, 0.06);
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: state.player.radius * playerScale * horizonPulse,
       color: webglColors.eventHorizon,
       sides: PLAYER_SHAPE.sides,
@@ -230,8 +238,8 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     renderer.pushCircle({
-      x: state.player.x,
-      y: state.player.y,
+      x: playerX,
+      y: playerY,
       radius: state.player.radius * 0.6 * playerScale,
       color: webglColors.playerCore,
       sides: PLAYER_SHAPE.sides,
@@ -240,6 +248,8 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Render bullets with additional trails and muzzle flash
     state.bullets.forEach((b) => {
+      const bx = b.x + shakeOffset.x;
+      const by = b.y + shakeOffset.y;
       const bulletSpeed = Math.hypot(b.dx, b.dy) || 1;
       const speedRatio = Math.min(1, bulletSpeed / bulletTuning.maxSpeed);
       const angle = Math.atan2(b.dy, b.dx);
@@ -253,8 +263,8 @@ export function render(state: GameState, context: RenderContext): void {
           const backtrack = 0.01 * i;
           const fade = 0.45 - i * 0.1 * fadeScale;
           renderer.pushCircle({
-            x: b.x - b.dx * backtrack,
-            y: b.y - b.dy * backtrack,
+            x: bx - b.dx * backtrack,
+            y: by - b.dy * backtrack,
             radius: 4.2 - i * 0.7,
             color: [bulletColor[0], bulletColor[1], bulletColor[2], Math.max(0, fade)] as const,
             sides: BULLET_SHAPE.sides,
@@ -266,8 +276,8 @@ export function render(state: GameState, context: RenderContext): void {
         // Radial flash when bullet is fresh
         if (fxIntensity > 0.15 && b.life > bulletTuning.maxLifetime * 0.6) {
           renderer.pushCircle({
-            x: b.x,
-            y: b.y,
+            x: bx,
+            y: by,
             radius: 6.5 * pulse,
             color: [bulletColor[0], bulletColor[1], bulletColor[2], 0.28 * fxIntensity] as const,
             sides: 10,
@@ -278,8 +288,8 @@ export function render(state: GameState, context: RenderContext): void {
       }
 
       renderer.pushCircle({
-        x: b.x,
-        y: b.y,
+        x: bx,
+        y: by,
         radius: 4.3 * pulse,
         color: bulletColor,
         sides: BULLET_SHAPE.sides,
@@ -290,6 +300,8 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Render fragments as mini black holes with accretion disks
     state.fragmentsOrbs.forEach((f, index) => {
+      const fx = f.x + shakeOffset.x;
+      const fy = f.y + shakeOffset.y;
       const { color, ringColor, radius } = getFragmentVisuals(f.value);
       const fragmentPhase = time + index * 0.3;
       const fragmentPulse = 1 + oscillate(fragmentPhase, 3, 0.08);
@@ -299,8 +311,8 @@ export function render(state: GameState, context: RenderContext): void {
       // Layer 1: Accretion disk (compact halo)
       const haloScale = f.value >= 10 ? 2.2 : f.value >= 3 ? 1.8 : 1.5;
       renderer.pushCircle({
-        x: f.x,
-        y: f.y + floatY,
+        x: fx,
+        y: fy + floatY,
         radius: radius * fragmentPulse * 0.9,
         color: [ringColor[0] * 0.4, ringColor[1] * 0.4, ringColor[2] * 0.4, 0.5] as const,
         sides: FRAGMENT_SHAPE.sides,
@@ -312,8 +324,8 @@ export function render(state: GameState, context: RenderContext): void {
 
       // Layer 2: Event horizon (dark core)
       renderer.pushCircle({
-        x: f.x,
-        y: f.y + floatY,
+        x: fx,
+        y: fy + floatY,
         radius: radius * fragmentPulse * 0.5,
         color: color,
         sides: FRAGMENT_SHAPE.sides * 2,
@@ -322,8 +334,8 @@ export function render(state: GameState, context: RenderContext): void {
 
       // Layer 3: Singularity (pure black center)
       renderer.pushCircle({
-        x: f.x,
-        y: f.y + floatY,
+        x: fx,
+        y: fy + floatY,
         radius: radius * fragmentPulse * 0.25,
         color: [0, 0, 0, 1] as const, // Pure black
         sides: 24,
@@ -333,6 +345,8 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Render enemies with type-based colors
     state.enemies.forEach((e) => {
+      const ex = e.x + shakeOffset.x;
+      const ey = e.y + shakeOffset.y;
       const enemyColor = getEnemyColorWebGL(e.type);
       const variantHaloColor = getVariantHaloColor(e.variant);
       const enemyShape = getEnemyShape(e.type);
@@ -365,8 +379,8 @@ export function render(state: GameState, context: RenderContext): void {
           const offset = 0.012 * i;
           const fade = 0.28 - i * 0.08;
           renderer.pushCircle({
-            x: e.x - (e.vx ?? 0) * offset,
-            y: e.y - (e.vy ?? 0) * offset,
+            x: ex - (e.vx ?? 0) * offset,
+            y: ey - (e.vy ?? 0) * offset,
             radius: e.radius * (0.75 - i * 0.12) * enemyPulse,
             color: [enemyColor[0], enemyColor[1], enemyColor[2], Math.max(0, fade)] as const,
             sides: enemyShape.sides,
@@ -375,8 +389,8 @@ export function render(state: GameState, context: RenderContext): void {
           });
 
           renderer.pushCircle({
-            x: e.x - (e.vx ?? 0) * offset,
-            y: e.y - (e.vy ?? 0) * offset,
+            x: ex - (e.vx ?? 0) * offset,
+            y: ey - (e.vy ?? 0) * offset,
             radius: e.radius * 0.45,
             color: [variantHaloColor?.[0] ?? enemyColor[0], variantHaloColor?.[1] ?? enemyColor[1], variantHaloColor?.[2] ?? enemyColor[2],
               Math.max(0, fade * 0.8)] as const,
@@ -388,8 +402,8 @@ export function render(state: GameState, context: RenderContext): void {
       }
 
       renderer.pushCircle({
-        x: e.x,
-        y: e.y,
+        x: ex,
+        y: ey,
         radius: e.radius * enemyPulse,
         color: tintedEnemyColor,
         sides: enemyShape.sides,
@@ -399,8 +413,8 @@ export function render(state: GameState, context: RenderContext): void {
 
       // Inner core for added depth
       renderer.pushCircle({
-        x: e.x,
-        y: e.y,
+        x: ex,
+        y: ey,
         radius: e.radius * 0.55,
         color: [tintedEnemyColor[0], tintedEnemyColor[1], tintedEnemyColor[2], 0.9] as const,
         sides: enemyShape.sides,
@@ -410,8 +424,8 @@ export function render(state: GameState, context: RenderContext): void {
       // Render health bars
       if (!state.visualsLow || e.hitThisFrame) {
         renderer.pushHealthBar({
-          x: e.x,
-          y: e.y - e.radius,
+          x: ex,
+          y: ey - e.radius,
           width: e.radius * 2,
           ratio: e.hp / e.maxHp
         });

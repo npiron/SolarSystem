@@ -14,6 +14,7 @@ import { updateFloatingText } from "./systems/hud.ts";
 import { calculatePlayerMovement, clampPlayerToBounds } from "./player.ts";
 import { computeIdleRate, computePassiveGains } from "./systems/economy.ts";
 import { getTuning } from "./config/tuning.ts";
+import { updateScreenShake } from "./renderer/screenShake.ts";
 
 interface UpdateContext {
   canvasWidth: number;
@@ -124,4 +125,7 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
 
   // Update floating text animations
   updateFloatingText(state, dt);
+
+  // Update screen shake
+  updateScreenShake(state.screenShake, dt, state.time);
 }

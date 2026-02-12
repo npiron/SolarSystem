@@ -8,6 +8,7 @@ import { playSound } from "./sound.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
 import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
 import { BASE_PLAYER_STATS } from "../config/player.ts";
+import { addTrauma } from "../renderer/screenShake.ts";
 
 // Helper to check if a weapon is unlocked
 function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
@@ -73,6 +74,8 @@ function applyExplosionDamage(
   state.player.hp -= scaledDamage;
   addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#ff1f1f");
   applyExplosionImpulse(state, enemy.x, enemy.y, radius);
+  // Add screen shake for explosion damage
+  addTrauma(state.screenShake, 0.4);
 }
 
 function applyExplosionImpulse(state: GameState, originX: number, originY: number, radius: number): void {
@@ -149,6 +152,9 @@ function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): voi
   state.resources.essence += enemy.reward;
   state.runStats.kills += 1;
   state.runStats.essence += enemy.reward;
+
+  // Add screen shake for enemy death (stronger for elites)
+  addTrauma(state.screenShake, enemy.elite ? 0.25 : 0.15);
 
   // Play death sound - deep knock
   playSound('death', { volume: 0.18, pitch: 1.0 });
@@ -1041,6 +1047,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const { contactDamageBase, contactDamageWaveScale } = getTuning().combat;
       const dmg = contactDamageBase * dt * (1 + state.wave * contactDamageWaveScale) * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
+      // Add minor screen shake for contact damage
+      addTrauma(state.screenShake, 0.08 * dt);
     }
   });
 
@@ -1114,10 +1122,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const { bossContactDamageBase } = getTuning().combat;
       const dmg = bossContactDamageBase * dt * (1 + state.wave * 0.05) * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
+      // Add screen shake for boss contact damage
+      addTrauma(state.screenShake, 0.12 * dt);
     }
 
     // Check if boss is defeated
     if (boss.hp <= 0) {
+      // Boss defeated - add major screen shake
+      addTrauma(state.screenShake, 0.8);
+      
       const fragReward = boss.reward * 0.35;
       state.resources.essence += boss.reward;
       state.runStats.kills += 1;
@@ -1168,6 +1181,8 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const dmg = p.damage * (1 - state.player.damageReduction);
       state.player.hp -= dmg;
       p.life = -1;
+      // Add screen shake for projectile hit
+      addTrauma(state.screenShake, 0.2);
     }
   });
   state.enemyProjectiles = state.enemyProjectiles.filter((p) => p.life > 0);
