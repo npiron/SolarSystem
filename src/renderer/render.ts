@@ -360,7 +360,7 @@ export function render(state: GameState, context: RenderContext): void {
       let spawnScale = 1;
       
       if (isSpawning && allowFx) {
-        const spawnProgress = (e.spawnAge ?? 0) / spawnDuration;  // 0 to 1
+        const spawnProgress = e.spawnAge / spawnDuration;  // 0 to 1
         spawnScale = 0.3 + spawnProgress * 0.7;  // Scale from 0.3 to 1.0
         
         // Expanding portal ring (implodes inward)

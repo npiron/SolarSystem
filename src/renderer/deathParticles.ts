@@ -40,7 +40,7 @@ export function createDeathParticles(
   
   for (let i = 0; i < count; i++) {
     const angle = angleStep * i + (Math.random() - 0.5) * 0.3;
-    const speedVariation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3x
+    const speedVariation = 0.7 + Math.random() * 0.6; // Range: 0.7x to 1.3x multiplier
     const particleSpeed = speed * speedVariation;
     
     particles.push({
