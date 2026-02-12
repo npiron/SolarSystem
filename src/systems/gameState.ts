@@ -103,6 +103,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     missileTimer: 0,
     // Visual effects
     screenShake: createScreenShake(),
+    deathParticles: [],
   };
 }
 
@@ -140,4 +141,5 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.missileTimer = 0;
   // Reset visual effects
   state.screenShake = createScreenShake();
+  state.deathParticles = [];
 }

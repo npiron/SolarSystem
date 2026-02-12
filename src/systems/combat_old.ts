@@ -9,6 +9,8 @@ import { getVariantDefinition } from "../config/enemyVariants.ts";
 import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
 import { BASE_PLAYER_STATS } from "../config/player.ts";
 import { addTrauma } from "../renderer/screenShake.ts";
+import { createDeathParticles, createEliteDeathParticles } from "../renderer/deathParticles.ts";
+import { getEnemyColorWebGL } from "../renderer/entityColors.ts";
 
 // Helper to check if a weapon is unlocked
 function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
@@ -159,6 +161,16 @@ function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): voi
   // Play death sound - deep knock
   playSound('death', { volume: 0.18, pitch: 1.0 });
   const variantDef = getVariantDefinition(enemy.variant);
+
+  // Create death particles
+  if (!state.visualsLow) {
+    const enemyColor = getEnemyColorWebGL(enemy.type);
+    const particles = enemy.elite
+      ? createEliteDeathParticles(enemy.x, enemy.y, enemyColor)
+      : createDeathParticles(enemy.x, enemy.y, enemyColor, 6 + Math.floor(Math.random() * 6));
+    
+    state.deathParticles.push(...particles);
+  }
 
   // Death animation - mini explosion particles
   if (!state.visualsLow) {

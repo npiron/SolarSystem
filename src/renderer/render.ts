@@ -566,6 +566,28 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
 
+    // Render death particles
+    state.deathParticles.forEach((p) => {
+      const px = p.x + shakeOffset.x;
+      const py = p.y + shakeOffset.y;
+      const fadeRatio = p.life / p.maxLife;
+      const particleColor: readonly [number, number, number, number] = [
+        p.color[0],
+        p.color[1],
+        p.color[2],
+        p.color[3] * fadeRatio
+      ];
+      
+      renderer.pushCircle({
+        x: px,
+        y: py,
+        radius: p.radius * (0.7 + fadeRatio * 0.3),
+        color: particleColor,
+        sides: 6,
+        rotation: 0
+      });
+    });
+
     // Render floating text using native WebGL2 text renderer
     state.floatingText.forEach((f) => {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";

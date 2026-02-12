@@ -15,6 +15,7 @@ import { calculatePlayerMovement, clampPlayerToBounds } from "./player.ts";
 import { computeIdleRate, computePassiveGains } from "./systems/economy.ts";
 import { getTuning } from "./config/tuning.ts";
 import { updateScreenShake } from "./renderer/screenShake.ts";
+import { updateDeathParticles } from "./renderer/deathParticles.ts";
 
 interface UpdateContext {
   canvasWidth: number;
@@ -128,4 +129,7 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
 
   // Update screen shake
   updateScreenShake(state.screenShake, dt, state.time);
+
+  // Update death particles
+  state.deathParticles = updateDeathParticles(state.deathParticles, dt);
 }
