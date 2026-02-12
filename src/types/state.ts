@@ -106,4 +106,5 @@ export interface GameState {
   lightningTimer: number;
   laserTimer: number;
   missileTimer: number;
+  bossAnnouncement: { text: string; timer: number } | null;
 }

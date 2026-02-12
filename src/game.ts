@@ -124,4 +124,12 @@ export function update(state: GameState, dt: number, context: UpdateContext): vo
 
   // Update floating text animations
   updateFloatingText(state, dt);
+
+  // Update boss announcement timer
+  if (state.bossAnnouncement) {
+    state.bossAnnouncement.timer -= dt;
+    if (state.bossAnnouncement.timer <= 0) {
+      state.bossAnnouncement = null;
+    }
+  }
 }

@@ -100,6 +100,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     lightningTimer: 0,
     laserTimer: 0,
     missileTimer: 0,
+    bossAnnouncement: null,
   };
 }
 
@@ -135,4 +136,5 @@ export function softReset(state: GameState, canvasWidth: number, canvasHeight: n
   state.lightningTimer = 0;
   state.laserTimer = 0;
   state.missileTimer = 0;
+  state.bossAnnouncement = null;
 }

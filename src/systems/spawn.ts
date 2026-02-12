@@ -303,4 +303,8 @@ export function spawnBoss(state: GameState, canvas: Canvas): void {
   state.currentBoss = boss;
   state.bossActive = true;
   state.lastBossWave = Math.floor(state.wave);
+  state.bossAnnouncement = {
+    text: `⚠ BOSS  —  Vague ${Math.floor(state.wave)} ⚠`,
+    timer: 3.0,
+  };
 }

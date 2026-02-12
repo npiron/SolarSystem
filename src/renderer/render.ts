@@ -552,6 +552,41 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
 
+    // Render boss wave announcement
+    if (state.bossAnnouncement) {
+      const ann = state.bossAnnouncement;
+      const totalDuration = 3.0;
+      const fadeInDuration = 0.4;
+      const fadeOutDuration = 0.8;
+      const elapsed = totalDuration - ann.timer;
+
+      let alpha: number;
+      if (elapsed < fadeInDuration) {
+        alpha = elapsed / fadeInDuration;
+      } else if (ann.timer < fadeOutDuration) {
+        alpha = ann.timer / fadeOutDuration;
+      } else {
+        alpha = 1;
+      }
+
+      // Scale: starts large, settles to 1, then grows slightly on exit
+      const scaleIn = elapsed < fadeInDuration ? 1.3 - 0.3 * (elapsed / fadeInDuration) : 1;
+      const scaleOut = ann.timer < fadeOutDuration ? 1 + 0.15 * (1 - ann.timer / fadeOutDuration) : 1;
+      const scale = 3.5 * scaleIn * scaleOut;
+
+      const cx = canvasWidth / 2;
+      const cy = canvasHeight / 2 - 40;
+
+      renderer.pushText({
+        text: ann.text,
+        x: cx,
+        y: cy,
+        color: [1, 0.3, 0.3, alpha],
+        alpha,
+        scale,
+      });
+    }
+
     // Render floating text using native WebGL2 text renderer
     state.floatingText.forEach((f) => {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
