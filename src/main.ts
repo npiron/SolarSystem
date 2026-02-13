@@ -8,7 +8,6 @@ import { VERSION } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
 import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
-import { initAssist } from "./systems/assist.ts";
 import { audioManager } from "./systems/audio.ts";
 import { updateHud } from "./systems/hud.ts";
 import { initSound, playPrestige, playPurchase, setAudioEnabled } from "./systems/sound.ts";
@@ -35,11 +34,11 @@ import { update as gameUpdate } from "./game.ts";
 import { render as gameRender } from "./renderer/render.ts";
 import { clampPlayerToBounds } from "./player.ts";
 import type { GameState, Generator, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
-import { initMainUi } from "./core/uiInitialization.ts";
 import { startGameLoop } from "./core/gameLoop.ts";
 import { getUiElements } from "./core/uiElements.ts";
 import { createHudContext } from "./core/hudContext.ts";
 import { createProgressionActions } from "./core/progressionActions.ts";
+import { initializeRuntime } from "./core/runtimeSetup.ts";
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
@@ -242,24 +241,18 @@ async function bootstrap(): Promise<void> {
 
   initSound(state.audio.enabled);
   setAudioEnabled(state.audio.enabled);
-  assistUi = initAssist(state, {
-    quickHelpList: null, // Removed in UI redesign
-    milestoneList: null, // Removed in UI redesign
-    bubbleContainer: assistBubbles,
-    anchors: {
-      arena: webgl2Canvas,
-      generators: generatorsContainer,
-      upgrades: upgradesContainer,
-      prestige: softPrestigeBtn
-    },
-    upgrades,
-    generators
-  });
-  initMainUi({
+  assistUi = initializeRuntime({
     state,
-    talents,
     hudContext,
-    elements: {
+    talents,
+    assistBubbles,
+    webgl2Canvas,
+    generatorsContainer,
+    upgradesContainer,
+    softPrestigeBtn,
+    upgrades,
+    generators,
+    uiElements: {
       pauseBtn,
       resetProgressBtn,
       toggleSoundBtn,
@@ -278,7 +271,7 @@ async function bootstrap(): Promise<void> {
       debugBtns,
       resetTalentsBtn
     },
-    actions: {
+    uiActions: {
       saveGame: saveGameLocal,
       prestige: progressionActions.prestige,
       softReset: softResetLocal,
@@ -290,20 +283,15 @@ async function bootstrap(): Promise<void> {
       updateUiTopMargin,
       resizeCanvas,
       buildBackground
-    }
+    },
+    windowLike: window,
+    onResize: () => resizeCanvas(),
+    onFirstInput: () => {
+      audioManager.init();
+      audioManager.resume();
+    },
+    onAutosave: saveGameLocal
   });
-  window.addEventListener("resize", () => resizeCanvas());
-  setInterval(saveGameLocal, 5000);
-  // Initialize audio on first user interaction
-  window.addEventListener('click', () => {
-    audioManager.init();
-    audioManager.resume();
-  }, { once: true });
-
-  window.addEventListener('keydown', () => {
-    audioManager.init();
-    audioManager.resume();
-  }, { once: true });
 
   startGameLoop(state, ({ dt, width, height }) => {
     gameUpdate(state, dt, {
