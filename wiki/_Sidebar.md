@@ -24,6 +24,9 @@
 - [[Interface-et-HUD]]
 - [[Migration-WebGL2]]
 
+## 🧠 Technique
+- [[Documentation-Technique-Agents]]
+
 ## ❓ Aide
 - [[FAQ]]
 - [[Conseils-et-Stratégies]]
