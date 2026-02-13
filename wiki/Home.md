@@ -28,6 +28,7 @@ Bienvenue dans la documentation complète de **Neo Survivors Idle**, un jeu incr
 - [[Performance-et-Optimisation]] - Mode perfo et gestion des ressources
 - [[Sauvegarde]] - Système de sauvegarde et gains hors-ligne
 - [[Interface-et-HUD]] - Comprendre l'interface du jeu
+- [[Documentation-Technique-Agents]] - Architecture du code et points d'entrée pour contribuer
 
 ### ❓ Aide
 - [[FAQ]] - Questions fréquemment posées

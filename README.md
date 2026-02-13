@@ -56,6 +56,7 @@ Comprehensive game documentation is available in the [**GitHub Wiki**](../../wik
 - 🌳 [Talent Tree](../../wiki/Arbre-de-Talents) - Persistent synergies
 - ⟳ [Prestige](../../wiki/Prestige-Consolidation) - Consolidation system
 - ❓ [FAQ](../../wiki/FAQ) - Frequently asked questions
+- 🧠 [Technical contributor/agent guide](../../wiki/Documentation-Technique-Agents) - Code architecture and extension points
 
 ## 🎮 How to Play
 
