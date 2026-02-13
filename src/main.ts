@@ -10,12 +10,11 @@ import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
 import { initAssist } from "./systems/assist.ts";
 import { audioManager } from "./systems/audio.ts";
-import { formatNumber, updateHud } from "./systems/hud.ts";
+import { updateHud } from "./systems/hud.ts";
 import { initSound, playPrestige, playPurchase, setAudioEnabled } from "./systems/sound.ts";
 import {
   computeTalentBonuses,
-  hydrateTalents,
-  unlockTalent
+  hydrateTalents
 } from "./systems/talents.ts";
 import { createInitialState, softReset } from "./systems/gameState.ts";
 import { applyProgressionEffects, computeGeneratorRate, refreshGeneratorRates } from "./systems/progression.ts";
@@ -25,11 +24,8 @@ import {
   updatePerformanceHud
 } from "./systems/performance.ts";
 import {
-  renderGenerators as renderGeneratorsUI,
-  renderUpgrades as renderUpgradesUI,
-  renderTalents as renderTalentsUI
-} from "./systems/ui.ts";
-import { updateLiveValues } from "./systems/tuningPanel.ts";
+  updateLiveValues
+} from "./systems/tuningPanel.ts";
 import { updateLiveValuesHud } from "./systems/liveValuesHud";
 import { updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds";
 import * as renderer from "./renderer/index.ts";
@@ -38,11 +34,12 @@ import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
 import { update as gameUpdate } from "./game.ts";
 import { render as gameRender } from "./renderer/render.ts";
 import { clampPlayerToBounds } from "./player.ts";
-import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
+import type { GameState, Generator, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
 import { initMainUi } from "./core/uiInitialization.ts";
 import { startGameLoop } from "./core/gameLoop.ts";
 import { getUiElements } from "./core/uiElements.ts";
 import { createHudContext } from "./core/hudContext.ts";
+import { createProgressionActions } from "./core/progressionActions.ts";
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
@@ -189,103 +186,37 @@ const hudContext: HudContext = createHudContext({
   computeIdleRate
 });
 
-function buyGenerator(gen: Generator): void {
-  if (state.resources.essence < gen.cost) return;
-  state.resources.essence -= gen.cost;
-  gen.level += 1;
-  gen.cost = Math.ceil(gen.cost * 1.30 + gen.level * 1.5);
-  gen.rate = computeGeneratorRateLocal(gen);
-  refreshGeneratorRatesLocal();
-  playPurchase();
-  assistUi.recordPurchase();
-}
-
-function renderGenerators(): void {
-  renderGeneratorsUI(
-    generatorsContainer,
-    generators,
-    uiRefs,
-    state.resources,
-    computeGeneratorRateLocal,
-    buyGenerator,
-    saveGameLocal
-  );
-}
-
-function isUpgradeCapped(upgrade: Upgrade): boolean {
-  return Number.isFinite(upgrade.max) && upgrade.level >= upgrade.max;
-}
-
-function computeNextUpgradeCost(upgrade: Upgrade): number {
-  const baseGrowth = Math.max(1.05, upgrade.growth ?? 1.4);
-  const ramp = 1 + Math.max(0, upgrade.level - 25) * 0.012;
-  const scaling = baseGrowth * ramp;
-  return Math.ceil(upgrade.baseCost * Math.pow(scaling, upgrade.level + 1));
-}
-
-function buyUpgrade(upgrade: Upgrade): void {
-  if (isUpgradeCapped(upgrade)) return;
-  if (state.resources.fragments < upgrade.cost) return;
-  state.resources.fragments -= upgrade.cost;
-  upgrade.level += 1;
-  upgrade.cost = computeNextUpgradeCost(upgrade);
-  applyProgressionEffectsLocal();
-  playPurchase();
-  assistUi.recordPurchase();
-}
-
-function renderUpgrades(): void {
-  renderUpgradesUI(
-    upgradesContainer,
-    upgrades,
-    uiRefs,
-    state.resources,
-    buyUpgrade,
-    saveGameLocal
-  );
-}
-
-function buyTalent(talent: Talent): boolean {
-  if (!unlockTalent(talent, talents, state)) return false;
-  applyProgressionEffectsLocal();
-  refreshGeneratorRatesLocal();
-  playPurchase();
-  return true;
-}
-
-function renderTalents(): void {
-  renderTalentsUI(
-    talentsContainer,
-    talents,
-    uiRefs,
-    state.resources,
-    buyTalent,
-    saveGameLocal,
-    renderUpgrades,
-    talentStatusEl,
-    resetTalentsBtn
-  );
-}
-
 function softResetLocal(): void {
   const width = window.innerWidth;
   const height = window.innerHeight;
   softReset(state, width, height);
 }
 
-function prestige(): void {
-  const bonus = 1 + Math.pow(state.wave, 0.45) * 0.20;
-  state.resources.idleMultiplier *= bonus;
-  refreshGeneratorRatesLocal();
-  softResetLocal();
-  refreshGeneratorRatesLocal();
-  softResetLocal();
-  // state.prestigeCooldown = 10; // Disabled for testing
-  playPrestige();
-  assistUi.recordPrestige();
-  saveGameLocal();
-  renderGenerators();
-}
+const progressionActions = createProgressionActions({
+  state,
+  generators,
+  upgrades,
+  getTalents: () => talents,
+  uiRefs,
+  generatorsContainer,
+  upgradesContainer,
+  talentsContainer,
+  talentStatusEl,
+  resetTalentsBtn,
+  computeGeneratorRate: computeGeneratorRateLocal,
+  applyProgressionEffects: applyProgressionEffectsLocal,
+  refreshGeneratorRates: refreshGeneratorRatesLocal,
+  softReset: softResetLocal,
+  saveGame: saveGameLocal,
+  onPurchase: () => {
+    playPurchase();
+    assistUi.recordPurchase();
+  },
+  onPrestige: () => {
+    playPrestige();
+    assistUi.recordPrestige();
+  }
+});
 
 async function bootstrap(): Promise<void> {
   resizeCanvas(true);
@@ -349,13 +280,13 @@ async function bootstrap(): Promise<void> {
     },
     actions: {
       saveGame: saveGameLocal,
-      prestige,
+      prestige: progressionActions.prestige,
       softReset: softResetLocal,
       applyProgressionEffects: applyProgressionEffectsLocal,
       refreshGeneratorRates: refreshGeneratorRatesLocal,
-      renderGenerators,
-      renderUpgrades,
-      renderTalents,
+      renderGenerators: progressionActions.renderGenerators,
+      renderUpgrades: progressionActions.renderUpgrades,
+      renderTalents: progressionActions.renderTalents,
       updateUiTopMargin,
       resizeCanvas,
       buildBackground
