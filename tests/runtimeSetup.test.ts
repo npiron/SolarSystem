@@ -51,19 +51,21 @@ describe("runtimeSetup", () => {
       resources: { idleMultiplier: 1 },
       visualsLow: false
     } as never;
+    const uiElements = {
+      webgl2Canvas: {} as HTMLCanvasElement,
+      generatorsContainer: {} as HTMLElement,
+      upgradesContainer: {} as HTMLElement,
+      softPrestigeBtn: null
+    } as never;
 
     const assistUi = initializeRuntime({
       state,
       hudContext: {} as never,
       talents: [],
       assistBubbles: null,
-      webgl2Canvas: {} as HTMLCanvasElement,
-      generatorsContainer: {} as HTMLElement,
-      upgradesContainer: {} as HTMLElement,
-      softPrestigeBtn: null,
       upgrades: [],
       generators: [],
-      uiElements: {} as never,
+      uiElements,
       uiActions: {} as never,
       windowLike,
       onResize: vi.fn(),

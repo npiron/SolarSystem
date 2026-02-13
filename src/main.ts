@@ -246,10 +246,6 @@ async function bootstrap(): Promise<void> {
     hudContext,
     talents,
     assistBubbles,
-    webgl2Canvas,
-    generatorsContainer,
-    upgradesContainer,
-    softPrestigeBtn,
     upgrades,
     generators,
     uiElements: {

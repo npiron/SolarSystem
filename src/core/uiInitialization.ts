@@ -73,8 +73,6 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
     docDialog,
     webgl2Canvas,
     fpsCanvas,
-    generatorsContainer,
-    upgradesContainer,
     debugBtns,
     resetTalentsBtn,
     tuningPanelContainer

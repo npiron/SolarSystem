@@ -33,5 +33,7 @@ describe("createHudContext", () => {
     expect(context.elements.softPrestigeBtn).toBe(ids.get("softPrestige"));
     expect(context.computeIdleRate()).toBe(42);
     expect(context.uiRefs).toBe(uiRefs);
+    expect(context.canUnlockTalent).toBeDefined();
+    expect(typeof context.canUnlockTalent).toBe("function");
   });
 });

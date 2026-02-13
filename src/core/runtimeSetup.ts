@@ -20,10 +20,6 @@ interface InitializeRuntimeOptions {
   hudContext: HudContext;
   talents: HudContext["talents"];
   assistBubbles: HTMLElement | null;
-  webgl2Canvas: HTMLCanvasElement;
-  generatorsContainer: HTMLElement;
-  upgradesContainer: HTMLElement;
-  softPrestigeBtn: HTMLElement | null;
   upgrades: Upgrade[];
   generators: Generator[];
   uiElements: Parameters<typeof initMainUi>[0]["elements"];
@@ -52,10 +48,6 @@ export function initializeRuntime({
   hudContext,
   talents,
   assistBubbles,
-  webgl2Canvas,
-  generatorsContainer,
-  upgradesContainer,
-  softPrestigeBtn,
   upgrades,
   generators,
   uiElements,
@@ -70,10 +62,10 @@ export function initializeRuntime({
     milestoneList: null,
     bubbleContainer: assistBubbles,
     anchors: {
-      arena: webgl2Canvas,
-      generators: generatorsContainer,
-      upgrades: upgradesContainer,
-      prestige: softPrestigeBtn
+      arena: uiElements.webgl2Canvas,
+      generators: uiElements.generatorsContainer,
+      upgrades: uiElements.upgradesContainer,
+      prestige: uiElements.softPrestigeBtn
     },
     upgrades,
     generators

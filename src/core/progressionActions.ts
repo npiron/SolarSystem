@@ -145,9 +145,6 @@ export function createProgressionActions(options: CreateProgressionActionsOption
     state.resources.idleMultiplier *= bonus;
     refreshGeneratorRates();
     softReset();
-    refreshGeneratorRates();
-    // Preserve the existing prestige flow from legacy main.ts (double reset sequence).
-    softReset();
     onPrestige();
     saveGame();
     renderGenerators();
