@@ -4,43 +4,34 @@
  * This module bootstraps the application, initializes all modules,
  * and manages the game loop.
  */
-import { STORAGE_KEY, VERSION, icons } from "./config/constants.ts";
+import { VERSION } from "./config/constants.ts";
 import { createGenerators } from "./config/generators.ts";
-import { TALENT_RESET_COST } from "./config/talents.ts";
 import { createUpgrades } from "./config/upgrades.ts";
 import { loadSave, saveGame } from "./config/persistence.ts";
-import { loadTuning } from "./config/tuning.ts";
 import { initAssist } from "./systems/assist.ts";
-import { playCollect, playSound } from "./systems/sound.ts";
 import { audioManager } from "./systems/audio.ts";
-import { PanelManager } from "./systems/panelManager.ts";
-import { debugPing, formatNumber, updateHud } from "./systems/hud.ts";
-import { initSound, playPrestige, playPurchase, playUiToggle, resumeAudio, setAudioEnabled } from "./systems/sound.ts";
+import { formatNumber, updateHud } from "./systems/hud.ts";
+import { initSound, playPrestige, playPurchase, setAudioEnabled } from "./systems/sound.ts";
 import {
   computeTalentBonuses,
-  canUnlockTalent,
   hydrateTalents,
-  resetTalents,
   unlockTalent
 } from "./systems/talents.ts";
 import { createInitialState, softReset } from "./systems/gameState.ts";
 import { applyProgressionEffects, computeGeneratorRate, refreshGeneratorRates } from "./systems/progression.ts";
 import { computeIdleRate as computeIdleRateFromEconomy } from "./systems/economy.ts";
 import {
-  recordFpsSample,
   drawFpsGraph,
-  updatePerformanceHud,
-  type PerformanceHudElements
+  updatePerformanceHud
 } from "./systems/performance.ts";
 import {
   renderGenerators as renderGeneratorsUI,
   renderUpgrades as renderUpgradesUI,
   renderTalents as renderTalentsUI
 } from "./systems/ui.ts";
-import { initTuningPanel, updateLiveValues } from "./systems/tuningPanel.ts";
-import { initLiveValuesHud, updateLiveValuesHud } from "./systems/liveValuesHud";
-import { initAdditionalHuds, updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds";
-import { initWeaponsUI, renderWeapons } from "./systems/weaponsUI";
+import { updateLiveValues } from "./systems/tuningPanel.ts";
+import { updateLiveValuesHud } from "./systems/liveValuesHud";
+import { updateGlobalStatsHud, updateWeaponsHud } from "./systems/additionalHuds";
 import * as renderer from "./renderer/index.ts";
 import { initDocumentationDialog } from "./renderer/documentation.ts";
 import { codeDocumentation, roadmapSections } from "./config/documentation.ts";
@@ -48,6 +39,10 @@ import { update as gameUpdate } from "./game.ts";
 import { render as gameRender } from "./renderer/render.ts";
 import { clampPlayerToBounds } from "./player.ts";
 import type { GameState, Generator, Talent, Upgrade, TalentBonuses, AssistUi, HudContext } from "./types/index.ts";
+import { initMainUi } from "./core/uiInitialization.ts";
+import { startGameLoop } from "./core/gameLoop.ts";
+import { getUiElements } from "./core/uiElements.ts";
+import { createHudContext } from "./core/hudContext.ts";
 
 // UI boundaries - margins for left/right panels and header/footer
 const UI_MARGINS = {
@@ -72,61 +67,32 @@ function buildBackground(width: number, height: number): void {
   }
 }
 
-// UI Element References
-const pauseBtn = document.getElementById("pause");
-const resetProgressBtn = document.getElementById("resetProgress");
-const toggleSoundBtn = document.getElementById("toggleSound");
-const softPrestigeBtn = document.getElementById("softPrestige");
-const restartRunBtn = document.getElementById("restartRun");
-const togglePerfBtn = document.getElementById("togglePerf");
-const toggleParallaxBtn = document.getElementById("toggleParallax");
-const versionBadge = document.getElementById("versionBadge");
-const docDialog = document.getElementById("docDialog");
-const docTabs = document.getElementById("docTabs");
-const docContent = document.getElementById("docContent");
-const docBtn = document.getElementById("docBtn");
-const docCloseBtn = docDialog?.querySelector(".doc-close-btn") as HTMLButtonElement | null;
-const topbarEl = document.querySelector(".topbar") as HTMLElement | null;
-const upgradeBarEl = document.getElementById("upgradeBar") as HTMLElement | null;
-const debugBtns = {
-  giveEssence: document.getElementById("debugGiveEssence"),
-  giveFragments: document.getElementById("debugGiveFragments"),
-  skipWave: document.getElementById("debugSkipWave"),
-  nuke: document.getElementById("debugNuke")
-};
-
-const essenceEl = document.getElementById("essence");
-const fragmentsEl = document.getElementById("fragments");
-const idleRateEl = document.getElementById("idleRate");
-const waveEl = document.getElementById("wave");
-const hpEl = document.getElementById("hp");
-const dpsEl = document.getElementById("dps");
-const damageRow = document.getElementById("damageRow");
-const spawnRateEl = document.getElementById("spawnRate");
-const statusEl = document.getElementById("statusMessage");
-const generatorsContainer = document.getElementById("generators") as HTMLElement;
-// Fallback to 'upgrades' provided by new HTML
-const upgradesContainer = (document.getElementById("upgradeBar") || document.getElementById("upgrades")) as HTMLElement;
-const talentsContainer = document.getElementById("talents") as HTMLElement | null;
-const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
-const talentStatusEl = document.getElementById("talentStatus");
-const fpsValueEl = document.getElementById("hudFpsValue");
-const frameTimeEl = document.getElementById("hudFrameTime");
-const avgFpsEl = document.getElementById("hudAvgFps");
-const memoryEl = document.getElementById("hudMemory");
-const fpsCanvas = document.getElementById("fpsGraphHud") as HTMLCanvasElement | null;
-const performanceHudElements: PerformanceHudElements = {
-  fpsValueEl,
-  frameTimeEl,
-  avgFpsEl,
-  memoryEl,
-  fpsCanvas
-};
-const toggleFpsBtn = document.getElementById("toggleFpsFromHud");
-const quickHelpList = document.getElementById("quickHelpList");
-const milestoneList = document.getElementById("milestoneList");
-const assistBubbles = document.getElementById("assistBubbles");
-const tuningPanelContainer = document.getElementById("tuningPanel");
+const {
+  pauseBtn,
+  resetProgressBtn,
+  toggleSoundBtn,
+  softPrestigeBtn,
+  restartRunBtn,
+  togglePerfBtn,
+  toggleParallaxBtn,
+  versionBadge,
+  docDialog,
+  docTabs,
+  docContent,
+  docBtn,
+  docCloseBtn,
+  debugBtns,
+  generatorsContainer,
+  upgradesContainer,
+  talentsContainer,
+  resetTalentsBtn,
+  talentStatusEl,
+  fpsCanvas,
+  performanceHudElements,
+  toggleFpsBtn,
+  assistBubbles,
+  tuningPanelContainer
+} = getUiElements();
 
 // Game data initialization
 const generators = createGenerators();
@@ -215,27 +181,13 @@ function saveGameLocal(): void {
   saveGame(state, generators, upgrades, talents);
 }
 
-const hudContext: HudContext = {
-  elements: {
-    essenceEl,
-    fragmentsEl,
-    idleRateEl,
-    waveEl,
-    hpEl,
-    dpsEl,
-    damageRow,
-    spawnRateEl,
-    pauseBtn,
-    softPrestigeBtn,
-    statusEl
-  },
+const hudContext: HudContext = createHudContext({
   uiRefs,
   generators,
   upgrades,
   talents,
-  computeIdleRate,
-  canUnlockTalent
-};
+  computeIdleRate
+});
 
 function buyGenerator(gen: Generator): void {
   if (state.resources.essence < gen.cost) return;
@@ -335,176 +287,6 @@ function prestige(): void {
   renderGenerators();
 }
 
-function initUI(): void {
-  const syncSoundToggle = (): void => {
-    if (!toggleSoundBtn) return;
-    toggleSoundBtn.innerHTML = state.audio.enabled ? '<i class="ti ti-volume"></i>' : '<i class="ti ti-volume-off"></i>';
-  };
-
-  const syncParallaxToggle = (): void => {
-    if (!toggleParallaxBtn) return;
-    toggleParallaxBtn.innerHTML = state.visualsParallax
-      ? '<i class="ti ti-photo"></i> Fond réaliste'
-      : '<i class="ti ti-photo-off"></i> Fond simple';
-    toggleParallaxBtn.title = state.visualsLow
-      ? "Fond désactivé en mode perfo"
-      : "Activer/désactiver le fond réaliste";
-  };
-
-  const armAudioUnlock = (): void => {
-    const unlock = () => resumeAudio();
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("keydown", unlock, { once: true });
-  };
-
-  armAudioUnlock();
-  syncSoundToggle();
-  syncParallaxToggle();
-
-  pauseBtn?.addEventListener("click", () => {
-    state.running = !state.running;
-    if (pauseBtn) pauseBtn.innerHTML = state.running ? '<i class="ti ti-player-pause"></i> PAUSE' : '<i class="ti ti-player-play"></i> REPRENDRE';
-    saveGameLocal();
-  });
-
-  toggleSoundBtn?.addEventListener("click", () => {
-    state.audio.enabled = !state.audio.enabled;
-    resumeAudio();
-    setAudioEnabled(state.audio.enabled);
-    syncSoundToggle();
-    playUiToggle();
-    saveGameLocal();
-  });
-
-
-  resetProgressBtn?.addEventListener("click", () => {
-    if (confirm("Effacer la sauvegarde et recommencer ?")) {
-      localStorage.removeItem(STORAGE_KEY);
-      window.location.reload();
-    }
-  });
-
-  softPrestigeBtn?.addEventListener("click", () => {
-    // if (state.prestigeCooldown > 0) return; // Disabled for testing
-    prestige();
-  });
-
-  restartRunBtn?.addEventListener("click", () => {
-    softResetLocal();
-    saveGameLocal();
-  });
-
-  resetTalentsBtn?.addEventListener("click", () => {
-    if (!resetTalents(talents, state)) return;
-    applyProgressionEffectsLocal();
-    refreshGeneratorRatesLocal();
-    renderTalents();
-    renderGenerators();
-    renderUpgrades();
-    saveGameLocal();
-  });
-
-  togglePerfBtn?.addEventListener("click", () => {
-    state.visualsLow = !state.visualsLow;
-    if (togglePerfBtn) togglePerfBtn.textContent = state.visualsLow ? "🚀 Perfo ON" : "⚙️ Mode perfo";
-
-    // Toggle CSS class for performance mode decorations
-    document.body.classList.toggle("performance-mode", state.visualsLow);
-    syncParallaxToggle();
-
-    buildBackground(webgl2Canvas.width, webgl2Canvas.height);
-    // REMOVED: webgl2Renderer?.setEnabled(!state.visualsLow);
-    playUiToggle();
-    debugPing(state, state.visualsLow ? "Mode perfo" : "Mode flair", state.visualsLow ? "#22c55e" : "#a78bfa", () =>
-      updateHud(state, hudContext)
-    );
-  });
-
-  toggleParallaxBtn?.addEventListener("click", () => {
-    state.visualsParallax = !state.visualsParallax;
-    syncParallaxToggle();
-    playUiToggle();
-    saveGameLocal();
-  });
-
-  toggleFpsBtn?.addEventListener("click", () => {
-    state.performance.graphVisible = !state.performance.graphVisible;
-    fpsCanvas?.classList.toggle("visible", state.performance.graphVisible);
-    if (fpsCanvas) drawFpsGraph(fpsCanvas, state.performance);
-  });
-
-  debugBtns.giveEssence?.addEventListener("click", () => {
-    state.resources.essence += 1_000_000;
-    renderGenerators();
-    saveGameLocal();
-    debugPing(state, "+1M ⚡", undefined, () => updateHud(state, hudContext));
-  });
-  debugBtns.giveFragments?.addEventListener("click", () => {
-    state.resources.fragments += 1_000_000;
-    renderUpgrades();
-    renderTalents();
-    saveGameLocal();
-    debugPing(state, "+1M ✦", undefined, () => updateHud(state, hudContext));
-  });
-  debugBtns.skipWave?.addEventListener("click", () => {
-    state.wave += 10;
-    state.spawnTimer = 0;
-    saveGameLocal();
-    debugPing(state, "+10 vagues", undefined, () => updateHud(state, hudContext));
-  });
-  debugBtns.nuke?.addEventListener("click", () => {
-    state.enemies = [];
-    state.fragmentsOrbs = [];
-    debugPing(state, "☄️ Nuke", "#f472b6", () => updateHud(state, hudContext));
-  });
-
-  renderGenerators();
-  renderUpgrades();
-  renderTalents();
-
-  // Initialize weapons UI
-  initWeaponsUI();
-  renderWeapons(state);
-
-  // Initialize Panel Manager
-  new PanelManager();
-
-  // Wire up Guide button
-  const toggleGuideBtn = document.getElementById("toggle-guide");
-  if (toggleGuideBtn && docDialog) {
-    toggleGuideBtn.addEventListener("click", () => {
-      (docDialog as HTMLDialogElement).showModal();
-      playUiToggle();
-    });
-  }
-
-  // After layout, recompute UI top margin and clamp bounds
-  updateUiTopMargin();
-  resizeCanvas();
-
-  // Initialize tuning panel
-  loadTuning();
-  initTuningPanel({
-    container: tuningPanelContainer,
-    state,
-    onUpdate: () => {
-      // Refresh UI when tuning changes
-      updateHud(state, hudContext);
-    },
-    onTuningChange: () => {
-      // Reset game when tuning values change (to avoid inconsistencies)
-      softResetLocal();
-      saveGameLocal();
-    }
-  });
-
-  // Initialize live values HUD
-  initLiveValuesHud();
-
-  // Initialize additional huds
-  initAdditionalHuds();
-}
-
 async function bootstrap(): Promise<void> {
   resizeCanvas(true);
   buildBackground(webgl2Canvas.width, webgl2Canvas.height);
@@ -542,7 +324,43 @@ async function bootstrap(): Promise<void> {
     upgrades,
     generators
   });
-  initUI();
+  initMainUi({
+    state,
+    talents,
+    hudContext,
+    elements: {
+      pauseBtn,
+      resetProgressBtn,
+      toggleSoundBtn,
+      softPrestigeBtn,
+      restartRunBtn,
+      togglePerfBtn,
+      toggleParallaxBtn,
+      toggleFpsBtn,
+      docDialog,
+      webgl2Canvas,
+      fpsCanvas,
+      assistBubbles,
+      tuningPanelContainer,
+      generatorsContainer,
+      upgradesContainer,
+      debugBtns,
+      resetTalentsBtn
+    },
+    actions: {
+      saveGame: saveGameLocal,
+      prestige,
+      softReset: softResetLocal,
+      applyProgressionEffects: applyProgressionEffectsLocal,
+      refreshGeneratorRates: refreshGeneratorRatesLocal,
+      renderGenerators,
+      renderUpgrades,
+      renderTalents,
+      updateUiTopMargin,
+      resizeCanvas,
+      buildBackground
+    }
+  });
   window.addEventListener("resize", () => resizeCanvas());
   setInterval(saveGameLocal, 5000);
   // Initialize audio on first user interaction
@@ -556,19 +374,7 @@ async function bootstrap(): Promise<void> {
     audioManager.resume();
   }, { once: true });
 
-  // === Main game loop ===
-  let lastFrameTime = performance.now();
-
-  function gameLoop(currentTime: number): void {
-    const frameMs = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
-
-    recordFpsSample(state.performance, frameMs);
-    const dt = Math.min(0.05, frameMs / 1000);
-
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
+  startGameLoop(state, ({ dt, width, height }) => {
     gameUpdate(state, dt, {
       canvasWidth: width,
       canvasHeight: height,
@@ -588,11 +394,7 @@ async function bootstrap(): Promise<void> {
       canvasHeight: height,
       webgl2Renderer
     });
-
-    requestAnimationFrame(gameLoop);
-  }
-
-  requestAnimationFrame(gameLoop);
+  });
 }
 
 bootstrap();
