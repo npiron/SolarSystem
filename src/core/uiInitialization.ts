@@ -216,7 +216,16 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
   initWeaponsUI();
   renderWeapons(state);
 
-  new PanelManager();
+  const panelMgr = new PanelManager();
+
+  // Quick-access production button in the HUD
+  const quickProdBtn = document.getElementById("quickProduction");
+  if (quickProdBtn) {
+    quickProdBtn.addEventListener("click", () => {
+      panelMgr.togglePanel("production");
+      playUiToggle();
+    });
+  }
 
   const toggleGuideBtn = document.getElementById("toggle-guide");
   if (toggleGuideBtn && docDialog) {

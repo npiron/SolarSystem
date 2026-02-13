@@ -10,8 +10,8 @@ export function createUpgrades(): Upgrade[] {
   return [
     {
       id: "attack",
-      name: "Projectiles instables",
-      description: "+15% dégâts par niveau",
+      name: "Dégâts +15%",
+      description: "Augmente les dégâts de chaque projectile",
       cost: 25,
       baseCost: 25,
       growth: 1.24,
@@ -24,8 +24,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "firerate",
-      name: "Cadence hypersonique",
-      description: "+10% vitesse de tir",
+      name: "Cadence +10%",
+      description: "Augmente la vitesse de tir",
       cost: 40,
       baseCost: 40,
       growth: 1.23,
@@ -38,8 +38,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "regen",
-      name: "Gel réparateur",
-      description: "+2 PV/s",
+      name: "Régénération +2 PV/s",
+      description: "Régénère des points de vie chaque seconde",
       cost: 45,
       baseCost: 45,
       growth: 1.18,
@@ -52,8 +52,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "aoe",
-      name: "Pulsar chaotique",
-      description: "+1 projectile par tir",
+      name: "Projectile +1",
+      description: "Ajoute un projectile supplémentaire par tir",
       cost: 100,
       baseCost: 100,
       growth: 1.35,
@@ -66,8 +66,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "range",
-      name: "Portée fractale",
-      description: "+15% portée des projectiles",
+      name: "Portée +15%",
+      description: "Augmente la portée des projectiles",
       cost: 70,
       baseCost: 70,
       growth: 1.2,
@@ -80,8 +80,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "velocity",
-      name: "Balistique ionisée",
-      description: "+12% vitesse des projectiles",
+      name: "Vitesse projectile +12%",
+      description: "Les projectiles vont plus vite",
       cost: 120,
       baseCost: 120,
       growth: 1.19,
@@ -94,8 +94,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "crit",
-      name: "Pointes critiques",
-      description: "+3% chance de critique (x2.2)",
+      name: "Critique +3%",
+      description: "Augmente les chances de coup critique (×2.2)",
       cost: 180,
       baseCost: 180,
       growth: 1.26,
@@ -110,8 +110,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "shield",
-      name: "Bouclier prismatique",
-      description: "Réduit les dégâts subis de 4%",
+      name: "Armure +4%",
+      description: "Réduit les dégâts subis",
       cost: 200,
       baseCost: 200,
       growth: 1.21,
@@ -124,8 +124,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "pierce",
-      name: "Percée quantique",
-      description: "+1 traversée de projectile",
+      name: "Traversée +1",
+      description: "Les projectiles traversent un ennemi de plus",
       cost: 240,
       baseCost: 240,
       growth: 1.34,
@@ -138,8 +138,8 @@ export function createUpgrades(): Upgrade[] {
     },
     {
       id: "collect",
-      name: "Rayon de collecte",
-      description: "+5% portée d'aspiration des fragments",
+      name: "Collecte +5%",
+      description: "Augmente le rayon d'aspiration des fragments",
       cost: 120,
       baseCost: 120,
       growth: 1.17,
@@ -147,13 +147,13 @@ export function createUpgrades(): Upgrade[] {
       max: Number.POSITIVE_INFINITY,
       apply: (state: { player: PlayerStats }, level: number) => {
         const effectiveLevel = scaleLevel(level, 30, 0.85);
-        state.player.collectRadius *= Math.pow(1.05, effectiveLevel); // Augmenté à 5%
+        state.player.collectRadius *= Math.pow(1.05, effectiveLevel);
       }
     },
     {
       id: "speed",
-      name: "Propulseurs quantiques",
-      description: "+6% vitesse de déplacement",
+      name: "Vitesse +6%",
+      description: "Augmente la vitesse de déplacement",
       cost: 90,
       baseCost: 90,
       growth: 1.16,

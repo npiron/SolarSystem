@@ -354,37 +354,51 @@ export function render(state: GameState, context: RenderContext): void {
       const enemyPulse = 1 + oscillate(wobblePhase, 1.6, 0.08);
       const enemyRotation = enemyShape.rotation + oscillate(wobblePhase, 1.1, 0.3);
 
-      // Spawn animation - expanding portal ring
-      const spawnDuration = 0.3;  // Animation duration in seconds
+      // Spawn animation - wormhole/black hole effect
+      const spawnDuration = 0.4;  // Animation duration in seconds
       const isSpawning = e.spawnAge !== undefined && e.spawnAge < spawnDuration;
       let spawnScale = 1;
       
       if (isSpawning && allowFx) {
-        const spawnProgress = e.spawnAge / spawnDuration;  // 0 to 1
-        spawnScale = 0.3 + spawnProgress * 0.7;  // Scale from 0.3 to 1.0
+        const spawnProgress = (e.spawnAge ?? 0) / spawnDuration;  // 0 to 1
+        spawnScale = 0.2 + spawnProgress * 0.8;  // Scale from 0.2 to 1.0
         
-        // Expanding portal ring (implodes inward)
-        const ringRadius = e.radius * (3 - spawnProgress * 2.5);  // Shrinks from 3x to 0.5x
-        const ringAlpha = (1 - spawnProgress) * 0.7;  // Fades out
-        
+        // Outer accretion ring — deep purple, shrinks inward
+        const outerRadius = e.radius * (4 - spawnProgress * 3.5);
+        const outerAlpha = (1 - spawnProgress) * 0.5;
         renderer.pushCircle({
           x: ex,
           y: ey,
-          radius: ringRadius,
-          color: [enemyColor[0], enemyColor[1], enemyColor[2], ringAlpha] as const,
-          sides: 32,  // Smooth circle
-          rotation: time * 2,
-          halo: { color: enemyColor, scale: 1.5 }
+          radius: outerRadius,
+          color: [0.3, 0.0, 0.5, outerAlpha] as const,
+          sides: 48,
+          rotation: time * 3,
+          halo: { color: [0.5, 0.1, 0.8, 0.4] as const, scale: 1.8 }
         });
         
-        // Inner ring for depth
+        // Mid ring — cyan/teal wormhole glow
+        const midRadius = e.radius * (2.5 - spawnProgress * 2);
+        const midAlpha = (1 - spawnProgress) * 0.6;
         renderer.pushCircle({
           x: ex,
           y: ey,
-          radius: ringRadius * 0.7,
-          color: [1, 1, 1, ringAlpha * 0.5] as const,  // White inner ring
+          radius: midRadius,
+          color: [0.0, 0.6, 0.8, midAlpha] as const,
+          sides: 36,
+          rotation: -time * 4,
+          halo: { color: [0.1, 0.7, 0.9, 0.3] as const, scale: 1.4 }
+        });
+        
+        // Inner dark core — black hole center
+        const coreRadius = e.radius * (1.5 - spawnProgress * 1.2);
+        const coreAlpha = (1 - spawnProgress) * 0.8;
+        renderer.pushCircle({
+          x: ex,
+          y: ey,
+          radius: coreRadius,
+          color: [0.0, 0.0, 0.0, coreAlpha] as const,
           sides: 24,
-          rotation: -time * 2.5
+          rotation: time * 2
         });
       }
 
@@ -623,17 +637,20 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     // Render floating text using native WebGL2 text renderer
+    const FLOATING_TEXT_RISE_SPEED = 24;
     state.floatingText.forEach((f) => {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
       if (!label) return;
-      const textColor = hexStringToVec4(f.color || "#fef08a", Math.max(0, f.life));
+      // Clamp alpha to avoid sub-pixel blurriness near end of life
+      const alpha = Math.min(1, Math.max(0, f.life > 0.5 ? 1 : f.life * 2));
+      const textColor = hexStringToVec4(f.color || "#fef08a", alpha);
       renderer.pushText({
         text: label,
-        x: f.x,
-        y: f.y - (1.5 - f.life) * 24,
+        x: Math.round(f.x),
+        y: Math.round(f.y - (1.5 - f.life) * FLOATING_TEXT_RISE_SPEED),
         color: textColor,
-        alpha: Math.max(0, f.life),
-        scale: f.scale ?? 1.8
+        alpha,
+        scale: f.scale ?? 2.0
       });
     });
 

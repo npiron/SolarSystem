@@ -29,7 +29,7 @@ function ensureAudioContext(): AudioContext | null {
     compressor.attack.value = 0.003;
     compressor.release.value = 0.25;
 
-    masterGain.gain.value = soundState.enabled ? 0.18 : 0;
+    masterGain.gain.value = soundState.enabled ? 0.10 : 0;
     masterGain.connect(compressor).connect(context.destination);
     soundState.context = context;
     soundState.masterGain = masterGain;
@@ -170,7 +170,7 @@ export function setAudioEnabled(enabled: boolean): void {
   const context = ensureAudioContext();
   if (!context || !soundState.masterGain) return;
   const now = context.currentTime;
-  const target = enabled ? 0.18 : 0.0001;
+  const target = enabled ? 0.10 : 0.0001;
   soundState.masterGain.gain.cancelScheduledValues(now);
   soundState.masterGain.gain.setTargetAtTime(target, now, 0.08);
 }

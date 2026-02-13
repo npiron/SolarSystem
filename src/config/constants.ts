@@ -19,13 +19,13 @@ export const BULLET_LIMITS: BulletLimits = {
 };
 
 export const icons: Icons = {
-  essence: '<i class="ti ti-droplet-filled resource-icon essence"></i>',
-  fragments: '<i class="ti ti-diamond-filled resource-icon fragments"></i>',
-  wave: '<i class="ti ti-wave-square"></i>',
-  reach: '<i class="ti ti-antenna"></i>',
-  speed: '<i class="ti ti-bolt"></i>',
-  shield: '<i class="ti ti-shield-filled"></i>',
-  crit: '<i class="ti ti-target"></i>',
+  essence: '<i class="ti ti-flame resource-icon essence"></i>',
+  fragments: '<i class="ti ti-diamond resource-icon fragments"></i>',
+  wave: '<i class="ti ti-wave-sine"></i>',
+  reach: '<i class="ti ti-radar-2"></i>',
+  speed: '<i class="ti ti-rocket"></i>',
+  shield: '<i class="ti ti-shield-chevron"></i>',
+  crit: '<i class="ti ti-crosshair"></i>',
   magnet: '<i class="ti ti-magnet"></i>'
 };
 
