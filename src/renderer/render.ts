@@ -637,6 +637,7 @@ export function render(state: GameState, context: RenderContext): void {
     });
 
     // Render floating text using native WebGL2 text renderer
+    const FLOATING_TEXT_RISE_SPEED = 24;
     state.floatingText.forEach((f) => {
       const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
       if (!label) return;
@@ -646,7 +647,7 @@ export function render(state: GameState, context: RenderContext): void {
       renderer.pushText({
         text: label,
         x: Math.round(f.x),
-        y: Math.round(f.y - (1.5 - f.life) * 24),
+        y: Math.round(f.y - (1.5 - f.life) * FLOATING_TEXT_RISE_SPEED),
         color: textColor,
         alpha,
         scale: f.scale ?? 2.0
