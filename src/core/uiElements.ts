@@ -38,6 +38,14 @@ export interface UiElements {
   tuningPanelContainer: HTMLElement | null;
 }
 
+function getRequiredElement(id: string): HTMLElement {
+  const element = document.getElementById(id);
+  if (!element) {
+    throw new Error(`Missing required UI element: #${id}`);
+  }
+  return element;
+}
+
 export function getUiElements(): UiElements {
   const pauseBtn = document.getElementById("pause");
   const resetProgressBtn = document.getElementById("resetProgress");
@@ -60,8 +68,11 @@ export function getUiElements(): UiElements {
     skipWave: document.getElementById("debugSkipWave"),
     nuke: document.getElementById("debugNuke")
   };
-  const generatorsContainer = document.getElementById("generators") as HTMLElement;
-  const upgradesContainer = (document.getElementById("upgradeBar") || document.getElementById("upgrades")) as HTMLElement;
+  const generatorsContainer = getRequiredElement("generators");
+  const upgradesContainer = (document.getElementById("upgradeBar") || document.getElementById("upgrades"));
+  if (!upgradesContainer) {
+    throw new Error("Missing required UI element: #upgradeBar or #upgrades");
+  }
   const talentsContainer = document.getElementById("talents") as HTMLElement | null;
   const resetTalentsBtn = document.getElementById("resetTalents") as HTMLButtonElement | null;
   const talentStatusEl = document.getElementById("talentStatus");
