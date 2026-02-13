@@ -24,12 +24,12 @@ Boucle simplifiée :
 ## 🗂️ Où modifier quoi
 
 | Besoin | Fichier(s) recommandé(s) |
-|---|---|
+| --- | --- |
 | Nouvelles valeurs d’équilibrage | `src/config/constants.ts`, `src/config/tuning.ts` |
 | Nouveau générateur | `src/config/generators.ts` + `src/systems/ui.ts` |
 | Nouvelle upgrade | `src/config/upgrades.ts` + `src/systems/progression.ts` |
 | Nouveau talent | `src/config/talents.ts` + `src/systems/talents.ts` |
-| Nouvelle logique de combat | `src/systems/combat/*` |
+| Nouvelle logique de combat | `src/systems/combat/*` + boucle `updateCombat` actuelle dans `src/systems/combat_old.ts` (ré-exportée par `src/systems/combat/index.ts`) |
 | Nouveau comportement de vague/ennemis | `src/systems/spawn.ts`, `src/config/enemyVariants.ts` |
 | Affichage HUD/panneaux | `src/systems/hud.ts`, `src/systems/ui.ts`, `src/systems/*Hud*.ts` |
 | Rendu GPU/WebGL2 | `src/renderer/*` |
@@ -76,6 +76,6 @@ npm run build
 
 ## ⚠️ Notes de maintenance
 
-- Le projet est en TypeScript ES modules (`.ts`, imports explicites)
+- Le projet est en TypeScript (ES modules) ; suivre le style d’import existant (avec ou sans extension selon le contexte/outils)
 - Des fichiers historiques existent (`combat_old.ts`, `combat_backup.ts`) : préférez les modules actifs importés depuis `src/main.ts` et `src/game.ts`
 - Garder le projet 100% client-side : ne pas introduire de dépendance serveur
