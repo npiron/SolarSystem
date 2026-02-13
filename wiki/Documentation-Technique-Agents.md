@@ -30,7 +30,7 @@ Boucle simplifiée :
 | Nouvelle upgrade | `src/config/upgrades.ts` + `src/systems/progression.ts` |
 | Nouveau talent | `src/config/talents.ts` + `src/systems/talents.ts` |
 | Nouvelle logique de combat | `src/systems/combat/*` |
-| Nouveau comportement de vague/enemis | `src/systems/spawn.ts`, `src/config/enemyVariants.ts` |
+| Nouveau comportement de vague/ennemis | `src/systems/spawn.ts`, `src/config/enemyVariants.ts` |
 | Affichage HUD/panneaux | `src/systems/hud.ts`, `src/systems/ui.ts`, `src/systems/*Hud*.ts` |
 | Rendu GPU/WebGL2 | `src/renderer/*` |
 | Persistance localStorage | `src/config/persistence.ts` (`STORAGE_KEY` dans `src/config/constants.ts`) |
