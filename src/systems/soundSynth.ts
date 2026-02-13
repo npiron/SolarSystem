@@ -52,38 +52,17 @@ export class SoundSynth {
     }
 
     /**
-     * Laser projectile fire - Short "pew" sound
+     * Laser projectile fire - Soft "pew" sound
      */
     private static createLaser(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800 * pitch, now);
-        osc.frequency.exponentialRampToValueAtTime(200 * pitch, now + 0.1);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600 * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(300 * pitch, now + 0.08);
 
-        gain.gain.setValueAtTime(0.3 * vol, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-
-        osc.connect(gain);
-        gain.connect(dest);
-
-        osc.start(now);
-        osc.stop(now + 0.2);
-    }
-
-    /**
-     * Hit impact - Short "thunk"
-     */
-    private static createHit(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150 * pitch, now);
-        osc.frequency.exponentialRampToValueAtTime(50 * pitch, now + 0.08);
-
-        gain.gain.setValueAtTime(0.4 * vol, now);
+        gain.gain.setValueAtTime(0.12 * vol, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
         osc.connect(gain);
@@ -94,28 +73,45 @@ export class SoundSynth {
     }
 
     /**
-   * Critical hit - Coin/pickaxe hit (metallic clink in low-mid)
+     * Hit impact - Gentle "tap"
+     */
+    private static createHit(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180 * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(80 * pitch, now + 0.06);
+
+        gain.gain.setValueAtTime(0.15 * vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(dest);
+
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+
+    /**
+   * Critical hit - Soft metallic chime
    */
     private static createCritical(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
-        // Metallic "clink" - two harmonics like coin/pickaxe
         const high = ctx.createOscillator();
         const low = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        // High harmonic (metallic ring)
         high.type = 'sine';
-        high.frequency.setValueAtTime(1200, now);
-        high.frequency.exponentialRampToValueAtTime(800, now + 0.03);
+        high.frequency.setValueAtTime(900, now);
+        high.frequency.exponentialRampToValueAtTime(700, now + 0.04);
 
-        // Low harmonic (body of sound)
         low.type = 'sine';
-        low.frequency.setValueAtTime(400, now);
-        low.frequency.exponentialRampToValueAtTime(200, now + 0.035);
+        low.frequency.setValueAtTime(450, now);
+        low.frequency.exponentialRampToValueAtTime(300, now + 0.04);
 
-        // Quick metallic click envelope
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.25 * vol, now + 0.002);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+        gain.gain.linearRampToValueAtTime(0.12 * vol, now + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
         high.connect(gain);
         low.connect(gain);
@@ -123,32 +119,30 @@ export class SoundSynth {
 
         high.start(now);
         low.start(now);
-        high.stop(now + 0.045);
-        low.stop(now + 0.045);
+        high.stop(now + 0.06);
+        low.stop(now + 0.06);
     }
 
     /**
-     * Enemy death - Deep "knock" (toc toc - small explosion)
+     * Enemy death - Soft low thud
      */
     private static createDeath(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
-        // Deep thud/knock
         const thud = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        thud.type = 'triangle';
-        thud.frequency.setValueAtTime(120, now); // Deep, grave
-        thud.frequency.exponentialRampToValueAtTime(60, now + 0.04);
+        thud.type = 'sine';
+        thud.frequency.setValueAtTime(100, now);
+        thud.frequency.exponentialRampToValueAtTime(50, now + 0.05);
 
-        // Quick punch
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.3 * vol, now + 0.003);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.045);
+        gain.gain.linearRampToValueAtTime(0.15 * vol, now + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
         thud.connect(gain);
         gain.connect(dest);
 
         thud.start(now);
-        thud.stop(now + 0.05);
+        thud.stop(now + 0.06);
     }
 
     /**
@@ -204,17 +198,17 @@ export class SoundSynth {
     }
 
     /**
-     * Player damage - Warning beep
+     * Player damage - Gentle warning tone
      */
     private static createDamage(ctx: AudioContext, dest: AudioNode, now: number, vol: number, pitch: number): void {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(220 * pitch, now);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(280 * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(180 * pitch, now + 0.06);
 
-        gain.gain.setValueAtTime(0.4 * vol, now);
-        gain.gain.setValueAtTime(0.4 * vol, now + 0.05);
+        gain.gain.setValueAtTime(0.15 * vol, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
 
         osc.connect(gain);

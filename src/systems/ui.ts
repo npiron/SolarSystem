@@ -88,7 +88,7 @@ export function renderUpgrades(
 
     // Create main card container
     const card = document.createElement("div");
-    card.className = "flex items-center gap-3 p-3 bg-base-100/40 backdrop-blur-sm border border-white/5 rounded-xl hover:bg-base-100/60 transition-colors group";
+    card.className = "flex items-center gap-3 p-3 bg-base-200/60 backdrop-blur-sm border border-white/8 rounded-xl hover:bg-base-200/80 transition-colors group";
 
     // Content Section (Left)
     const info = document.createElement("div");
@@ -113,12 +113,12 @@ export function renderUpgrades(
     // Button Section (Right)
     // "Square" button with just Number + Icon
     const btn = document.createElement("button");
-    btn.className = "btn btn-square btn-lg bg-base-300 border-white/10 hover:border-primary/50 hover:bg-base-300 group-hover:shadow-lg transition-all flex flex-col items-center justify-center gap-0 w-16 h-16 shrink-0";
+    btn.className = "btn btn-square btn-lg bg-base-100 border-secondary/30 hover:border-primary/50 hover:bg-base-200 group-hover:shadow-lg transition-all flex flex-col items-center justify-center gap-0 w-16 h-16 shrink-0";
 
     // Icon and Cost
     btn.innerHTML = `
       <span class="text-lg mb-[-2px]">${icons.fragments}</span>
-      <span class="font-mono text-xs font-bold ${resources.fragments >= up.cost ? 'text-secondary' : 'opacity-50'}">${formatNumber(up.cost)}</span>
+      <span class="font-mono text-xs font-bold ${resources.fragments >= up.cost ? 'text-secondary' : 'text-base-content/50'}">${formatNumber(up.cost)}</span>
     `;
 
     btn.disabled = reachedCap || resources.fragments < up.cost;

@@ -33,7 +33,9 @@ function triggerHudAnimation(el: HTMLElement | null): void {
 function updateAnimatedValue(key: AnimatedHudValue, value: number, el: HTMLElement | null): void {
   if (!el) return;
   const previous = hudValueCache[key];
-  if (value > previous) {
+  // Only animate when value increases by at least 1% or 1 unit to avoid constant flickering
+  const threshold = Math.max(1, previous * 0.01);
+  if (value - previous >= threshold) {
     triggerHudAnimation(el);
   }
   hudValueCache[key] = value;

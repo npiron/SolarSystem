@@ -43,24 +43,11 @@ export function addTrauma(shake: ScreenShake, amount: number): void {
  * @param dt Delta time in seconds
  * @param time Current game time
  */
-export function updateScreenShake(shake: ScreenShake, dt: number, time: number): void {
-  // Decay trauma
-  if (shake.trauma > 0) {
-    shake.trauma = Math.max(0, shake.trauma - TRAUMA_DECAY * dt);
-  }
-
-  // Calculate shake offset based on trauma squared (more intense shake)
-  const shakeIntensity = shake.trauma * shake.trauma;
-  
-  if (shakeIntensity > 0.01) {
-    // Use perlin-like noise for smooth shake
-    const t = time * SHAKE_FREQUENCY + shake.seed;
-    shake.offsetX = Math.sin(t * 1.7) * MAX_SHAKE_OFFSET * shakeIntensity;
-    shake.offsetY = Math.cos(t * 2.3) * MAX_SHAKE_OFFSET * shakeIntensity;
-  } else {
-    shake.offsetX = 0;
-    shake.offsetY = 0;
-  }
+export function updateScreenShake(shake: ScreenShake, _dt: number, _time: number): void {
+  // Screen shake disabled — keep offsets at zero
+  shake.trauma = 0;
+  shake.offsetX = 0;
+  shake.offsetY = 0;
 }
 
 /**

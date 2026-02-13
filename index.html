@@ -89,14 +89,14 @@
           <div class="flex flex-col">
             <span class="text-xs font-bold text-base-content/40 tracking-wider">ESSENCE</span>
             <div class="flex items-center gap-2">
-              <i class="ti ti-droplet-filled text-primary text-lg"></i>
+              <i class="ti ti-flame text-primary text-lg"></i>
               <span id="essence" class="font-mono text-xl font-bold text-base-content">0</span>
             </div>
           </div>
           <div class="flex flex-col">
             <span class="text-xs font-bold text-base-content/40 tracking-wider">FRAGMENTS</span>
             <div class="flex items-center gap-2">
-              <i class="ti ti-diamond-filled text-secondary text-lg"></i>
+              <i class="ti ti-diamond text-secondary text-lg"></i>
               <span id="fragments" class="font-mono text-xl font-bold text-base-content">0</span>
             </div>
           </div>
@@ -111,7 +111,6 @@
         <div class="flex items-center gap-3">
           <div class="flex flex-col items-end mr-4">
             <span class="text-xs font-bold text-base-content/40 tracking-wider">VAGUE <span id="wave">1</span></span>
-            <span class="text-xs text-error font-mono" id="hudLiveDps">0 DPS</span>
           </div>
           <button id="toggleParallax" class="btn btn-sm btn-ghost text-xs font-normal opacity-70 hover:opacity-100">
             <i class="ti ti-photo"></i> Fond
@@ -138,18 +137,35 @@
               <span id="hp" class="text-error font-bold">100</span>
             </div>
             <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-sword mr-1"></i> DPS</span>
+              <span id="hudLiveDps" class="text-primary font-bold">0</span>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
               <span class="text-base-content/60"><i class="ti ti-alien mr-1"></i> Spawn</span>
               <span id="spawnRate" class="text-warning">0/s</span>
             </div>
             <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
-              <span class="text-base-content/60"><i class="ti ti-target mr-1"></i> Critique</span>
+              <span class="text-base-content/60"><i class="ti ti-crosshair mr-1"></i> Critique</span>
               <span id="crit" class="text-info">0%</span>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-shield-chevron mr-1"></i> Armure</span>
+              <span id="shield" class="text-accent">0%</span>
+            </div>
+            <div class="flex justify-between items-center bg-white/5 p-1 px-2 rounded">
+              <span class="text-base-content/60"><i class="ti ti-magnet mr-1"></i> Collecte</span>
+              <span id="collect" class="text-success">0px</span>
             </div>
           </div>
         </div>
 
-        <!-- Prestige Actions -->
+        <!-- Prestige Actions & Quick Access -->
         <div class="flex gap-2">
+          <button id="quickProduction"
+            class="btn btn-sm btn-ghost flex-1 border border-white/10 text-base-content/70 hover:text-primary hover:border-primary/30 text-xs"
+            title="Production">
+            <i class="ti ti-building-factory"></i> Production
+          </button>
           <button id="softPrestige"
             class="btn btn-sm btn-secondary flex-1 shadow-lg shadow-secondary/20 font-bold text-xs"
             title="Consolider (Prestige)">
@@ -194,7 +210,7 @@
               </div>
             </div>
             <div class="menu-panel__body">
-              <div id="talents" class="grid grid-cols-4 gap-2"></div>
+              <div id="talents" class="grid grid-cols-2 gap-2"></div>
             </div>
           </div>
         </div>

@@ -47,13 +47,13 @@ export type GlyphMetrics = {
  */
 export const DEFAULT_STYLE: TextStyle = {
   fontFamily: "Fredoka, Baloo 2, Nunito, sans-serif",
-  fontSize: 18,
+  fontSize: 22,
   strokeColor: [5 / 255, 10 / 255, 25 / 255, 1.0],
-  strokeThickness: 3,
+  strokeThickness: 3.5,
   dropShadow: true,
-  dropShadowColor: [0, 0, 0, 0.7],
-  dropShadowBlur: 2,
-  dropShadowOffset: [1.5, 1.5],
+  dropShadowColor: [0, 0, 0, 0.85],
+  dropShadowBlur: 1,
+  dropShadowOffset: [1, 1],
 };
 
 // Vertex data constants
