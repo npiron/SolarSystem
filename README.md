@@ -165,8 +165,8 @@ Please ensure:
 ## 📋 CI/CD & Automation
 
 - **Tests**: Runs on `main`, `work` branches and PRs via `npm ci && npm test`
-- **Pages**: Auto-deploys to GitHub Pages on push to `main` or `work`
-- **Releases**: Pushing tag `v*.*.*` creates GitHub Release with automatic notes
+- **Pages**: Auto-deploys to GitHub Pages on push to `main` or `work` after `npm test` and `npm run build`
+- **Releases**: Pushing tag `v*.*.*` runs `npm test` + `npm run build`, then creates a GitHub Release with automatic notes
 - **Wiki Sync**: Syncs `wiki/` folder to GitHub Wiki (see workflow for setup)
 - **Dependabot**: Weekly dependency updates (npm & GitHub Actions)
 
