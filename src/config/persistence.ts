@@ -3,7 +3,7 @@
  */
 import type { GameState, Generator, PlayerStats, Talent, Upgrade } from "../types/index.ts";
 import { MAX_OFFLINE_SECONDS, STORAGE_KEY } from "./constants.ts";
-import { BASE_PLAYER_STATS } from "./player.ts";
+import { getPlayerStatsFromTuning } from "./player.ts";
 import { hydrateTalents, computeTalentBonuses } from "../systems/talents.ts";
 import { debugPing } from "../systems/hud.ts";
 
@@ -20,7 +20,7 @@ interface SaveData {
     bloom?: boolean;
     grain?: boolean;
   };
-  player?: Partial<typeof BASE_PLAYER_STATS>;
+  player?: Partial<ReturnType<typeof getPlayerStatsFromTuning>>;
   generators?: Array<{ level: number; cost: number }>;
   upgrades?: Array<{ level: number; cost: number } | number>;
   talents?: Array<{ id: string; unlocked: boolean }>;
@@ -104,8 +104,9 @@ export function loadSave(
 
     // Player stats
     if (save.player) {
-      Object.keys(BASE_PLAYER_STATS).forEach((key) => {
-        const k = key as keyof typeof BASE_PLAYER_STATS;
+      const baseStats = getPlayerStatsFromTuning();
+      Object.keys(baseStats).forEach((key) => {
+        const k = key as keyof typeof baseStats;
         const value = save.player?.[k];
         if (value !== undefined) {
           (state.player as PlayerStats)[k] = value;

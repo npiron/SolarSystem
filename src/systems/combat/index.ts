@@ -1,6 +1,6 @@
 /**
  * Combat System - Main Entry Point
- * 
+ *
  * This module coordinates all combat subsystems:
  * - Weapons (fire functions)
  * - Projectiles (missiles, laser updates)
@@ -19,6 +19,10 @@ export { updateMissiles, updateLaser } from "./projectiles.ts";
 
 // Re-export enemies
 export { handleEnemyDeath, applyExplosionDamage, applyExplosionImpulse, spawnSplitChildren } from "./enemies.ts";
+
+// Re-export AI
+export { updateEnemyAI, computeEnemyVelocity, getBehaviorWeights } from "./ai.ts";
+export type { AiTuning, BehaviorWeights, SteeringForce } from "./ai.ts";
 
 // Re-export main update from old file temporarily
 // TODO: Move updateCombat to update.ts and import from there

@@ -1,309 +1,206 @@
-interface SoundState {
-  context: AudioContext | null;
-  masterGain: GainNode | null;
-  compressor: DynamicsCompressorNode | null;
-  enabled: boolean;
-  lastPlay: Map<string, number>;
+/**
+ * Sound System - Unified audio interface
+ * Routes all sound through AudioManager for consistent volume control
+ * and dynamic compression. Legacy functions preserved for backward compatibility.
+ */
+
+import { audioManager, type SoundType } from './audio.ts';
+import { SoundSynth } from './soundSynth.ts';
+
+// ─── Throttling ────────────────────────────────────────────────────────────────
+
+const lastPlay = new Map<string, number>();
+
+function shouldThrottle(key: string, intervalSeconds: number): boolean {
+    const context = audioManager.getContext();
+    const now = context ? context.currentTime : performance.now() / 1000;
+    const last = lastPlay.get(key) || 0;
+    if (now - last < intervalSeconds) return true;
+    lastPlay.set(key, now);
+    return false;
 }
-
-const soundState: SoundState = {
-  context: null,
-  masterGain: null,
-  compressor: null,
-  enabled: false,
-  lastPlay: new Map(),
-};
-
-function ensureAudioContext(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  const Ctx = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctx) return null;
-  if (!soundState.context) {
-    const context = new Ctx({ latencyHint: "interactive" });
-    const masterGain = context.createGain();
-    const compressor = context.createDynamicsCompressor();
-
-    compressor.threshold.value = -22;
-    compressor.knee.value = 18;
-    compressor.ratio.value = 3.2;
-    compressor.attack.value = 0.003;
-    compressor.release.value = 0.25;
-
-    masterGain.gain.value = soundState.enabled ? 0.10 : 0;
-    masterGain.connect(compressor).connect(context.destination);
-    soundState.context = context;
-    soundState.masterGain = masterGain;
-    soundState.compressor = compressor;
-  }
-  return soundState.context;
-}
-
-function canPlay(): boolean {
-  const context = ensureAudioContext();
-  return !!context && !!soundState.masterGain && soundState.enabled;
-}
-
-function shouldThrottle(key: string, interval: number): boolean {
-  const context = ensureAudioContext();
-  const now = context ? context.currentTime : performance.now() / 1000;
-  const last = soundState.lastPlay.get(key) || 0;
-  if (now - last < interval) return true;
-  soundState.lastPlay.set(key, now);
-  return false;
-}
-
-interface ToneOptions {
-  frequency: number;
-  duration?: number;
-  type?: OscillatorType;
-  volume?: number;
-  detune?: number;
-  attack?: number;
-  release?: number;
-  pan?: number;
-}
-
-function playTone({
-  frequency,
-  duration = 0.16,
-  type = "sine",
-  volume = 0.08,
-  detune = 0,
-  attack = 0.02,
-  release = 0.14,
-  pan = 0,
-}: ToneOptions): void {
-  if (!canPlay()) return;
-  const context = soundState.context!;
-  const now = context.currentTime;
-  const osc = context.createOscillator();
-  const gain = context.createGain();
-  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
-
-  osc.type = type;
-  osc.frequency.value = frequency;
-  osc.detune.value = detune;
-
-  const attackTime = Math.max(0.002, attack);
-  const releaseTime = Math.max(0.04, release);
-
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(volume, now + attackTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration + releaseTime);
-
-  if (panner) {
-    panner.pan.value = pan;
-    osc.connect(gain).connect(panner).connect(soundState.masterGain!);
-  } else {
-    osc.connect(gain).connect(soundState.masterGain!);
-  }
-
-  osc.start(now);
-  osc.stop(now + duration + releaseTime);
-}
-
-interface SweepOptions {
-  from: number;
-  to: number;
-  duration?: number;
-  type?: OscillatorType;
-  volume?: number;
-  attack?: number;
-  release?: number;
-  pan?: number;
-}
-
-function playSweep({
-  from,
-  to,
-  duration = 0.5,
-  type = "sawtooth",
-  volume = 0.08,
-  attack = 0.02,
-  release = 0.18,
-  pan = 0,
-}: SweepOptions): void {
-  if (!canPlay()) return;
-  const context = soundState.context!;
-  const now = context.currentTime;
-  const osc = context.createOscillator();
-  const gain = context.createGain();
-  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
-
-  osc.type = type;
-  osc.frequency.setValueAtTime(from, now);
-  osc.frequency.exponentialRampToValueAtTime(to, now + duration);
-
-  const attackTime = Math.max(0.008, attack);
-  const releaseTime = Math.max(0.12, release);
-
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(volume, now + attackTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration + releaseTime);
-
-  if (panner) {
-    panner.pan.value = pan;
-    osc.connect(gain).connect(panner).connect(soundState.masterGain!);
-  } else {
-    osc.connect(gain).connect(soundState.masterGain!);
-  }
-
-  osc.start(now);
-  osc.stop(now + duration + releaseTime);
-}
-
-export function initSound(enabled = false): void {
-  soundState.enabled = enabled;
-  ensureAudioContext();
-}
-
-export function resumeAudio(): void {
-  const context = ensureAudioContext();
-  if (!context) return;
-  if (context.state === "suspended") {
-    context.resume();
-  }
-}
-
-export function setAudioEnabled(enabled: boolean): void {
-  soundState.enabled = enabled;
-  const context = ensureAudioContext();
-  if (!context || !soundState.masterGain) return;
-  const now = context.currentTime;
-  const target = enabled ? 0.10 : 0.0001;
-  soundState.masterGain.gain.cancelScheduledValues(now);
-  soundState.masterGain.gain.setTargetAtTime(target, now, 0.08);
-}
-
-export function isAudioEnabled(): boolean {
-  return soundState.enabled;
-}
-
-import { SoundSynth } from "./soundSynth.ts";
 
 let lastCollectTime = 0;
-const COLLECT_THROTTLE_MS = 150; // Aggressive throttle to avoid spam
+const COLLECT_THROTTLE_MS = 120;
+
+// ─── Public API ─────────────────────────────────────────────────────────────────
+
+/**
+ * Initialize the sound system
+ */
+export function initSound(enabled = false): void {
+    audioManager.setEnabled(enabled);
+    if (enabled) {
+        audioManager.init();
+    }
+}
+
+/**
+ * Resume audio context (required after page load in some browsers)
+ */
+export function resumeAudio(): void {
+    const context = audioManager.getContext();
+    if (context && context.state === 'suspended') {
+        context.resume();
+    }
+}
+
+/**
+ * Enable or disable audio
+ */
+export function setAudioEnabled(enabled: boolean): void {
+    audioManager.setEnabled(enabled);
+    if (enabled) {
+        audioManager.init();
+        const context = audioManager.getContext();
+        if (context && context.state === 'suspended') {
+            context.resume();
+        }
+    }
+}
+
+/**
+ * Check if audio is enabled
+ */
+export function isAudioEnabled(): boolean {
+    return audioManager.isEnabled();
+}
 
 /**
  * Play a sound effect (convenience wrapper)
+ * Supports all SoundType values with optional volume/pitch overrides
  */
-export function playSound(type: 'laser' | 'hit' | 'critical' | 'death' | 'collect' | 'wave' | 'damage' | 'click', options?: { volume?: number; pitch?: number }): void {
-  // Throttle collect sounds to avoid spam
-  if (type === 'collect') {
-    const now = performance.now();
-    if (now - lastCollectTime < COLLECT_THROTTLE_MS) return;
-    lastCollectTime = now;
-  }
+export function playSound(
+    type: SoundType,
+    options?: { volume?: number; pitch?: number }
+): void {
+    // Throttle collect sounds to avoid spam
+    if (type === 'collect') {
+        const now = performance.now();
+        if (now - lastCollectTime < COLLECT_THROTTLE_MS) return;
+        lastCollectTime = now;
+    }
 
-  SoundSynth.play(type, options);
+    SoundSynth.play(type, options);
 }
 
-// Keep existing playCollect function for compatibility
+// ─── Legacy functions (backward compatibility) ───────────────────────────────────
+
+/**
+ * Play collect sound - musical ding with harmonics
+ */
 export function playCollect(): void {
-  if (!canPlay() || shouldThrottle("collect", 0.08)) return;
-  playTone({
-    frequency: 760,
-    duration: 0.14,
-    type: "triangle",
-    volume: 0.08,
-    attack: 0.012,
-    release: 0.12,
-    pan: -0.08,
-  });
-  playTone({
-    frequency: 1130,
-    duration: 0.16,
-    type: "sine",
-    volume: 0.06,
-    detune: 8,
-    attack: 0.014,
-    release: 0.16,
-    pan: 0.08,
-  });
+    if (shouldThrottle('collect', 0.08)) return;
+    SoundSynth.play('collect', { volume: 0.8 });
 }
 
+/**
+ * Play purchase sound - ascending triad
+ */
 export function playPurchase(): void {
-  if (!canPlay()) return;
-  playTone({
-    frequency: 540,
-    duration: 0.16,
-    type: "triangle",
-    volume: 0.07,
-    attack: 0.016,
-    release: 0.18,
-    pan: -0.06,
-  });
-  playTone({
-    frequency: 910,
-    duration: 0.22,
-    type: "sine",
-    volume: 0.06,
-    detune: 10,
-    attack: 0.018,
-    release: 0.22,
-    pan: 0.06,
-  });
-  playTone({
-    frequency: 1350,
-    duration: 0.2,
-    type: "triangle",
-    volume: 0.045,
-    detune: -6,
-    attack: 0.012,
-    release: 0.18,
-  });
+    if (!audioManager.isEnabled()) return;
+    const ctx = audioManager.getContext();
+    const sfxGain = audioManager.getSfxGain();
+    if (!ctx || !sfxGain) return;
+
+    const now = ctx.currentTime;
+
+    // Three ascending notes: C5, E5, G5
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const startTime = now + i * 0.08;
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.10, startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+
+        osc.connect(gain);
+        gain.connect(sfxGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + 0.2);
+    });
 }
 
+/**
+ * Play prestige sound - dramatic descending sweep
+ */
 export function playPrestige(): void {
-  if (!canPlay()) return;
-  playSweep({
-    from: 620,
-    to: 140,
-    duration: 0.92,
-    type: "triangle",
-    volume: 0.075,
-    attack: 0.02,
-    release: 0.22,
-  });
-  playTone({
-    frequency: 320,
-    duration: 0.42,
-    type: "sine",
-    volume: 0.05,
-    attack: 0.018,
-    release: 0.32,
-    pan: -0.05,
-  });
-  playTone({
-    frequency: 920,
-    duration: 0.48,
-    type: "triangle",
-    volume: 0.042,
-    detune: -4,
-    attack: 0.016,
-    release: 0.3,
-    pan: 0.05,
-  });
+    if (!audioManager.isEnabled()) return;
+    const ctx = audioManager.getContext();
+    const sfxGain = audioManager.getSfxGain();
+    if (!ctx || !sfxGain) return;
+
+    const now = ctx.currentTime;
+
+    // Descending sweep
+    const sweep = ctx.createOscillator();
+    const sweepGain = ctx.createGain();
+    sweep.type = 'sawtooth';
+    sweep.frequency.setValueAtTime(800, now);
+    sweep.frequency.exponentialRampToValueAtTime(100, now + 0.8);
+
+    sweepGain.gain.setValueAtTime(0, now);
+    sweepGain.gain.linearRampToValueAtTime(0.08, now + 0.02);
+    sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+    const sweepFilter = ctx.createBiquadFilter();
+    sweepFilter.type = 'lowpass';
+    sweepFilter.frequency.setValueAtTime(2000, now);
+    sweepFilter.frequency.exponentialRampToValueAtTime(200, now + 0.8);
+    sweepFilter.Q.value = 2;
+
+    sweep.connect(sweepFilter);
+    sweepFilter.connect(sweepGain);
+    sweepGain.connect(sfxGain);
+
+    sweep.start(now);
+    sweep.stop(now + 0.95);
+
+    // Low rumble undertone
+    const rumble = ctx.createOscillator();
+    const rumbleGain = ctx.createGain();
+    rumble.type = 'sine';
+    rumble.frequency.setValueAtTime(80, now);
+    rumble.frequency.exponentialRampToValueAtTime(40, now + 0.6);
+
+    rumbleGain.gain.setValueAtTime(0, now);
+    rumbleGain.gain.linearRampToValueAtTime(0.06, now + 0.03);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+    rumble.connect(rumbleGain);
+    rumbleGain.connect(sfxGain);
+
+    rumble.start(now);
+    rumble.stop(now + 0.75);
+
+    // Ascending shimmer
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(400, now + 0.3);
+    shimmer.frequency.exponentialRampToValueAtTime(1200, now + 0.7);
+
+    shimmerGain.gain.setValueAtTime(0, now + 0.3);
+    shimmerGain.gain.linearRampToValueAtTime(0.05, now + 0.35);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(sfxGain);
+
+    shimmer.start(now + 0.3);
+    shimmer.stop(now + 0.85);
 }
 
+/**
+ * Play UI toggle sound - crisp click
+ */
 export function playUiToggle(): void {
-  if (!canPlay() || shouldThrottle("ui-toggle", 0.1)) return;
-  playTone({
-    frequency: 360,
-    duration: 0.12,
-    type: "sine",
-    volume: 0.05,
-    attack: 0.01,
-    release: 0.16,
-    pan: -0.05,
-  });
-  playTone({
-    frequency: 540,
-    duration: 0.1,
-    type: "triangle",
-    volume: 0.045,
-    attack: 0.012,
-    release: 0.16,
-    pan: 0.05,
-  });
+    if (shouldThrottle('ui-toggle', 0.1)) return;
+    SoundSynth.play('click', { volume: 0.7 });
 }

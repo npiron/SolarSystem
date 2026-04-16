@@ -10,6 +10,9 @@ import { TAU } from "../../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "../hud.ts";
 import { playSound } from "../sound.ts";
 import { getVariantDefinition } from "../../config/enemyVariants.ts";
+import { addTrauma } from "../../renderer/screenShake.ts";
+import { createDeathParticles, createEliteDeathParticles } from "../../renderer/deathParticles.ts";
+import { getEnemyColorWebGL } from "../../renderer/entityColors.ts";
 
 /**
  * Apply explosion damage when explosive enemy dies
@@ -31,6 +34,8 @@ export function applyExplosionDamage(
     state.player.hp -= scaledDamage;
     addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#ff1f1f");
     applyExplosionImpulse(state, enemy.x, enemy.y, radius);
+    // Add screen shake for explosion damage
+    addTrauma(state.screenShake, 0.4);
 }
 
 /**
@@ -104,7 +109,9 @@ export function spawnSplitChildren(
             type: enemy.type === "weak" ? "weak" : "normal",
             variant: enemy.variant,
             generation,
-            spawnAge: 0  // Initialize spawn age for spawn animation
+            spawnAge: 0,  // Initialize spawn age for spawn animation
+            strafeDir: Math.random() < 0.5 ? 1 : -1,  // AI: random initial strafe direction
+            aiTimer: 0  // AI: initialize timer
         };
         spawned.push(child);
     }
@@ -118,9 +125,27 @@ export function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[
     state.runStats.kills += 1;
     state.runStats.essence += enemy.reward;
 
+    // Add screen shake for enemy death (stronger for elites)
+    addTrauma(state.screenShake, enemy.elite ? 0.25 : 0.15);
+
     // Play death sound - deep knock
-    playSound('death', { volume: 0.18, pitch: 1.0 });
+    playSound('death', { volume: 0.18, pitch: 0.9 + Math.random() * 0.2 });
     const variantDef = getVariantDefinition(enemy.variant);
+
+    // Play explosion sound for explosive enemies
+    if (variantDef.explosion) {
+        playSound('explosion', { volume: 0.22, pitch: 0.85 + Math.random() * 0.3 });
+    }
+
+    // Create death particles
+    if (!state.visualsLow) {
+        const enemyColor = getEnemyColorWebGL(enemy.type);
+        const particles = enemy.elite
+            ? createEliteDeathParticles(enemy.x, enemy.y, enemyColor)
+            : createDeathParticles(enemy.x, enemy.y, enemyColor, 6 + Math.floor(Math.random() * 6));
+
+        state.deathParticles.push(...particles);
+    }
 
     // Death animation - mini explosion particles
     if (!state.visualsLow) {

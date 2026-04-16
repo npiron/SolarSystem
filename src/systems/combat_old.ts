@@ -1,683 +1,18 @@
-import type { Bullet, Canvas, Enemy, GameState, EnemyProjectile, LightningBolt, LaserBeam, HomingMissile } from "../types/index.ts";
-import type { TuningConfig } from "../config/tuning.ts";
-import type { EnemyVariantDefinition } from "../config/enemyVariants.ts";
+import type { Canvas, Enemy, GameState, EnemyProjectile } from "../types/index.ts";
 import { getTuning } from "../config/tuning.ts";
 import { CELL_SIZE, TAU } from "../config/constants.ts";
 import { addFloatingText, registerFragmentGain } from "./hud.ts";
 import { playSound } from "./sound.ts";
+import { audioManager } from "./audio.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
-import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
-import { BASE_PLAYER_STATS } from "../config/player.ts";
+import { getWeaponDef, getWeaponStats } from "../config/weapons.ts";
+import { getPlayerStatsFromTuning } from "../config/player.ts";
 import { addTrauma } from "../renderer/screenShake.ts";
-import { createDeathParticles, createEliteDeathParticles } from "../renderer/deathParticles.ts";
-import { getEnemyColorWebGL } from "../renderer/entityColors.ts";
-
-// Helper to check if a weapon is unlocked
-function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
-  const weapon = state.weapons.find(w => w.id === id);
-  return weapon?.unlocked ?? false;
-}
-
-// Helper to get weapon level
-function getWeaponLevel(state: GameState, id: WeaponId): number {
-  const weapon = state.weapons.find(w => w.id === id);
-  return weapon?.level ?? 0;
-}
-
-function nearestEnemy(state: GameState): Enemy | { x: number; y: number } | null {
-  let closest: Enemy | { x: number; y: number } | null = null;
-  let bestDist = Infinity;
-
-  // Check regular enemies
-  state.enemies.forEach((e) => {
-    const dx = e.x - state.player.x;
-    const dy = e.y - state.player.y;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      closest = e;
-    }
-  });
-
-  // Check boss if active
-  if (state.bossActive && state.currentBoss) {
-    const dx = state.currentBoss.x - state.player.x;
-    const dy = state.currentBoss.y - state.player.y;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      closest = state.currentBoss;
-    }
-  }
-
-  return closest;
-}
-
-function calculateOrbitProjectiles(state: GameState, orbitConfig: TuningConfig["orbit"]): number {
-  const bonusProjectiles = Math.max(0, state.player.projectiles - 1) * orbitConfig.projectileScaling;
-  const desiredOrbs = state.player.orbitProjectiles + bonusProjectiles;
-  const roundedOrbs = Math.max(1, Math.round(desiredOrbs));
-  return Math.min(orbitConfig.maxOrbitProjectiles, roundedOrbs);
-}
-
-function applyExplosionDamage(
-  state: GameState,
-  enemy: Enemy,
-  variantDef: EnemyVariantDefinition
-): void {
-  if (!variantDef.explosion) return;
-
-  const { radius, damage } = variantDef.explosion;
-  const dx = enemy.x - state.player.x;
-  const dy = enemy.y - state.player.y;
-  const dist = Math.hypot(dx, dy) || 1;
-  if (dist > radius + state.player.radius) return;
-
-  const scaledDamage = damage * (1 + state.wave * 0.025) * (1 - state.player.damageReduction);
-  state.player.hp -= scaledDamage;
-  addFloatingText(state, "BOOM", enemy.x, enemy.y - 8, "#ff1f1f");
-  applyExplosionImpulse(state, enemy.x, enemy.y, radius);
-  // Add screen shake for explosion damage
-  addTrauma(state.screenShake, 0.4);
-}
-
-function applyExplosionImpulse(state: GameState, originX: number, originY: number, radius: number): void {
-  const strength = 140;
-
-  const applyKnockback = (target: { x: number; y: number; vx?: number; vy?: number; radius?: number }, scale = 1): void => {
-    const dx = target.x - originX;
-    const dy = target.y - originY;
-    const dist = Math.hypot(dx, dy) || 1;
-    if (dist > radius + (target.radius ?? 0)) return;
-
-    const falloff = 1 - Math.min(dist / radius, 1);
-    const impulse = strength * falloff * scale;
-    const nx = dx / dist;
-    const ny = dy / dist;
-
-    target.vx = (target.vx ?? 0) + nx * impulse;
-    target.vy = (target.vy ?? 0) + ny * impulse;
-  };
-
-  applyKnockback(state.player, 0.6);
-  state.enemies.forEach((other) => applyKnockback(other, other.elite ? 0.9 : 1));
-  state.fragmentsOrbs.forEach((fragment) => applyKnockback(fragment, 0.4));
-}
-
-function spawnSplitChildren(
-  state: GameState,
-  enemy: Enemy,
-  variantDef: EnemyVariantDefinition,
-  spawned: Enemy[]
-): void {
-  const split = variantDef.split;
-  if (!split) return;
-
-  const generation = (enemy.generation ?? 0) + 1;
-  if (generation > split.maxGenerations) return;
-
-  if (!state.visualsLow) {
-    addFloatingText(state, "✨", enemy.x, enemy.y - enemy.radius, "#c084fc", 1.4);
-  }
-
-  for (let i = 0; i < split.count; i++) {
-    const angle = Math.random() * TAU;
-    const offset = split.spread * (0.8 + Math.random() * 0.6);
-    const childX = enemy.x + Math.cos(angle) * offset;
-    const childY = enemy.y + Math.sin(angle) * offset;
-    const hp = Math.max(6, enemy.maxHp * split.hpScale);
-    const radius = Math.max(4, enemy.radius * split.radiusScale);
-    const reward = Math.max(0.5, enemy.reward * split.rewardScale);
-
-    const launchSpeed = 90;
-    const child: Enemy = {
-      x: childX,
-      y: childY,
-      vx: Math.cos(angle) * launchSpeed,
-      vy: Math.sin(angle) * launchSpeed,
-      radius,
-      hp,
-      maxHp: hp,
-      speed: enemy.speed * split.speedScale,
-      reward,
-      fireTimer: enemy.fireDelay * Math.random(),
-      fireDelay: enemy.fireDelay,
-      elite: false,
-      type: enemy.type === "weak" ? "weak" : "normal",
-      variant: enemy.variant,
-      generation
-    };
-    spawned.push(child);
-  }
-}
-
-function handleEnemyDeath(state: GameState, enemy: Enemy, spawned: Enemy[]): void {
-  state.resources.essence += enemy.reward;
-  state.runStats.kills += 1;
-  state.runStats.essence += enemy.reward;
-
-  // Add screen shake for enemy death (stronger for elites)
-  addTrauma(state.screenShake, enemy.elite ? 0.25 : 0.15);
-
-  // Play death sound - deep knock
-  playSound('death', { volume: 0.18, pitch: 1.0 });
-  const variantDef = getVariantDefinition(enemy.variant);
-
-  // Create death particles
-  if (!state.visualsLow) {
-    const enemyColor = getEnemyColorWebGL(enemy.type);
-    const particles = enemy.elite
-      ? createEliteDeathParticles(enemy.x, enemy.y, enemyColor)
-      : createDeathParticles(enemy.x, enemy.y, enemyColor, 6 + Math.floor(Math.random() * 6));
-    
-    state.deathParticles.push(...particles);
-  }
-
-  // Death animation - mini explosion particles
-  if (!state.visualsLow) {
-    const particleCount = enemy.elite ? 8 : 5;
-    for (let i = 0; i < particleCount; i++) {
-      const angle = (Math.PI * 2 * i) / particleCount;
-      const color = enemy.elite ? "#fbbf24" : "#94a3b8";
-      addFloatingText(
-        state,
-        "★",
-        enemy.x + Math.cos(angle) * 5,
-        enemy.y + Math.sin(angle) * 5,
-        color,
-        1.2
-      );
-    }
-  }
-
-  // Handle variant death effects
-  applyExplosionDamage(state, enemy, variantDef);
-  spawnSplitChildren(state, enemy, variantDef, spawned);
-
-  // Drop fragment orb with 35% of reward
-  const { maxFragments } = getTuning().fx;
-  const fragReward = enemy.reward * 0.35;
-  if (state.fragmentsOrbs.length < maxFragments) {
-    state.fragmentsOrbs.push({
-      x: enemy.x,
-      y: enemy.y,
-      value: fragReward,
-      vx: (Math.random() - 0.5) * 30,
-      vy: (Math.random() - 0.5) * 30,
-      life: 12
-    });
-  } else {
-    registerFragmentGain(state, fragReward, enemy.x, enemy.y, true);
-  }
-
-  // Add floating text for essence gain
-  if (!state.visualsLow) {
-    const gainText = `+${Math.round(enemy.reward)}`;
-    addFloatingText(state, gainText, enemy.x, enemy.y - 10, "#84cc16", 1.6);
-  }
-
-  // High-value enemies show special effects
-  if (enemy.elite && !state.visualsLow) {
-    addFloatingText(state, "⭐ ELITE", enemy.x, enemy.y + 8, "#fbbf24", 2.0);
-  }
-}
-
-function fire(state: GameState): void {
-  if (!isWeaponUnlocked(state, 'mainGun')) return;
-
-  const level = getWeaponLevel(state, 'mainGun');
-  const def = getWeaponDef('mainGun');
-  const stats = getWeaponStats(def, level);
-
-  const target = nearestEnemy(state);
-  // Main weapon count: combine base stats, weapon upgrades, and player bonuses
-  // state.player.projectiles includes base (1) + talents
-  // stats.projectiles includes base (1) + weapon levels
-  // We combine the bonuses from both sources
-  // NOTE: getGlobalMultipliers uses state.player.projectiles VS BASE, so let's stick to the existing logic 
-  // which works fine, but we MUST apply damageMult.
-
-  const { damageMult } = getGlobalMultipliers(state);
-
-  const weaponStatsProjectiles = stats.projectiles ?? 1;
-  const playerBonus = Math.max(0, state.player.projectiles - 1);
-  const weaponBonus = Math.max(0, weaponStatsProjectiles - 1);
-  const count = 1 + playerBonus + weaponBonus;
-
-  // Base direction: toward nearest enemy, or forward if no enemies
-  const baseAngle = target
-    ? Math.atan2(target.y - state.player.y, target.x - state.player.x)
-    : state.time * 0.9;
-
-  const { maxSpeed, maxLifetime } = getTuning().bullet;
-  const { maxBullets } = getTuning().fx;
-
-  const bulletSpeed = Math.min(state.player.bulletSpeed, maxSpeed);
-  const rangeFactor = (stats.range ?? 1) * state.player.range;
-  const lifetime = Math.min(1.2 * rangeFactor, maxLifetime);
-
-  // Shotgun spread: all projectiles fire in a cone toward the target
-  const spreadAngle = Math.PI / 4; // 45 degrees total spread (like a shotgun)
-
-  for (let i = 0; i < count; i++) {
-    if (state.bullets.length >= maxBullets) break;
-    // Spread projectiles evenly within the cone, centered on baseAngle
-    const offset = count > 1 ? (i / (count - 1) - 0.5) * spreadAngle : 0;
-    const angle = baseAngle + offset;
-    const bullet: Bullet = {
-      x: state.player.x,
-      y: state.player.y,
-      dx: Math.cos(angle) * bulletSpeed,
-      dy: Math.sin(angle) * bulletSpeed,
-      life: lifetime,
-      pierce: state.player.pierce,
-      damage: stats.damage * damageMult // Apply global damage multiplier
-    };
-    state.bullets.push(bullet);
-  }
-  // No sound for basic fire - too spammy
-}
-
-/**
- * Helper to get global multipliers from player state upgrades
- */
-function getGlobalMultipliers(state: GameState) {
-  return {
-    damageMult: state.player.damage / BASE_PLAYER_STATS.damage,
-    rangeMult: state.player.range / BASE_PLAYER_STATS.range,
-    // For cooldown, we want the ratio of current/base (e.g. 0.5/1.0 = 0.5x delay)
-    // Be careful not to divide by zero if base is 0
-    cooldownMult: BASE_PLAYER_STATS.fireDelay > 0 ? state.player.fireDelay / BASE_PLAYER_STATS.fireDelay : 1.0,
-    // Additive projectile bonus
-    extraProjectiles: Math.max(0, state.player.projectiles - BASE_PLAYER_STATS.projectiles)
-  };
-}
-
-/**
- * Orbit weapon: fires projectiles in a circular pattern around the player
- */
-function fireOrbit(state: GameState): void {
-  if (!isWeaponUnlocked(state, 'circularBlast')) return;
-
-  const level = getWeaponLevel(state, 'circularBlast');
-  const def = getWeaponDef('circularBlast');
-  const stats = getWeaponStats(def, level);
-  const { damageMult } = getGlobalMultipliers(state);
-
-  const { maxSpeed, maxLifetime } = getTuning().bullet;
-  const { maxBullets } = getTuning().fx;
-  const orbitConfig = getTuning().orbit;
-
-  // Use the same calculation as visuals to ensure what you see is what you hit with
-  // Note: calculateOrbitProjectiles already uses state.player.projectiles, so scaling is handled there
-  const count = calculateOrbitProjectiles(state, orbitConfig);
-
-  const bulletSpeed = Math.min(state.player.bulletSpeed * 0.8, maxSpeed);
-  const rangeFactor = (stats.range ?? 1) * state.player.range;
-  const lifetime = Math.min(1.5 * rangeFactor, maxLifetime);
-
-  for (let i = 0; i < count; i++) {
-    if (state.bullets.length >= maxBullets) break;
-    // Evenly distribute projectiles around the player
-    const angle = (TAU * i) / count + state.player.spin;
-    const bullet: Bullet = {
-      x: state.player.x,
-      y: state.player.y,
-      dx: Math.cos(angle) * bulletSpeed,
-      dy: Math.sin(angle) * bulletSpeed,
-      life: lifetime,
-      pierce: state.player.pierce, // Pierce upgrade applies globally
-      damage: stats.damage * damageMult // Apply global damage multiplier
-    };
-    state.bullets.push(bullet);
-  }
-  // No sound for shotgun - too spammy
-}
-
-/**
- * Lightning weapon: strikes random enemy and chains to nearby enemies
- */
-function fireLightning(state: GameState): void {
-  if (!isWeaponUnlocked(state, 'lightning')) return;
-  if (state.enemies.length === 0) return;
-
-  const level = getWeaponLevel(state, 'lightning');
-  const def = getWeaponDef('lightning');
-  const stats = getWeaponStats(def, level);
-  const { damageMult, rangeMult, extraProjectiles } = getGlobalMultipliers(state);
-
-  const range = (stats.range ?? 200) * rangeMult;
-  // Extra projectiles increase chain count for lightning
-  const chainCount = (stats.chainCount ?? 2) + extraProjectiles;
-
-  // Find enemies within range
-  const inRange = state.enemies.filter(e => {
-    const dx = e.x - state.player.x;
-    const dy = e.y - state.player.y;
-    return Math.hypot(dx, dy) <= range;
-  });
-
-  if (inRange.length === 0) return;
-
-  // Pick random target
-  const primaryTarget = inRange[Math.floor(Math.random() * inRange.length)];
-  const hitEnemies: Enemy[] = [primaryTarget];
-
-  // Apply damage to primary target
-  primaryTarget.hp -= stats.damage * damageMult;
-  primaryTarget.hitThisFrame = true;
-
-  // Create lightning bolt visual
-  const segments: { x: number; y: number }[] = [];
-  let lastX = state.player.x;
-  let lastY = state.player.y;
-
-  // Generate zigzag path to primary target
-  const steps = 5;
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    const baseX = state.player.x + (primaryTarget.x - state.player.x) * t;
-    const baseY = state.player.y + (primaryTarget.y - state.player.y) * t;
-    const offset = i === 0 || i === steps ? 0 : (Math.random() - 0.5) * 30;
-    segments.push({ x: baseX + offset, y: baseY + offset });
-    lastX = baseX;
-    lastY = baseY;
-  }
-
-  // Chain to nearby enemies
-  let currentX = primaryTarget.x;
-  let currentY = primaryTarget.y;
-
-  for (let c = 0; c < chainCount && hitEnemies.length < inRange.length; c++) {
-    // Find nearest un-hit enemy
-    let nearest: Enemy | null = null;
-    let nearestDist = Infinity;
-
-    for (const e of state.enemies) {
-      if (hitEnemies.includes(e)) continue;
-      const dx = e.x - currentX;
-      const dy = e.y - currentY;
-      const dist = Math.hypot(dx, dy);
-      if (dist < nearestDist && dist < range * 0.8) { // Chain range slightly shorter
-        nearestDist = dist;
-        nearest = e;
-      }
-    }
-
-    if (!nearest) break;
-
-    // Apply chain damage (reduced)
-    const chainDamage = (stats.damage * damageMult) * 0.6;
-    nearest.hp -= chainDamage;
-    nearest.hitThisFrame = true;
-    hitEnemies.push(nearest);
-
-    // Add chain segment
-    segments.push({ x: nearest.x, y: nearest.y });
-    currentX = nearest.x;
-    currentY = nearest.y;
-  }
-
-  // Add visual bolt
-  state.lightningBolts.push({
-    startX: state.player.x,
-    startY: state.player.y,
-    segments,
-    life: 0.2
-  });
-
-  addFloatingText(state, "⚡", primaryTarget.x, primaryTarget.y - 10, "#00ffff");
-  // No sound for lightning - too spammy
-}
-
-/**
- * Laser weapon: continuous beam toward nearest enemy
- */
-function updateLaser(state: GameState, dt: number): void {
-  if (!isWeaponUnlocked(state, 'laser')) return;
-
-  const level = getWeaponLevel(state, 'laser');
-  const def = getWeaponDef('laser');
-  const stats = getWeaponStats(def, level);
-  const { damageMult, rangeMult, extraProjectiles } = getGlobalMultipliers(state);
-
-  // Clear old beams
-  state.laserBeams = [];
-
-  const range = (stats.range ?? 250) * rangeMult;
-
-  // Find multiple targets based on extra projectiles
-  const beamCount = 1 + extraProjectiles;
-
-  // Get all enemies in range sorted by distance
-  // Optimization: Pre-filter by range square
-  const candidates: { enemy: Enemy, distSq: number }[] = [];
-  const rangeSq = range * range;
-
-  for (const e of state.enemies) {
-    const dx = e.x - state.player.x;
-    const dy = e.y - state.player.y;
-    const distSq = dx * dx + dy * dy;
-    if (distSq <= rangeSq) {
-      candidates.push({ enemy: e, distSq });
-    }
-  }
-
-  // Also add boss if in range
-  if (state.bossActive && state.currentBoss) {
-    const dx = state.currentBoss.x - state.player.x;
-    const dy = state.currentBoss.y - state.player.y;
-    const distSq = dx * dx + dy * dy;
-    if (distSq <= rangeSq) {
-      // Treat boss as a high priority target (hack: dist 0 to always be first)
-      candidates.unshift({ enemy: state.currentBoss as unknown as Enemy, distSq: 0 });
-    }
-  }
-
-  // Sort by distance (closest first)
-  candidates.sort((a, b) => a.distSq - b.distSq);
-
-  const targets = candidates.slice(0, beamCount).map(c => c.enemy);
-
-  for (const target of targets) {
-    const dx = target.x - state.player.x;
-    const dy = target.y - state.player.y;
-    const dist = Math.sqrt(candidates.find(c => c.enemy === target)?.distSq || 1); // potential slight inefficiency but ok for low counts
-
-    // Create laser beam visual
-    state.laserBeams.push({
-      startX: state.player.x,
-      startY: state.player.y,
-      endX: target.x,
-      endY: target.y,
-      life: 0.1
-    });
-
-    // Apply DPS to all enemies on the beam path
-    const beamWidth = 8;
-    const dps = stats.damage * damageMult;
-
-    for (const enemy of state.enemies) {
-      // Optimization: simple bbox check first
-      if (Math.abs(enemy.x - state.player.x) > range && Math.abs(enemy.y - state.player.y) > range) continue;
-
-      // Point-to-line distance
-      const ex = enemy.x - state.player.x;
-      const ey = enemy.y - state.player.y;
-      const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (dist * dist)));
-      const closestX = state.player.x + t * dx;
-      const closestY = state.player.y + t * dy;
-      const distToBeam = Math.hypot(enemy.x - closestX, enemy.y - closestY);
-
-      if (distToBeam < beamWidth + enemy.radius) {
-        enemy.hp -= dps * dt;
-        enemy.hitThisFrame = true;
-      }
-    }
-
-    // Boss hit check (if active)
-    if (state.bossActive && state.currentBoss) {
-      const boss = state.currentBoss;
-      const bx = boss.x - state.player.x;
-      const by = boss.y - state.player.y;
-      const t = Math.max(0, Math.min(1, (bx * dx + by * dy) / (dist * dist)));
-      const closestX = state.player.x + t * dx;
-      const closestY = state.player.y + t * dy;
-      const distToBeam = Math.hypot(boss.x - closestX, boss.y - closestY);
-
-      if (distToBeam < beamWidth + boss.radius) {
-        boss.hp -= dps * dt;
-      }
-    }
-  }
-}
-
-/**
- * Missiles weapon: fire homing missiles toward enemies
- */
-function fireMissiles(state: GameState): void {
-  if (!isWeaponUnlocked(state, 'missiles')) return;
-  if (state.enemies.length === 0 && !state.bossActive) return;
-
-  const level = getWeaponLevel(state, 'missiles');
-  const def = getWeaponDef('missiles');
-  const stats = getWeaponStats(def, level);
-  const { damageMult, extraProjectiles } = getGlobalMultipliers(state);
-
-  const count = Math.max(1, Math.floor((stats.projectiles ?? 1) + extraProjectiles));
-
-  for (let i = 0; i < count; i++) {
-    // Pick a random target
-    let targetX: number, targetY: number;
-
-    if (state.bossActive && state.currentBoss && Math.random() < 0.5) {
-      targetX = state.currentBoss.x;
-      targetY = state.currentBoss.y;
-    } else if (state.enemies.length > 0) {
-      const target = state.enemies[Math.floor(Math.random() * state.enemies.length)];
-      targetX = target.x;
-      targetY = target.y;
-    } else {
-      continue;
-    }
-
-    const dx = targetX - state.player.x;
-    const dy = targetY - state.player.y;
-    const dist = Math.hypot(dx, dy) || 1;
-    const speed = 150;
-    const maxRange = stats.range ?? 300;
-    const lifetime = Math.min((maxRange / speed) * 1.5, 6);
-
-    const missile: HomingMissile = {
-      x: state.player.x,
-      y: state.player.y,
-      dx: (dx / dist) * speed,
-      dy: (dy / dist) * speed,
-      targetId: i, // Just an identifier
-      life: lifetime,
-      damage: stats.damage * damageMult
-    };
-
-    state.missiles.push(missile);
-  }
-  // No sound for missile - too spammy
-}
-
-/**
- * Update homing missiles movement and collisions
- */
-function updateMissiles(state: GameState, dt: number): void {
-  const turnSpeed = 4; // Radians per second for homing
-
-  for (const missile of state.missiles) {
-    // Find nearest enemy to home toward
-    let nearestEnemy: Enemy | null = null;
-    let nearestDist = Infinity;
-
-    for (const e of state.enemies) {
-      const dx = e.x - missile.x;
-      const dy = e.y - missile.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearestEnemy = e;
-      }
-    }
-
-    // Also consider boss
-    if (state.bossActive && state.currentBoss) {
-      const dx = state.currentBoss.x - missile.x;
-      const dy = state.currentBoss.y - missile.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearestEnemy = null; // Will handle boss separately
-      }
-    }
-
-    // Home toward target
-    let targetX = missile.x + missile.dx;
-    let targetY = missile.y + missile.dy;
-
-    if (nearestEnemy) {
-      targetX = nearestEnemy.x;
-      targetY = nearestEnemy.y;
-    } else if (state.bossActive && state.currentBoss) {
-      targetX = state.currentBoss.x;
-      targetY = state.currentBoss.y;
-    }
-
-    const desiredDx = targetX - missile.x;
-    const desiredDy = targetY - missile.y;
-    const desiredAngle = Math.atan2(desiredDy, desiredDx);
-    const currentAngle = Math.atan2(missile.dy, missile.dx);
-
-    // Interpolate angle
-    let angleDiff = desiredAngle - currentAngle;
-    while (angleDiff > Math.PI) angleDiff -= TAU;
-    while (angleDiff < -Math.PI) angleDiff += TAU;
-
-    const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnSpeed * dt);
-    const speed = Math.hypot(missile.dx, missile.dy);
-
-    missile.dx = Math.cos(newAngle) * speed;
-    missile.dy = Math.sin(newAngle) * speed;
-
-    // Move missile
-    missile.x += missile.dx * dt;
-    missile.y += missile.dy * dt;
-    missile.life -= dt;
-
-    // Check collision with enemies
-    for (const enemy of state.enemies) {
-      const dx = enemy.x - missile.x;
-      const dy = enemy.y - missile.y;
-      if (dx * dx + dy * dy < (enemy.radius + 6) ** 2) {
-        enemy.hp -= missile.damage;
-        enemy.hitThisFrame = true;
-        missile.life = -1;
-        addFloatingText(state, "💥", enemy.x, enemy.y - 5, "#ff6600");
-        // No sound for missile hit - relies on death sound
-        break;
-      }
-    }
-
-    // Check collision with boss
-    if (state.bossActive && state.currentBoss && missile.life > 0) {
-      const boss = state.currentBoss;
-      const dx = boss.x - missile.x;
-      const dy = boss.y - missile.y;
-      if (dx * dx + dy * dy < (boss.radius + 6) ** 2) {
-        boss.hp -= missile.damage;
-        missile.life = -1;
-        addFloatingText(state, "💥", boss.x, boss.y - 5, "#ff6600");
-        // No sound for boss missile hit
-      }
-    }
-  }
-
-  // Remove dead missiles
-  state.missiles = state.missiles.filter(m => m.life > 0);
-}
+import { isWeaponUnlocked, getWeaponLevel, nearestEnemy, calculateOrbitProjectiles } from "./combat/helpers.ts";
+import { fire, fireOrbit, fireLightning, fireMissiles, getGlobalMultipliers } from "./combat/weapons.ts";
+import { updateMissiles, updateLaser } from "./combat/projectiles.ts";
+import { handleEnemyDeath } from "./combat/enemies.ts";
+import { updateEnemyAI } from "./combat/ai.ts";
 
 export function updateCombat(state: GameState, dt: number, canvas: Canvas): void {
   state.player.fireTimer -= dt;
@@ -728,6 +63,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('mainGun');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'mainGun'));
     fire(state);
+    playSound('weaponFire', { volume: 0.12, pitch: 0.9 + Math.random() * 0.2 });
     state.player.fireTimer = stats.fireDelay * cooldownMult;
   }
 
@@ -736,6 +72,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('circularBlast');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'circularBlast'));
     fireOrbit(state);
+    playSound('weaponFire', { volume: 0.10, pitch: 1.1 + Math.random() * 0.15 });
     state.player.orbitTimer = stats.fireDelay * cooldownMult;
   }
 
@@ -745,6 +82,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('lightning');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'lightning'));
     fireLightning(state);
+    playSound('laser', { volume: 0.10, pitch: 1.3 + Math.random() * 0.2 });
     state.lightningTimer = stats.fireDelay * cooldownMult;
   }
 
@@ -769,6 +107,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     const def = getWeaponDef('missiles');
     const stats = getWeaponStats(def, getWeaponLevel(state, 'missiles'));
     fireMissiles(state);
+    playSound('weaponFire', { volume: 0.14, pitch: 0.7 + Math.random() * 0.15 });
     state.missileTimer = stats.fireDelay * cooldownMult;
   }
 
@@ -913,44 +252,15 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
   const newEnemyProjectiles: EnemyProjectile[] = [];
   const { enemyAcceleration, enemyMaxSpeedRatio } = getTuning().physics;
 
-  state.enemies.forEach((e) => {
-    // Initialize velocity if not present (for existing enemies)
-    if (e.vx === undefined) e.vx = 0;
-    if (e.vy === undefined) e.vy = 0;
-    
-    // Update spawn age for spawn animation
-    if (e.spawnAge !== undefined) {
-      e.spawnAge += dt;
-    }
+  // Update enemy movement using AI steering behaviors
+  updateEnemyAI(state, canvas.width, canvas.height, dt);
 
-    const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
+  // Handle artillery firing (separate from movement)
+  state.enemies.forEach((e) => {
     const variantDef = getVariantDefinition(e.variant);
 
     if (e.variant === "artillery" && variantDef.projectile) {
-      const distance = Math.hypot(state.player.x - e.x, state.player.y - e.y);
-      const desiredRange = 240;
-      const approachDirection = distance > desiredRange ? 1 : -0.65;
-
-      // Target velocity for artillery
-      const targetVx = Math.cos(angle) * e.speed * approachDirection;
-      const targetVy = Math.sin(angle) * e.speed * approachDirection;
-
-      // Accelerate towards target velocity
-      e.vx += (targetVx - e.vx) * enemyAcceleration * dt;
-      e.vy += (targetVy - e.vy) * enemyAcceleration * dt;
-
-      // Apply velocity with speed clamping
-      const currentSpeed = Math.hypot(e.vx, e.vy);
-      const maxSpeed = e.speed * enemyMaxSpeedRatio;
-      if (currentSpeed > maxSpeed) {
-        const scale = maxSpeed / currentSpeed;
-        e.vx *= scale;
-        e.vy *= scale;
-      }
-
-      e.x += e.vx * dt;
-      e.y += e.vy * dt;
-
+      const angle = Math.atan2(state.player.y - e.y, state.player.x - e.x);
       e.fireTimer -= dt;
       if (e.fireTimer <= 0) {
         const projectileSpeed = variantDef.projectile.speed;
@@ -965,26 +275,6 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         });
         e.fireTimer = e.fireDelay;
       }
-    } else {
-      // Standard chasing behavior with acceleration
-      const targetVx = Math.cos(angle) * e.speed;
-      const targetVy = Math.sin(angle) * e.speed;
-
-      // Accelerate towards target velocity for smooth movement
-      e.vx += (targetVx - e.vx) * enemyAcceleration * dt;
-      e.vy += (targetVy - e.vy) * enemyAcceleration * dt;
-
-      // Apply velocity with speed clamping
-      const currentSpeed = Math.hypot(e.vx, e.vy);
-      const maxSpeed = e.speed * enemyMaxSpeedRatio;
-      if (currentSpeed > maxSpeed) {
-        const scale = maxSpeed / currentSpeed;
-        e.vx *= scale;
-        e.vy *= scale;
-      }
-
-      e.x += e.vx * dt;
-      e.y += e.vy * dt;
     }
   });
   state.enemyProjectiles.push(...newEnemyProjectiles);
@@ -1019,8 +309,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
         const dx = enemy.x - b.x;
         const dy = enemy.y - b.y;
         if (dx * dx + dy * dy < (enemy.radius + 4) ** 2) {
+          const baseDmg = b.damage ?? state.player.damage;
           const crit = Math.random() < state.player.critChance;
-          const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+          const dmg = crit ? baseDmg * state.player.critMultiplier : baseDmg;
           enemy.hp -= dmg;
           enemy.hitThisFrame = true;
 
@@ -1113,8 +404,9 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
       const dx = boss.x - b.x;
       const dy = boss.y - b.y;
       if (dx * dx + dy * dy < (boss.radius + 4) ** 2) {
+        const baseDmg = b.damage ?? state.player.damage;
         const crit = Math.random() < state.player.critChance;
-        const dmg = crit ? state.player.damage * state.player.critMultiplier : state.player.damage;
+        const dmg = crit ? baseDmg * state.player.critMultiplier : baseDmg;
         boss.hp -= dmg;
         if (!state.visualsLow) {
           if (crit) {
@@ -1147,7 +439,7 @@ export function updateCombat(state: GameState, dt: number, canvas: Canvas): void
     if (boss.hp <= 0) {
       // Boss defeated - add major screen shake
       addTrauma(state.screenShake, 0.8);
-      
+
       const fragReward = boss.reward * 0.35;
       state.resources.essence += boss.reward;
       state.runStats.kills += 1;

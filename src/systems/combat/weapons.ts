@@ -6,7 +6,7 @@
 import type { Bullet, GameState, HomingMissile, Enemy } from "../../types/index.ts";
 import { getTuning } from "../../config/tuning.ts";
 import { getWeaponDef, getWeaponStats } from "../../config/weapons.ts";
-import { BASE_PLAYER_STATS } from "../../config/player.ts";
+import { getPlayerStatsFromTuning } from "../../config/player.ts";
 import { addFloatingText } from "../hud.ts";
 import { TAU } from "../../config/constants.ts";
 import { isWeaponUnlocked, getWeaponLevel, nearestEnemy, calculateOrbitProjectiles } from "./helpers.ts";
@@ -15,11 +15,12 @@ import { isWeaponUnlocked, getWeaponLevel, nearestEnemy, calculateOrbitProjectil
  * Helper to get global multipliers from player state upgrades
  */
 export function getGlobalMultipliers(state: GameState) {
+    const baseStats = getPlayerStatsFromTuning();
     return {
-        damageMult: state.player.damage / BASE_PLAYER_STATS.damage,
-        rangeMult: state.player.range / BASE_PLAYER_STATS.range,
-        cooldownMult: BASE_PLAYER_STATS.fireDelay > 0 ? state.player.fireDelay / BASE_PLAYER_STATS.fireDelay : 1.0,
-        extraProjectiles: Math.max(0, state.player.projectiles - BASE_PLAYER_STATS.projectiles)
+        damageMult: state.player.damage / baseStats.damage,
+        rangeMult: state.player.range / baseStats.range,
+        cooldownMult: baseStats.fireDelay > 0 ? state.player.fireDelay / baseStats.fireDelay : 1.0,
+        extraProjectiles: Math.max(0, state.player.projectiles - baseStats.projectiles)
     };
 }
 

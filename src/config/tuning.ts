@@ -3,6 +3,8 @@
  * Contains all adjustable parameters for fine-tuning gameplay
  */
 
+import type { AiTuning } from "../systems/combat/ai.ts";
+
 export interface TuningConfig {
   // Player base stats
   player: {
@@ -138,6 +140,9 @@ export interface TuningConfig {
     fragmentDrag: number;
     fragmentBounce: number;
   };
+
+  // Enemy AI steering behaviors
+  ai: AiTuning;
 }
 
 // Storage key for tuning config
@@ -259,6 +264,26 @@ export function getDefaultTuning(): TuningConfig {
       fragmentGravity: 80,
       fragmentDrag: 0.85,
       fragmentBounce: 0.4
+    },
+    ai: {
+      separationRadius: 50,
+      separationForce: 1.2,
+      dodgeScanRadius: 120,
+      dodgeReactionTime: 0.15,
+      dodgeForce: 2.0,
+      dodgeCooldownDuration: 0.5,
+      flankAngle: 1.1,
+      flankForce: 0.8,
+      kiteDesiredDistance: 240,
+      kiteRepulsionForce: 1.5,
+      kiteAttractionForce: 0.6,
+      weaveAmplitude: 0.6,
+      weaveFrequency: 1.5,
+      strafeForce: 0.7,
+      boundaryMargin: 40,
+      boundaryForce: 2.0,
+      maxSteeringForce: 3.0,
+      velocityBlend: 0.85,
     }
   };
 }
@@ -535,6 +560,29 @@ export const tuningMeta: TuningMetaMap = {
       fragmentGravity: { label: "Gravité fragments", min: 0, max: 200, step: 10, description: "Force vers le bas sur les fragments" },
       fragmentDrag: { label: "Traînée fragments", min: 0.5, max: 1, step: 0.05, description: "Résistance de l'air" },
       fragmentBounce: { label: "Rebond fragments", min: 0, max: 0.9, step: 0.05, description: "Élasticité des rebonds" }
+    }
+  },
+  ai: {
+    label: "IA Ennemis",
+    params: {
+      separationRadius: { label: "Rayon séparation", min: 10, max: 120, step: 5, description: "Distance de détection des ennemis proches" },
+      separationForce: { label: "Force séparation", min: 0, max: 3, step: 0.1, description: "Force de répulsion entre ennemis" },
+      dodgeScanRadius: { label: "Rayon détection balles", min: 30, max: 250, step: 10, description: "Distance de détection des projectiles" },
+      dodgeReactionTime: { label: "Temps réaction esquive", min: 0.05, max: 0.5, step: 0.01, unit: "s", description: "Délai avant esquive" },
+      dodgeForce: { label: "Force esquive", min: 0, max: 5, step: 0.1, description: "Force d'esquive des projectiles" },
+      dodgeCooldownDuration: { label: "Cooldown esquive", min: 0.1, max: 2, step: 0.1, unit: "s", description: "Temps entre les esquives" },
+      flankAngle: { label: "Angle flanquement", min: 0.1, max: 1.57, step: 0.05, unit: "rad", description: "Décalage angulaire pour contourner" },
+      flankForce: { label: "Force flanquement", min: 0, max: 2, step: 0.1, description: "Force de contournement" },
+      kiteDesiredDistance: { label: "Distance kiting", min: 80, max: 400, step: 10, description: "Distance souhaitée (artillerie)" },
+      kiteRepulsionForce: { label: "Force répulsion kiting", min: 0, max: 4, step: 0.1, description: "Force quand trop près du joueur" },
+      kiteAttractionForce: { label: "Force attraction kiting", min: 0, max: 2, step: 0.1, description: "Force quand trop loin du joueur" },
+      weaveAmplitude: { label: "Amplitude tissage", min: 0, max: 2, step: 0.1, description: "Amplitude du mouvement sinusoïdal" },
+      weaveFrequency: { label: "Fréquence tissage", min: 0.5, max: 4, step: 0.1, unit: "Hz", description: "Fréquence du mouvement sinusoïdal" },
+      strafeForce: { label: "Force orbite", min: 0, max: 2, step: 0.1, description: "Force de mouvement circulaire autour du joueur" },
+      boundaryMargin: { label: "Marge bord écran", min: 10, max: 100, step: 5, description: "Distance de répulsion des bords" },
+      boundaryForce: { label: "Force bord écran", min: 0, max: 5, step: 0.1, description: "Force de répulsion des bords" },
+      maxSteeringForce: { label: "Force directionnelle max", min: 0.5, max: 6, step: 0.1, description: "Limite de force de direction" },
+      velocityBlend: { label: "Mélange vitesse", min: 0.5, max: 0.98, step: 0.01, description: "Lissage du mouvement (0=instantané, 1=très lisse)" }
     }
   }
 };

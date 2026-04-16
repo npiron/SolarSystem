@@ -63,6 +63,10 @@ export interface Enemy {
   generation?: number;
   hitThisFrame?: boolean;
   spawnAge?: number;  // Age in seconds since spawn (for spawn animation)
+  /** AI: strafe direction, 1 or -1 (circle clockwise or counter-clockwise) */
+  strafeDir?: number;
+  /** AI: timer for periodic direction changes */
+  aiTimer?: number;
 }
 
 export interface FragmentOrb {

@@ -7,7 +7,7 @@ import { addFloatingText, registerFragmentGain } from "./hud.ts";
 import { playSound } from "./sound.ts";
 import { getVariantDefinition } from "../config/enemyVariants.ts";
 import { getWeaponDef, getWeaponStats, type WeaponId } from "../config/weapons.ts";
-import { BASE_PLAYER_STATS } from "../config/player.ts";
+import { getPlayerStatsFromTuning } from "../config/player.ts";
 
 // Helper to check if a weapon is unlocked
 function isWeaponUnlocked(state: GameState, id: WeaponId): boolean {
@@ -215,7 +215,7 @@ function fire(state: GameState): void {
   // state.player.projectiles includes base (1) + talents
   // stats.projectiles includes base (1) + weapon levels
   // We combine the bonuses from both sources
-  // NOTE: getGlobalMultipliers uses state.player.projectiles VS BASE, so let's stick to the existing logic 
+  // NOTE: getGlobalMultipliers uses state.player.projectiles VS BASE, so let's stick to the existing logic
   // which works fine, but we MUST apply damageMult.
 
   const { damageMult } = getGlobalMultipliers(state);
@@ -262,14 +262,15 @@ function fire(state: GameState): void {
  * Helper to get global multipliers from player state upgrades
  */
 function getGlobalMultipliers(state: GameState) {
+  const baseStats = getPlayerStatsFromTuning();
   return {
-    damageMult: state.player.damage / BASE_PLAYER_STATS.damage,
-    rangeMult: state.player.range / BASE_PLAYER_STATS.range,
+    damageMult: state.player.damage / baseStats.damage,
+    rangeMult: state.player.range / baseStats.range,
     // For cooldown, we want the ratio of current/base (e.g. 0.5/1.0 = 0.5x delay)
     // Be careful not to divide by zero if base is 0
-    cooldownMult: BASE_PLAYER_STATS.fireDelay > 0 ? state.player.fireDelay / BASE_PLAYER_STATS.fireDelay : 1.0,
+    cooldownMult: baseStats.fireDelay > 0 ? state.player.fireDelay / baseStats.fireDelay : 1.0,
     // Additive projectile bonus
-    extraProjectiles: Math.max(0, state.player.projectiles - BASE_PLAYER_STATS.projectiles)
+    extraProjectiles: Math.max(0, state.player.projectiles - baseStats.projectiles)
   };
 }
 

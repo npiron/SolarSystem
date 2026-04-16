@@ -205,7 +205,9 @@ export function spawnEnemy(
     type,
     variant: variantDef.variant,
     generation: 0,
-    spawnAge: 0  // Initialize spawn age for spawn animation
+    spawnAge: 0,  // Initialize spawn age for spawn animation
+    strafeDir: Math.random() < 0.5 ? 1 : -1,  // AI: random initial strafe direction
+    aiTimer: 0  // AI: initialize timer
   };
   state.enemies.push(enemy);
 }
