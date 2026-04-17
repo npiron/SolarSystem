@@ -1,6 +1,6 @@
 /**
  * Screen Shake System
- * 
+ *
  * Implements trauma-based camera shake with smooth decay.
  * Shake intensity is controlled by trauma (0-1), which decays over time.
  */
@@ -43,11 +43,19 @@ export function addTrauma(shake: ScreenShake, amount: number): void {
  * @param dt Delta time in seconds
  * @param time Current game time
  */
-export function updateScreenShake(shake: ScreenShake, _dt: number, _time: number): void {
-  // Screen shake disabled — keep offsets at zero
-  shake.trauma = 0;
-  shake.offsetX = 0;
-  shake.offsetY = 0;
+export function updateScreenShake(shake: ScreenShake, dt: number, time: number): void {
+  // Decay trauma over time
+  shake.trauma = Math.max(0, shake.trauma - TRAUMA_DECAY * dt);
+
+  // Calculate shake offset from trauma using noise-like oscillation
+  if (shake.trauma > 0.001) {
+    const intensity = shake.trauma * shake.trauma; // Square for more dramatic peaks
+    shake.offsetX = Math.sin(time * SHAKE_FREQUENCY + shake.seed) * MAX_SHAKE_OFFSET * intensity;
+    shake.offsetY = Math.cos(time * SHAKE_FREQUENCY * 1.3 + shake.seed * 1.7) * MAX_SHAKE_OFFSET * intensity;
+  } else {
+    shake.offsetX = 0;
+    shake.offsetY = 0;
+  }
 }
 
 /**

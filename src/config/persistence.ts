@@ -19,6 +19,7 @@ interface SaveData {
     glow?: boolean;
     bloom?: boolean;
     grain?: boolean;
+    crt?: boolean;
   };
   player?: Partial<ReturnType<typeof getPlayerStatsFromTuning>>;
   generators?: Array<{ level: number; cost: number }>;
@@ -99,8 +100,14 @@ export function loadSave(
     state.visualsLow = save.visuals?.low ?? state.visualsLow;
     state.visualsParallax = save.visuals?.parallax ?? state.visualsParallax;
 
-    // Post-processing addons are intentionally disabled to keep visuals clear
-    state.addons = { glow: false, bloom: false, grain: false };
+    // Post-processing addons: CRT enabled by default for retro NES aesthetic
+    const savedAddons = save.addons;
+    state.addons = {
+      glow: savedAddons?.glow ?? false,
+      bloom: savedAddons?.bloom ?? false,
+      grain: savedAddons?.grain ?? false,
+      crt: savedAddons?.crt ?? true
+    };
 
     // Player stats
     if (save.player) {

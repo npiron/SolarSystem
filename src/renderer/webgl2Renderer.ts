@@ -222,7 +222,7 @@ export class WebGL2Renderer {
   }
 
   render(
-    addons: { glow: boolean; bloom: boolean; grain: boolean },
+    addons: { glow: boolean; bloom: boolean; grain: boolean; crt: boolean },
     time: number,
     camera: { x: number; y: number },
     parallaxEnabled: boolean

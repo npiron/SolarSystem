@@ -26,6 +26,7 @@ interface UiElements {
   restartRunBtn: HTMLElement | null;
   togglePerfBtn: HTMLElement | null;
   toggleParallaxBtn: HTMLElement | null;
+  toggleCrtBtn: HTMLElement | null;
   toggleFpsBtn: HTMLElement | null;
   docDialog: HTMLElement | null;
   webgl2Canvas: HTMLCanvasElement;
@@ -69,6 +70,7 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
     restartRunBtn,
     togglePerfBtn,
     toggleParallaxBtn,
+    toggleCrtBtn,
     toggleFpsBtn,
     docDialog,
     webgl2Canvas,
@@ -106,6 +108,16 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
       : "Activer/désactiver le fond réaliste";
   };
 
+  const syncCrtToggle = (): void => {
+    if (!toggleCrtBtn) return;
+    toggleCrtBtn.innerHTML = state.addons.crt
+      ? '<i class="ti ti-device-tv"></i> CRT'
+      : '<i class="ti ti-device-tv-off"></i> CRT';
+    toggleCrtBtn.title = state.addons.crt
+      ? "Désactiver l'effet CRT"
+      : "Activer l'effet CRT";
+  };
+
   const armAudioUnlock = (): void => {
     const unlock = () => resumeAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -115,6 +127,7 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
   armAudioUnlock();
   syncSoundToggle();
   syncParallaxToggle();
+  syncCrtToggle();
 
   pauseBtn?.addEventListener("click", () => {
     state.running = !state.running;
@@ -174,6 +187,13 @@ export function initMainUi({ state, talents, hudContext, elements, actions }: In
   toggleParallaxBtn?.addEventListener("click", () => {
     state.visualsParallax = !state.visualsParallax;
     syncParallaxToggle();
+    playUiToggle();
+    saveGame();
+  });
+
+  toggleCrtBtn?.addEventListener("click", () => {
+    state.addons.crt = !state.addons.crt;
+    syncCrtToggle();
     playUiToggle();
     saveGame();
   });

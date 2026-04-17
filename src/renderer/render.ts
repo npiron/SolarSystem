@@ -1,6 +1,6 @@
 /**
  * Game rendering logic
- * 
+ *
  * This module handles all visual rendering of the game state,
  * including player, enemies, bullets, fragments, and HUD elements.
  */
@@ -358,11 +358,11 @@ export function render(state: GameState, context: RenderContext): void {
       const spawnDuration = 0.4;  // Animation duration in seconds
       const isSpawning = e.spawnAge !== undefined && e.spawnAge < spawnDuration;
       let spawnScale = 1;
-      
+
       if (isSpawning && allowFx) {
         const spawnProgress = (e.spawnAge ?? 0) / spawnDuration;  // 0 to 1
         spawnScale = 0.2 + spawnProgress * 0.8;  // Scale from 0.2 to 1.0
-        
+
         // Outer accretion ring — deep purple, shrinks inward
         const outerRadius = e.radius * (4 - spawnProgress * 3.5);
         const outerAlpha = (1 - spawnProgress) * 0.5;
@@ -375,7 +375,7 @@ export function render(state: GameState, context: RenderContext): void {
           rotation: time * 3,
           halo: { color: [0.5, 0.1, 0.8, 0.4] as const, scale: 1.8 }
         });
-        
+
         // Mid ring — cyan/teal wormhole glow
         const midRadius = e.radius * (2.5 - spawnProgress * 2);
         const midAlpha = (1 - spawnProgress) * 0.6;
@@ -388,7 +388,7 @@ export function render(state: GameState, context: RenderContext): void {
           rotation: -time * 4,
           halo: { color: [0.1, 0.7, 0.9, 0.3] as const, scale: 1.4 }
         });
-        
+
         // Inner dark core — black hole center
         const coreRadius = e.radius * (1.5 - spawnProgress * 1.2);
         const coreAlpha = (1 - spawnProgress) * 0.8;
@@ -403,7 +403,13 @@ export function render(state: GameState, context: RenderContext): void {
       }
 
       // Enhanced halo for variants - larger and more visible
-      const haloScale = variantHaloColor ? 1.6 + enemyPulse * 0.4 : 1.15 + enemyPulse * 0.3;
+      // Increase halo scale for elites and strong enemies to create a clearer hierarchy
+      const isHighThreat = enemyColor[0] > 0.8 && enemyColor[1] < 0.5; // Rough check for red/orange (Elite/Strong)
+      const haloScale = variantHaloColor
+        ? 1.8 + enemyPulse * 0.5
+        : isHighThreat
+          ? 1.4 + enemyPulse * 0.4
+          : 1.15 + enemyPulse * 0.3;
       const enemyHalo = allowFx && fxIntensity > 0
         ? { color: variantHaloColor ?? enemyColor, scale: haloScale * (0.7 + fxIntensity * 0.6) }
         : undefined;
@@ -521,8 +527,9 @@ export function render(state: GameState, context: RenderContext): void {
     state.lightningBolts.forEach((bolt) => {
       if (bolt.segments.length < 2) return;
       const alpha = Math.min(1, bolt.life * 5);
-      const lightningColor: readonly [number, number, number, number] = [0.4, 0.9, 1, alpha];
-      const lightningGlow: readonly [number, number, number, number] = [0.2, 0.6, 1, alpha * 0.5];
+      // More vibrant, electric purple/blue for lightning
+      const lightningColor: readonly [number, number, number, number] = [0.6, 0.4, 1, alpha];
+      const lightningGlow: readonly [number, number, number, number] = [0.4, 0.2, 1, alpha * 0.5];
 
       const lightningSteps = fxIntensity > 0.5 ? 3 : fxIntensity > 0.2 ? 2 : 1;
       for (let i = 0; i < bolt.segments.length - 1; i++) {
@@ -549,8 +556,9 @@ export function render(state: GameState, context: RenderContext): void {
     // Render Laser beams
     state.laserBeams.forEach((beam) => {
       const alpha = Math.min(1, beam.life * 10);
-      const laserColor: readonly [number, number, number, number] = [1, 0.2, 0.2, alpha];
-      const laserGlow: readonly [number, number, number, number] = [1, 0.1, 0.1, alpha * 0.4];
+      // High-intensity crimson for lasers
+      const laserColor: readonly [number, number, number, number] = [1, 0, 0, alpha];
+      const laserGlow: readonly [number, number, number, number] = [1, 0, 0, alpha * 0.6];
 
       // Draw laser beam as series of circles along the path
       const dx = beam.endX - beam.startX;
@@ -579,7 +587,8 @@ export function render(state: GameState, context: RenderContext): void {
     // Render Homing missiles
     const missileColor: readonly [number, number, number, number] = [1, 0.5, 0.1, 1];
     const missileTrailColor: readonly [number, number, number, number] = [1, 0.3, 0, 0.6];
-    const missileGlow = allowFx ? { color: [1, 0.4, 0, 0.5] as const, scale: 2.5 } : undefined;
+    // Bright orange-gold glow for missiles
+    const missileGlow = allowFx ? { color: [1, 0.6, 0, 0.6] as const, scale: 2.8 } : undefined;
 
     state.missiles.forEach((m) => {
       const angle = Math.atan2(m.dy, m.dx);
@@ -625,7 +634,7 @@ export function render(state: GameState, context: RenderContext): void {
         p.color[2],
         p.color[3] * fadeRatio
       ];
-      
+
       renderer.pushCircle({
         x: px,
         y: py,
@@ -638,9 +647,10 @@ export function render(state: GameState, context: RenderContext): void {
 
     // Render floating text using native WebGL2 text renderer
     const FLOATING_TEXT_RISE_SPEED = 24;
-    state.floatingText.forEach((f) => {
-      const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
-      if (!label) return;
+    if (state.visualsDamageNumbers) {
+      state.floatingText.forEach((f) => {
+        const label = typeof f.text === "string" || typeof f.text === "number" ? String(f.text) : "";
+        if (!label) return;
       // Clamp alpha to avoid sub-pixel blurriness near end of life
       const alpha = Math.min(1, Math.max(0, f.life > 0.5 ? 1 : f.life * 2));
       const textColor = hexStringToVec4(f.color || "#fef08a", alpha);
@@ -652,7 +662,8 @@ export function render(state: GameState, context: RenderContext): void {
         alpha,
         scale: f.scale ?? 2.0
       });
-    });
+      });
+    }
 
     const parallaxEnabled = state.visualsParallax && !state.visualsLow;
     renderer.render(
@@ -671,23 +682,23 @@ export function render(state: GameState, context: RenderContext): void {
  * Render HUD text elements
  */
 function renderHudText(state: GameState): void {
-  const hudTexts = [
-    { text: `〰️ Vague ${state.wave.toFixed(1)}`, x: 24, y: 28 },
-    { text: `⚔️ Kills ${state.runStats.kills}`, x: 24, y: 48 },
-    { text: `💎 Fragments ${formatNumber(state.runStats.fragments)}`, x: 24, y: 68 },
-    { text: `💧 Essence ${formatNumber(state.runStats.essence)}`, x: 24, y: 88 },
+  const hudTexts: { text: string; x: number; y: number; color: readonly [number, number, number, number] }[] = [
+    { text: `WAVE ${state.wave.toFixed(1)}`, x: 24, y: 28, color: [0.7, 0.85, 1, 1] },
+    { text: `KILLS ${state.runStats.kills}`, x: 24, y: 48, color: [1, 0.9, 0.7, 1] },
+    { text: `FRAG ${formatNumber(state.runStats.fragments)}`, x: 24, y: 68, color: [0.4, 0.7, 1, 1] },
+    { text: `ESS ${formatNumber(state.runStats.essence)}`, x: 24, y: 88, color: [0.6, 1, 0.7, 1] },
   ];
 
   if (state.gainTicker.fragments > 0) {
-    hudTexts.push({ text: `⇡ +${formatNumber(state.gainTicker.fragments)} ✦`, x: 24, y: 108 });
+    hudTexts.push({ text: `+${formatNumber(state.gainTicker.fragments)}`, x: 24, y: 108, color: [0.4, 0.9, 1, 1] });
   }
 
-  hudTexts.forEach(({ text, x, y }) => {
+  hudTexts.forEach(({ text, x, y, color }) => {
     renderer.pushText({
       text,
       x,
       y,
-      color: [1, 1, 1, 1],
+      color,
       alpha: 1,
     });
   });

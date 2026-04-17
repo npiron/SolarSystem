@@ -1,53 +1,61 @@
 /* ===== FONT SYSTEM ===== */
-/* Import modern web fonts for better readability and game aesthetics */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+/* Import retro NES pixel fonts + readable UI fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  /* Font Families */
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Orbitron', 'Inter', sans-serif;
+  /* Font Families - NES pixel-perfect primary, clean secondary */
+  --font-primary: 'Press Start 2P', monospace;
+  --font-display: 'Press Start 2P', monospace;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
-  
-  /* Font Sizes - Semantic Scale */
-  --text-xs: 0.65rem;      /* 10.4px - Small labels, badges */
-  --text-sm: 0.75rem;      /* 12px - Body small, descriptions */
-  --text-base: 0.85rem;    /* 13.6px - Body text, stats */
-  --text-md: 0.95rem;      /* 15.2px - Emphasized text */
-  --text-lg: 1.1rem;       /* 17.6px - Card titles */
-  --text-xl: 1.25rem;      /* 20px - Section headers */
-  --text-2xl: 1.5rem;      /* 24px - Page title */
-  
+  --font-retro: 'Press Start 2P', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Font Sizes - NES scale (slightly larger for pixel font readability) */
+  --text-xs: 0.5rem;       /* 8px - Tiny pixel labels */
+  --text-sm: 0.6rem;       /* 9.6px - Small NES text */
+  --text-base: 0.65rem;    /* 10.4px - Body text, stats */
+  --text-md: 0.75rem;      /* 12px - Emphasized text */
+  --text-lg: 0.85rem;      /* 13.6px - Card titles */
+  --text-xl: 1rem;         /* 16px - Section headers */
+  --text-2xl: 1.2rem;      /* 19.2px - Page title */
+
   /* Font Weights */
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
   --font-extrabold: 800;
-  
-  /* Line Heights */
-  --leading-tight: 1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.75;
-  
-  /* Letter Spacing */
-  --tracking-tight: -0.025em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.05em;
+
+  /* Line Heights - tighter for NES pixel fonts */
+  --leading-tight: 1.4;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.8;
+
+  /* Letter Spacing - wider for pixel font readability */
+  --tracking-tight: 0;
+  --tracking-normal: 0.02em;
+  --tracking-wide: 0.06em;
   --tracking-wider: 0.1em;
   --tracking-widest: 0.15em;
 
-  /* Glass & Icons */
-  --panel-surface: oklch(var(--b2, 0.18 0 0) / 62%);
-  --panel-surface-strong: oklch(var(--b1, 0.2 0 0) / 82%);
-  --panel-border: oklch(var(--bc, 0.9 0 0) / 10%);
-  --panel-blur: 14px;
-  --icon-accent: oklch(var(--p, 0.6 0.2 260));
-  --icon-muted: oklch(var(--bc, 0.9 0 0) / 60%);
+  /* NES-style panels: opaque, sharp borders, no blur */
+  --panel-surface: oklch(0.12 0 0 / 95%);
+  --panel-surface-strong: oklch(0.15 0 0 / 98%);
+  --panel-border: oklch(0.55 0.15 260 / 80%);
+  --panel-blur: 0px;
+  --icon-accent: oklch(0.65 0.18 260);
+  --icon-muted: oklch(0.7 0 0 / 70%);
+
+  /* NES-style border: sharp 2px pixel borders */
+  --border-retro: 2px solid oklch(0.55 0.15 260 / 70%);
+  --border-retro-thick: 3px solid oklch(0.55 0.15 260 / 80%);
+  --shadow-retro: 4px 4px 0 oklch(0 0 0 / 60%), 0 0 0 1px oklch(0.55 0.15 260 / 30%);
+  --shadow-retro-glow: 0 0 8px oklch(0.55 0.15 260 / 40%), 4px 4px 0 oklch(0 0 0 / 50%);
 }
 
 /* ===== LAYOUT VARIABLES ===== */
 :root {
-  --header-height: 64px;
-  --footer-height: 40px;
-  --panel-width: 380px;
+  --header-height: 56px;
+  --footer-height: 32px;
+  --panel-width: 360px;
 }

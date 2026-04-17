@@ -22,13 +22,13 @@ export function beginFrame() {
 }
 
 export function render(
-  addons?: { glow: boolean; bloom: boolean; grain: boolean },
+  addons?: { glow: boolean; bloom: boolean; grain: boolean; crt: boolean },
   time?: number,
   camera?: { x: number; y: number },
   parallaxEnabled?: boolean
 ) {
   renderer?.render(
-    addons ?? { glow: false, bloom: false, grain: false },
+    addons ?? { glow: false, bloom: false, grain: false, crt: false },
     time ?? 0,
     camera ?? { x: 0, y: 0 },
     parallaxEnabled ?? true

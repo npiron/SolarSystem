@@ -68,7 +68,7 @@ uniform vec2 u_resolution;
 vec4 bloom(sampler2D tex, vec2 uv, vec2 resolution, float intensity) {
     vec4 sum = vec4(0.0);
     vec2 texel = 1.0 / resolution;
-    
+
     // Gaussian-like weights for natural falloff
     float weights[5];
     weights[0] = 0.227027;
@@ -76,7 +76,7 @@ vec4 bloom(sampler2D tex, vec2 uv, vec2 resolution, float intensity) {
     weights[2] = 0.1216216;
     weights[3] = 0.054054;
     weights[4] = 0.016216;
-    
+
     // Multi-pass bloom sampling
     for (int i = -4; i <= 4; i++) {
         for (int j = -4; j <= 4; j++) {
@@ -84,18 +84,18 @@ vec4 bloom(sampler2D tex, vec2 uv, vec2 resolution, float intensity) {
             sum += texture(tex, uv + vec2(float(j), float(i)) * texel * 2.0) * weight;
         }
     }
-    
+
     vec4 original = texture(tex, uv);
     float luminance = dot(original.rgb, vec3(0.299, 0.587, 0.114));
-    
+
     // Apply bloom more aggressively to bright areas
     float bloomFactor = smoothstep(0.2, 0.8, luminance);
     vec4 bloomColor = sum * intensity * (0.5 + bloomFactor * 0.5);
-    
+
     // Additive blend with slight saturation boost
     vec3 result = original.rgb + bloomColor.rgb * 0.8;
     result = mix(result, result * 1.1, bloomFactor * 0.3);
-    
+
     return vec4(result, original.a);
 }
 
@@ -121,28 +121,101 @@ float random(vec2 st) {
 
 void main() {
   vec4 color = texture(u_texture, v_uv);
-  
-  // Film grain noise
+
+  // Film grain noise only - vignette is handled by CRT pass
   float noise = (random(v_uv * u_time + u_time * 0.1) - 0.5) * u_intensity;
-  
-  // Cinematic vignette effect
-  vec2 center = v_uv - 0.5;
-  float vignette = 1.0 - dot(center, center) * 0.8;
-  vignette = smoothstep(0.2, 1.0, vignette);
-  
-  // Subtle color grading - slight cool tint in shadows, warm in highlights
+
+  // Subtle color grading - slight warm tint for NES feel
   float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  vec3 coolTint = vec3(0.95, 0.98, 1.02);
-  vec3 warmTint = vec3(1.02, 1.0, 0.98);
-  vec3 gradedColor = color.rgb * mix(coolTint, warmTint, luminance);
-  
-  // Combine all effects
-  vec3 result = gradedColor * vignette + noise;
-  
-  // Slight contrast boost
-  result = (result - 0.5) * 1.05 + 0.5;
-  
+  vec3 warmTint = vec3(1.01, 1.0, 0.99);
+  vec3 gradedColor = color.rgb * mix(vec3(1.0), warmTint, luminance);
+
+  // Combine grain with graded color (no vignette here)
+  vec3 result = gradedColor + noise;
+
   fragColor = vec4(clamp(result, 0.0, 1.0), color.a);
+}
+`;
+
+/**
+ * CRT post-processing shader - NES-style cathode ray tube effect
+ * Combines: scanlines, barrel distortion, chromatic aberration,
+ * vignette, phosphor glow, screen flicker, and pixel quantization
+ */
+const crtFragmentShader = `#version 300 es
+precision highp float;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+uniform sampler2D u_texture;
+uniform vec2 u_resolution;
+uniform float u_time;
+
+// Pseudo-random hash
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+// Barrel distortion for CRT curvature
+vec2 barrelDistort(vec2 uv, float amount) {
+    vec2 cc = uv - 0.5;
+    float dist = dot(cc, cc);
+    return uv + cc * dist * amount;
+}
+
+void main() {
+    // Apply barrel distortion (CRT curvature) - reduced for brightness
+    vec2 uv = barrelDistort(v_uv, 0.06);
+
+    // Discard pixels outside screen bounds (CRT edge)
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+
+    vec2 texel = 1.0 / u_resolution;
+
+    // === Chromatic aberration (RGB offset at edges) - reduced ===
+    vec2 cc = uv - 0.5;
+    float edgeDist = length(cc);
+    float aberration = edgeDist * 0.002;
+    float r = texture(u_texture, barrelDistort(v_uv + vec2(aberration, 0.0), 0.06)).r;
+    float g = texture(u_texture, uv).g;
+    float b = texture(u_texture, barrelDistort(v_uv - vec2(aberration, 0.0), 0.06)).b;
+    vec3 color = vec3(r, g, b);
+
+    // === Scanlines (horizontal dark bands) - lighter for NES brightness ===
+    float scanline = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
+    scanline = pow(scanline, 0.9);
+    // Much softer scanlines: only 10% darkening at troughs
+    float softScanline = smoothstep(0.35, 0.65, scanline);
+    color *= mix(softScanline, scanline, 0.2) * 0.1 + 0.9;
+
+    // === Phosphor pixel grid (very subtle) ===
+    float pixelX = floor(uv.x * u_resolution.x);
+    float subPixel = mod(pixelX, 3.0);
+    // Minimal brightness variation per sub-pixel column
+    float phosphor = subPixel < 1.0 ? 1.0 : (subPixel < 2.0 ? 0.99 : 0.98);
+    color *= phosphor;
+
+    // === Single gentle vignette (CRT edge darkening) ===
+    float vignette = 1.0 - edgeDist * edgeDist * 0.9;
+    vignette = smoothstep(0.1, 1.0, vignette);
+    color *= vignette;
+
+    // === Screen flicker (very subtle brightness oscillation) ===
+    float flicker = 1.0 + sin(u_time * 8.0) * 0.004 + sin(u_time * 13.7) * 0.003;
+    color *= flicker;
+
+    // === NES color quantization (6-bit per channel = 64 levels) ===
+    color = floor(color * 63.0 + 0.5) / 63.0;
+
+    // === Slight warm tint (phosphor warmth) - very subtle ===
+    color.r *= 1.02;
+    color.b *= 0.99;
+
+    fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
 }
 `;
 
@@ -189,6 +262,7 @@ export class WebGL2PostProcessing {
   private glowPass: PostProcessingPass;
   private bloomPass: PostProcessingPass;
   private grainPass: PostProcessingPass;
+  private crtPass: PostProcessingPass;
 
   constructor(private gl: WebGL2RenderingContext, private dpr: number) {
     [this.framebuffer1, this.texture1] = this.createFramebuffer();
@@ -215,6 +289,11 @@ export class WebGL2PostProcessing {
       "u_intensity",
       "u_time"
     ]);
+    this.crtPass = new PostProcessingPass(gl, fullscreenQuadVertexShader, crtFragmentShader, [
+      "u_texture",
+      "u_resolution",
+      "u_time"
+    ]);
   }
 
   beginFrame() {
@@ -224,7 +303,7 @@ export class WebGL2PostProcessing {
 
   endFrame(
     resolution: { width: number; height: number },
-    addons: { glow: boolean; bloom: boolean; grain: boolean },
+    addons: { glow: boolean; bloom: boolean; grain: boolean; crt: boolean },
     time: number
   ) {
     const passes: {
@@ -266,6 +345,21 @@ export class WebGL2PostProcessing {
         uniforms: (gl) => {
           gl.uniform1f(this.grainPass.uniformLocations["u_intensity"], 0.1);
           gl.uniform1f(this.grainPass.uniformLocations["u_time"], time);
+        }
+      });
+    }
+
+    // CRT pass is always applied last for the full retro effect
+    if (addons.crt) {
+      passes.push({
+        pass: this.crtPass,
+        uniforms: (gl) => {
+          gl.uniform2f(
+            this.crtPass.uniformLocations["u_resolution"],
+            resolution.width,
+            resolution.height
+          );
+          gl.uniform1f(this.crtPass.uniformLocations["u_time"], time);
         }
       });
     }

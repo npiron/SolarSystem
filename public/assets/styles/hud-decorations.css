@@ -1,47 +1,39 @@
 /**
- * HUD Decorations - Lightweight CSS-based visual enhancements
- * 
- * This stylesheet adds decorative visual elements to the game's HUD (Heads-Up Display)
+ * HUD Decorations - NES-style pixel-perfect visual enhancements
+ *
+ * This stylesheet adds decorative visual elements to the game's HUD
  * using only CSS techniques to ensure zero performance impact on canvas rendering.
- * 
+ *
  * Key Features:
- * - Corner ornaments using CSS borders and pseudo-elements
- * - Subtle background patterns and gradients
- * - Animated accents (rotating hexagons, pulsing values)
+ * - Sharp pixel borders with NES-style offset shadows
+ * - No blur/transparency effects (opaque panels)
+ * - Press Start 2P pixel font for authentic NES feel
+ * - Animated accents (pulsing values, blink effects)
  * - Hover effects for better interactivity feedback
- * - Full performance mode support - all decorations are disabled when visualsLow is true
- * 
+ * - Full performance mode support
+ *
  * Performance Considerations:
  * - All decorations are CSS-only (no JavaScript, no canvas rendering)
  * - Animations use GPU-accelerated properties (transform, opacity)
  * - Performance mode class (body.performance-mode) disables all decorations
  * - Zero impact on game logic or canvas FPS
- * 
- * Usage:
- * - Decorations are automatically applied to .hud-card, .merged-run-hud, .performance-hud, .stat-block
- * - Toggle performance mode with the "Perfo" button to disable decorations
- * - The body.performance-mode class is managed by src/main.ts
  */
 
-/* ===== HUD CARD BASE STYLES ===== */
+/* ===== HUD CARD BASE STYLES - NES pixel-perfect ===== */
 .hud-card,
 .merged-run-hud,
 .performance-hud,
 .stat-block {
-  background:
-    linear-gradient(155deg, var(--panel-surface-strong), var(--panel-surface)),
-    radial-gradient(circle at 20% 20%, color-mix(in oklch, var(--icon-accent) 30%, transparent), transparent 45%),
-    radial-gradient(circle at 80% 80%, color-mix(in oklch, oklch(var(--s, 0.6 0.2 300)) 28%, transparent), transparent 50%);
-  border: 1px solid var(--panel-border);
-  box-shadow:
-    0 8px 30px oklch(0 0 0 / 35%),
-    inset 0 0 20px oklch(var(--p, 0.6 0.2 260) / 8%);
+  background: var(--panel-surface-strong);
+  border: var(--border-retro);
+  box-shadow: var(--shadow-retro);
+  border-radius: 0;
 }
 
 .hud-card,
 .merged-run-hud,
 .performance-hud {
-  backdrop-filter: blur(var(--panel-blur)) saturate(115%);
+  /* No backdrop-filter for NES authenticity - opaque panels */
 }
 
 /* ===== HUD CARD CORNER ORNAMENTS ===== */
@@ -52,10 +44,10 @@
   left: 0;
   width: 40px;
   height: 40px;
-  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
+  border: 2px solid oklch(0.55 0.15 260 / 60%);
   border-right: none;
   border-bottom: none;
-  border-top-left-radius: 0.75rem;
+  border-radius: 0;
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.3s ease;
@@ -68,10 +60,10 @@
   right: 0;
   width: 40px;
   height: 40px;
-  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 30%);
+  border: 2px solid oklch(0.55 0.15 260 / 60%);
   border-left: none;
   border-top: none;
-  border-bottom-right-radius: 0.75rem;
+  border-radius: 0;
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.3s ease;
@@ -80,28 +72,32 @@
 /* ===== HUD CARD HEADER DECORATIONS ===== */
 .hud-card h2 {
   position: relative;
+  font-family: var(--font-retro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .hud-card h2::before {
-  content: '◆';
-  color: oklch(var(--p, 0.6 0.2 260) / 60%);
-  margin-right: 0.5rem;
-  font-size: 0.8em;
+  content: '▸';
+  color: oklch(0.65 0.18 260 / 80%);
+  margin-right: 0.4rem;
+  font-size: 0.7em;
 }
 
 .hud-card h2::after {
-  content: '◆';
-  color: oklch(var(--p, 0.6 0.2 260) / 60%);
-  margin-left: 0.5rem;
-  font-size: 0.8em;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: oklch(0.55 0.15 260 / 40%);
 }
 
-/* ===== MERGED RUN HUD DECORATIONS ===== */
+/* ===== MERGED RUN HUD DECORATIONS - NES style ===== */
 .merged-run-hud {
   position: relative;
-  box-shadow: 
-    0 4px 20px oklch(0 0 0 / 25%),
-    inset 0 0 30px oklch(var(--p, 0.6 0.2 260) / 10%);
+  box-shadow: 4px 4px 0 oklch(0 0 0 / 60%);
 }
 
 .merged-run-hud::before {
@@ -109,12 +105,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 30px;
-  height: 30px;
-  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 35%);
+  width: 24px;
+  height: 24px;
+  border: 2px solid oklch(0.55 0.15 260 / 60%);
   border-right: none;
   border-bottom: none;
-  border-top-left-radius: 0.75rem;
+  border-radius: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
@@ -124,68 +120,63 @@
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 30px;
-  height: 30px;
-  border: 2px solid oklch(var(--p, 0.6 0.2 260) / 35%);
+  width: 24px;
+  height: 24px;
+  border: 2px solid oklch(0.55 0.15 260 / 60%);
   border-left: none;
   border-top: none;
-  border-bottom-right-radius: 0.75rem;
+  border-radius: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
-/* Live values header */
+/* Live values header - NES style */
 .live-values-header {
   position: relative;
+  font-family: var(--font-retro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .live-values-header::before {
-  content: '⬢';
+  content: '▸';
   position: absolute;
-  left: 0.5rem;
+  left: 0.3rem;
   top: 50%;
   transform: translateY(-50%);
-  color: oklch(var(--in, 0.7 0.15 220) / 50%);
-  font-size: 0.7em;
-  animation: rotate-slow 8s linear infinite;
+  color: oklch(0.55 0.15 260 / 70%);
+  font-size: 0.6em;
 }
 
 .live-values-header::after {
   content: '';
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   bottom: -2px;
-  width: 60px;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    oklch(var(--in, 0.7 0.15 220)),
-    transparent
-  );
+  background: oklch(0.55 0.15 260 / 30%);
 }
 
-/* ===== LIVE VALUE NUMBER ANIMATION ===== */
+/* ===== LIVE VALUE NUMBER ANIMATION - NES blink ===== */
 .live-value-number {
-  animation: subtle-pulse 3s ease-in-out infinite;
+  font-family: var(--font-mono);
+  animation: nes-pulse 2s steps(2) infinite;
 }
 
-@keyframes subtle-pulse {
+@keyframes nes-pulse {
   0%, 100% {
-    text-shadow: 0 1px 3px oklch(0 0 0 / 60%);
+    text-shadow: 0 0 4px oklch(0.55 0.15 260 / 50%);
   }
   50% {
-    text-shadow: 0 1px 6px oklch(var(--wa, 0.75 0.15 85) / 40%);
+    text-shadow: 0 0 8px oklch(0.65 0.18 260 / 70%);
   }
 }
 
-/* ===== PERFORMANCE HUD DECORATIONS ===== */
+/* ===== PERFORMANCE HUD DECORATIONS - NES style ===== */
 .performance-hud {
   position: relative;
-  box-shadow: 
-    0 4px 20px oklch(0 0 0 / 40%),
-    inset 0 0 30px oklch(var(--su, 0.7 0.2 160) / 12%);
+  box-shadow: 4px 4px 0 oklch(0 0 0 / 60%);
 }
 
 .performance-hud::before {
@@ -193,12 +184,12 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 25px;
-  height: 25px;
-  border: 2px solid oklch(var(--su, 0.7 0.2 160) / 40%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid oklch(0.55 0.2 160 / 50%);
   border-left: none;
   border-bottom: none;
-  border-top-right-radius: 0.5rem;
+  border-radius: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
@@ -208,52 +199,48 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 25px;
-  height: 25px;
-  border: 2px solid oklch(var(--su, 0.7 0.2 160) / 40%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid oklch(0.55 0.2 160 / 50%);
   border-right: none;
   border-top: none;
-  border-bottom-left-radius: 0.5rem;
+  border-radius: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
-/* Performance header */
+/* Performance header - NES style */
 .performance-header {
   position: relative;
+  font-family: var(--font-retro);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .performance-header::before {
-  content: '⬡';
+  content: '▸';
   position: absolute;
-  left: 0.5rem;
+  left: 0.3rem;
   top: 50%;
   transform: translateY(-50%);
-  color: oklch(var(--su, 0.7 0.2 160) / 50%);
-  font-size: 0.7em;
-  animation: rotate-slow 6s linear infinite;
+  color: oklch(0.55 0.2 160 / 60%);
+  font-size: 0.6em;
 }
 
 .performance-header::after {
   content: '';
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   bottom: -2px;
-  width: 50px;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    oklch(var(--su, 0.7 0.2 160)),
-    transparent
-  );
+  background: oklch(0.55 0.2 160 / 30%);
 }
 
 /* ===== STAT BLOCK DECORATIONS ===== */
 .stat-block {
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 4px 20px oklch(0 0 0 / 25%),
     inset 0 0 30px oklch(var(--p, 0.6 0.2 260) / 8%);
 }

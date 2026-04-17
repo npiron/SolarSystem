@@ -99,7 +99,8 @@ export function addFloatingText(state: GameState, text: string | number, x: numb
     state.floatingText.shift();
   }
 
-  const life = state.visualsLow ? 3.0 : 5.0; // AUGMENTÉ: 5 secondes pour bien voir !
+  // Shorter lifetime for less clutter - 2.5s default, 1.5s in low visuals
+  const life = state.visualsLow ? 1.5 : 2.5;
   state.floatingText.push({ text: safeText, x, y, life, color, scale });
 }
 
@@ -116,7 +117,8 @@ export function registerFragmentGain(state: GameState, value: number, x: number,
   }
 
   // Smart grouping: check if there's a nearby fragment text to merge with
-  const mergeRadius = 40; // Pixels - fragments this close get merged
+  // Larger merge radius to reduce clutter on screen
+  const mergeRadius = 80;
   let merged = false;
 
   for (const text of state.floatingText) {
@@ -124,32 +126,27 @@ export function registerFragmentGain(state: GameState, value: number, x: number,
     const dy = text.y - y;
     const dist = Math.hypot(dx, dy);
 
-    // Check if it's a fragment text nearby (contains 💎)
-    if (dist < mergeRadius && String(text.text).includes('💎')) {
-      // Extract current value and add new value
-      const match = String(text.text).match(/\+([0-9.KMBTQa-z]+)/);
-      if (match) {
-        // Update the text with combined value
-        const newTotal = value; // Just show the new amount for simplicity
-        text.text = `+${formatNumber(value)} 💎`;
-        text.life = 5.0; // Reset lifetime
+    // Check if it's a fragment text nearby (contains +)
+    if (dist < mergeRadius && String(text.text).startsWith('+')) {
+      // Merge: update existing text with new value
+      text.text = `+${formatNumber(value)}`;
+      text.life = 2.0; // Reset lifetime (shorter)
 
-        // Choose color based on value
-        if (value >= 10) {
-          text.color = "#a855f7"; // Purple for high value
-        } else if (value >= 3) {
-          text.color = "#22d3ee"; // Cyan for medium
-        } else {
-          text.color = "#60a5fa"; // Blue for low
-        }
-
-        merged = true;
-        break;
+      // Choose color based on value
+      if (value >= 10) {
+        text.color = "#a855f7"; // Purple for high value
+      } else if (value >= 3) {
+        text.color = "#22d3ee"; // Cyan for medium
+      } else {
+        text.color = "#60a5fa"; // Blue for low
       }
+
+      merged = true;
+      break;
     }
   }
 
-  // If not merged, create new text with value-based color
+  // If not merged, create new text with value-based color (no emoji for cleaner look)
   if (!merged) {
     let color = "#60a5fa"; // Default blue for low value
     if (value >= 10) {
@@ -158,7 +155,7 @@ export function registerFragmentGain(state: GameState, value: number, x: number,
       color = "#22d3ee"; // Cyan for medium value
     }
 
-    addFloatingText(state, `+${formatNumber(value)} 💎`, x, y, color, 2.0);
+    addFloatingText(state, `+${formatNumber(value)}`, x, y, color, 1.6);
   }
 }
 

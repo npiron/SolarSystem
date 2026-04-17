@@ -19,12 +19,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, oklch(var(--b1, 0.2 0 0) / 90%), oklch(var(--b2, 0.2 0 0) / 75%));
+  background: linear-gradient(135deg, oklch(var(--b1, 0.2 0 0) / 92%), oklch(var(--b2, 0.2 0 0) / 80%));
   backdrop-filter: blur(20px) saturate(120%);
-  border-bottom: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
+  border-bottom: var(--border-retro);
   box-shadow:
-    0 6px 30px oklch(0 0 0 / 25%),
-    inset 0 1px 0 oklch(var(--bc, 0.9 0 0) / 10%);
+    var(--shadow-retro-glow),
+    inset 0 1px 0 oklch(var(--p, 0.6 0.2 260) / 15%);
   min-height: var(--header-height);
   overflow: hidden;
 }
@@ -34,8 +34,8 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at 20% 50%, oklch(var(--p, 0.6 0.2 260) / 12%), transparent 35%),
-    radial-gradient(circle at 80% 40%, oklch(var(--s, 0.6 0.2 300) / 14%), transparent 40%);
+  background: radial-gradient(circle at 20% 50%, oklch(var(--p, 0.6 0.2 260) / 15%), transparent 35%),
+    radial-gradient(circle at 80% 40%, oklch(var(--s, 0.6 0.2 300) / 18%), transparent 40%);
   opacity: 0.8;
 }
 
@@ -53,10 +53,13 @@
 }
 
 .topbar h1 {
-  font-size: 1.25rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: oklch(var(--p, 0.6 0.2 260));
   margin: 0;
+  font-family: var(--font-retro);
+  text-shadow: 0 0 10px oklch(var(--p, 0.6 0.2 260) / 40%);
+  letter-spacing: 0.08em;
 }
 
 .eyebrow {
@@ -137,10 +140,12 @@
   z-index: 50;
   text-align: center;
   padding: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.55rem;
+  font-family: var(--font-retro);
+  letter-spacing: 0.08em;
   color: oklch(var(--bc, 0.9 0 0) / 40%);
-  background: oklch(var(--b1, 0.2 0 0) / 90%);
+  background: oklch(var(--b1, 0.2 0 0) / 92%);
   backdrop-filter: blur(20px);
-  border-top: 1px solid oklch(var(--bc, 0.9 0 0) / 8%);
+  border-top: var(--border-retro);
   height: var(--footer-height);
 }

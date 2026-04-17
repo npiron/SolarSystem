@@ -15,6 +15,7 @@ export interface UiElements {
   restartRunBtn: HTMLElement | null;
   togglePerfBtn: HTMLElement | null;
   toggleParallaxBtn: HTMLElement | null;
+  toggleCrtBtn: HTMLElement | null;
   versionBadge: HTMLElement | null;
   docDialog: HTMLElement | null;
   docTabs: HTMLElement | null;
@@ -93,6 +94,7 @@ export function getUiElements(): UiElements {
   const milestoneList = document.getElementById("milestoneList");
   const assistBubbles = document.getElementById("assistBubbles");
   const tuningPanelContainer = document.getElementById("tuningPanel");
+  const toggleCrtBtn = document.getElementById("toggleCrt");
 
   return {
     pauseBtn,
@@ -102,6 +104,7 @@ export function getUiElements(): UiElements {
     restartRunBtn,
     togglePerfBtn,
     toggleParallaxBtn,
+    toggleCrtBtn,
     versionBadge,
     docDialog,
     docTabs,

@@ -53,6 +53,7 @@ export interface Addons {
   glow: boolean;
   bloom: boolean;
   grain: boolean;
+  crt: boolean;
 }
 
 export interface AudioState {
@@ -92,6 +93,7 @@ export interface GameState {
   dead: boolean;
   visualsLow: boolean;
   visualsParallax: boolean;
+  visualsDamageNumbers: boolean;
   audio: AudioState;
   performance: PerformanceState;
   addons: Addons;

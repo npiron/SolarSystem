@@ -119,36 +119,36 @@ void main() {
   vec2 uv = v_uv;
   vec2 correctUV = correctAspect(uv);
 
-  // Deep black space base
-  vec3 color = vec3(0.0, 0.0, 0.01);
+  // Deep black space base - NES-style pure dark background
+  vec3 color = vec3(0.005, 0.005, 0.02);
 
-  // Milky Way / nebula background
+  // Subtle nebula tint - much more restrained for NES feel
   vec2 galaxyUV = parallaxUV(correctUV, 0.12) * 2.0 - 1.0;
   galaxyUV.x *= 1920.0 / 1080.0;
   float angle = 0.25;
   mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
   galaxyUV = rot * galaxyUV;
   float galaxyBand = 1.0 - abs(galaxyUV.y * 2.0);
-  galaxyBand = smoothstep(0.25, 0.9, galaxyBand);
-  galaxyBand = pow(galaxyBand, 6.0);
-  float galaxyNoise = noise(galaxyUV * 1.5 + u_time * 0.02);
-  vec3 galaxyColor = vec3(0.08, 0.06, 0.12) * (0.12 + galaxyNoise * 0.12);
+  galaxyBand = smoothstep(0.3, 0.9, galaxyBand);
+  galaxyBand = pow(galaxyBand, 8.0);
+  float galaxyNoise = noise(galaxyUV * 1.5 + u_time * 0.015);
+  vec3 galaxyColor = vec3(0.06, 0.04, 0.1) * (0.08 + galaxyNoise * 0.08);
   color += galaxyColor * galaxyBand;
 
-  // Distant galaxy clusters
+  // Distant galaxy clusters - more sparse for NES
   addDistantGalaxies(color, parallaxUV(correctUV, 0.14));
 
-  // Star layers with parallax
-  addStarLayer(color, parallaxUV(correctUV, 0.02), 180.0, 0.975, 0.26, 0.35, vec3(0.9, 0.95, 1.0), 0.4);
-  addStarLayer(color, parallaxUV(correctUV, 0.06), 120.0, 0.94, 0.22, 0.22, vec3(1.0, 0.96, 0.9), 0.6);
-  addStarLayer(color, parallaxUV(correctUV, 0.09), 48.0, 0.9, 0.18, 0.16, vec3(1.0, 0.98, 0.95), 0.95);
+  // Star layers - fewer, brighter, more NES-like (pixel stars)
+  addStarLayer(color, parallaxUV(correctUV, 0.02), 90.0, 0.985, 0.35, 0.2, vec3(0.85, 0.9, 1.0), 0.5);
+  addStarLayer(color, parallaxUV(correctUV, 0.06), 60.0, 0.96, 0.28, 0.15, vec3(1.0, 0.95, 0.85), 0.7);
+  addStarLayer(color, parallaxUV(correctUV, 0.09), 24.0, 0.92, 0.22, 0.1, vec3(1.0, 0.98, 0.9), 1.0);
 
-  // Dust / faint nebula wisps
+  // Minimal dust for NES simplicity
   vec2 dustUV = parallaxUV(correctUV * 1.4, 0.12);
-  float dustNoise = noise(dustUV * 3.0 + vec2(0.0, u_time * 0.01));
-  float dust = smoothstep(0.6, 1.0, dustNoise);
-  vec3 dustColor = vec3(0.2, 0.18, 0.3);
-  color += dustColor * dust * 0.08;
+  float dustNoise = noise(dustUV * 3.0 + vec2(0.0, u_time * 0.008));
+  float dust = smoothstep(0.7, 1.0, dustNoise);
+  vec3 dustColor = vec3(0.15, 0.12, 0.25);
+  color += dustColor * dust * 0.04;
 
   fragColor = vec4(color, 1.0);
 }

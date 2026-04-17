@@ -97,7 +97,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     visualsParallax: true,
     audio: { enabled: true },
     performance: { fps: 60, frameTimeMs: 16, avgFps: 60, memoryUsageMb: null, memoryLimitMb: null, history: [], maxSamples: 60, graphVisible: false },
-    addons: { glow: true, bloom: true, grain: true },
+    addons: { glow: true, bloom: true, grain: true, crt: true },
     bossActive: false,
     currentBoss: null,
     enemyProjectiles: [],

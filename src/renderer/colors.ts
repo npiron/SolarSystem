@@ -14,40 +14,40 @@ function string2hex(hex: string): number {
 }
 
 export const colors = {
-  // Player - Black hole aesthetic with fiery accretion disk
-  player: string2hex("#0a0c14"),
-  playerCore: string2hex("#05060d"),
-  playerHorizon: string2hex("#11162a"),
-  accretionInner: string2hex("#ff8a3d"),
-  accretionOuter: string2hex("#ffca6a"),
-  collect: string2hex("#ff9f5a"),
+  // Player - Deep space black hole with fiery NES palette accents
+  player: string2hex("#0c0e1a"),
+  playerCore: string2hex("#060812"),
+  playerHorizon: string2hex("#1a1e3a"),
+  accretionInner: string2hex("#ff6b2b"),
+  accretionOuter: string2hex("#ffc83d"),
+  collect: string2hex("#ff8c42"),
   bulletLow: string2hex("#ffffff"),
-  bulletHigh: string2hex("#ffdd00"),
-  orbitBullet: string2hex("#bf5fff"),
-  fragment: string2hex("#ff4da6"),
-  fragmentRing: string2hex("#ff6bc5"),
-  elite: string2hex("#ff6b35"),
-  // Enemy type colors - High contrast palette for clear differentiation
+  bulletHigh: string2hex("#ffe135"),
+  orbitBullet: string2hex("#d63aff"),
+  fragment: string2hex("#ff2d78"),
+  fragmentRing: string2hex("#ff5ca8"),
+  elite: string2hex("#ff5722"),
+  // Enemy type colors - NES-inspired high contrast palette
   enemyWeak: string2hex("#7cff00"),     // Lime green - easy to kill
-  enemyNormal: string2hex("#00a8ff"),   // Sky blue - standard threat
+  enemyNormal: string2hex("#00b8ff"),   // Bright cyan-blue - standard threat
   enemyStrong: string2hex("#d400ff"),   // Vivid purple - dangerous
   enemyElite: string2hex("#ff4500"),    // Red-orange - boss-like
   enemyVolatile: string2hex("#ff0044"), // Bright red - explodes on death
   enemySplitter: string2hex("#00ffff"), // Pure cyan - divides into smaller foes
-  enemyArtillery: string2hex("#ffff00"), // Pure yellow - fires from afar
-  // Boss colors
+  enemyArtillery: string2hex("#ffe135"), // Bright yellow - fires from afar
+  // Boss colors - more intense NES reds
   boss: string2hex("#ff0044"),          // Hot red - boss
   bossHalo: string2hex("#ff3366"),      // Pink-red glow
   enemyProjectile: string2hex("#ff5722"), // Orange-red - enemy projectile
-  // Fragment value colors - Clear progression from low to high value
+  // Fragment value colors - NES gold/pink progression
   fragmentLow: string2hex("#8b7cf6"),   // Light purple - low value
   fragmentMedium: string2hex("#ff66cc"), // Bright pink - medium value
-  fragmentHigh: string2hex("#ffaa00"),  // Vibrant gold - high value
-  hpBg: string2hex("#0a0e1a"),
+  fragmentHigh: string2hex("#ffc83d"),   // Vibrant gold - high value
+  hpBg: string2hex("#0c1020"),
   hpFg: string2hex("#00ff66"),
-  hudBg: string2hex("#0a0f1f"),
+  hudBg: string2hex("#0c1020"),
   hudBorder: string2hex("#ffffff"),
-  // Weapon colors
+  // Weapon colors - more saturated NES palette
   lightning: string2hex("#9f7aea"),
   lightningGlow: string2hex("#c4b5fd"),
   laser: string2hex("#ff3333"),

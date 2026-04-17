@@ -1,6 +1,6 @@
 /**
  * Main application entry point
- * 
+ *
  * This module bootstraps the application, initializes all modules,
  * and manages the game loop.
  */
@@ -71,6 +71,7 @@ const {
   restartRunBtn,
   togglePerfBtn,
   toggleParallaxBtn,
+  toggleCrtBtn,
   versionBadge,
   docDialog,
   docTabs,
@@ -256,6 +257,7 @@ async function bootstrap(): Promise<void> {
       restartRunBtn,
       togglePerfBtn,
       toggleParallaxBtn,
+      toggleCrtBtn,
       toggleFpsBtn,
       docDialog,
       webgl2Canvas,

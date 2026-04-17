@@ -63,6 +63,7 @@ export function renderTuningPanel(): void {
       <button id="tuningReset" class="ghost small">🔄 Réinitialiser</button>
       <button id="tuningExport" class="ghost small">📤 Exporter</button>
       <button id="tuningImport" class="ghost small">📥 Importer</button>
+      <button id="tuningDamageNumbers" class="ghost small">🔢 Dégâts: <span id="tuningDamageNumbersVal">On</span></button>
     </div>
   `;
   container.appendChild(header);
@@ -149,24 +150,24 @@ function createParamRow(
       ${meta.description ? `<span class="tuning-param-desc muted">${meta.description}</span>` : ""}
     </div>
     <div class="tuning-controls">
-      <input 
-        type="range" 
-        class="tuning-slider" 
-        data-category="${category}" 
+      <input
+        type="range"
+        class="tuning-slider"
+        data-category="${category}"
         data-param="${param}"
-        min="${meta.min}" 
-        max="${meta.max}" 
-        step="${meta.step}" 
+        min="${meta.min}"
+        max="${meta.max}"
+        step="${meta.step}"
         value="${sliderValue}"
       />
-      <input 
-        type="number" 
-        class="tuning-input" 
-        data-category="${category}" 
+      <input
+        type="number"
+        class="tuning-input"
+        data-category="${category}"
         data-param="${param}"
-        min="${meta.min}" 
-        max="${meta.max}" 
-        step="${meta.step}" 
+        min="${meta.min}"
+        max="${meta.max}"
+        step="${meta.step}"
         value="${value}"
       />
       <span class="tuning-unit">${meta.unit || ""}</span>
@@ -288,6 +289,21 @@ function attachTuningEventListeners(): void {
     };
     reader.readAsText(file);
   });
+
+  // Damage numbers toggle
+  const damageNumbersBtn = container.querySelector("#tuningDamageNumbers");
+  const damageNumbersVal = container.querySelector("#tuningDamageNumbersVal");
+
+  if (damageNumbersBtn && damageNumbersVal && panelContext.state) {
+    const state = panelContext.state;
+    damageNumbersVal.textContent = state.visualsDamageNumbers ? "On" : "Off";
+
+    damageNumbersBtn.addEventListener("click", () => {
+      state.visualsDamageNumbers = !state.visualsDamageNumbers;
+      damageNumbersVal.textContent = state.visualsDamageNumbers ? "On" : "Off";
+      // We don't need to call onUpdate here as the renderer reads state every frame
+    });
+  }
 }
 
 /**

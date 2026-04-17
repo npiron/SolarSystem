@@ -10,6 +10,7 @@ import { getPlayerStatsFromTuning } from "../../config/player.ts";
 import { addFloatingText } from "../hud.ts";
 import { TAU } from "../../config/constants.ts";
 import { isWeaponUnlocked, getWeaponLevel, nearestEnemy, calculateOrbitProjectiles } from "./helpers.ts";
+import { addTrauma } from "../../renderer/screenShake.ts";
 
 /**
  * Helper to get global multipliers from player state upgrades
@@ -70,6 +71,9 @@ export function fire(state: GameState): void {
         };
         state.bullets.push(bullet);
     }
+
+    // Muzzle kick - light screen shake for main gun
+    addTrauma(state.screenShake, 0.03);
 }
 
 /**
@@ -106,6 +110,9 @@ export function fireOrbit(state: GameState): void {
         };
         state.bullets.push(bullet);
     }
+
+    // Circular blast kick
+    addTrauma(state.screenShake, 0.05);
 }
 
 /**
@@ -189,7 +196,10 @@ export function fireLightning(state: GameState): void {
         life: 0.2
     });
 
-    addFloatingText(state, "⚡", primaryTarget.x, primaryTarget.y - 10, "#00ffff");
+    // Lightning strike kick
+    addTrauma(state.screenShake, 0.08);
+
+    addFloatingText(state, `${Math.round(stats.damage * damageMult)}`, primaryTarget.x, primaryTarget.y - 10, "#00ffff", 1.4);
 }
 
 /**
@@ -239,4 +249,7 @@ export function fireMissiles(state: GameState): void {
 
         state.missiles.push(missile);
     }
+
+    // Missile launch kick
+    addTrauma(state.screenShake, 0.06);
 }

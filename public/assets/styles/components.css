@@ -1,25 +1,26 @@
-/* ===== STAT BLOCKS (Cards) ===== */
+/* ===== STAT BLOCKS (Cards) - NES pixel-perfect style ===== */
 .stat-block {
-  background: var(--panel-surface);
-  border-radius: 0.75rem;
-  border: 1px solid var(--panel-border);
+  background: var(--panel-surface-strong);
+  border-radius: 0;
+  border: var(--border-retro);
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px oklch(0 0 0 / 10%), 0 2px 4px -2px oklch(0 0 0 / 10%);
-  backdrop-filter: blur(var(--panel-blur));
+  box-shadow: var(--shadow-retro);
 }
 
 .stat-block h2 {
-  font-size: 0.8rem;
+  font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--icon-accent);
-  padding: 0.75rem 1rem 0.5rem;
+  padding: 0.6rem 0.8rem 0.4rem;
   margin: 0;
-  border-bottom: 1px solid var(--panel-border);
+  border-bottom: 2px solid oklch(0.55 0.15 260 / 40%);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: var(--font-retro);
+  text-shadow: 0 0 4px oklch(0.55 0.15 260 / 40%);
 }
 
 .stat-block h2 i {
@@ -70,94 +71,115 @@
   display: none;
 }
 
-/* ===== BUTTONS ===== */
+/* ===== BUTTONS - Balatro-inspired retro style ===== */
+/* ===== BUTTONS - NES pixel-perfect style ===== */
 button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.55rem;
+  font-weight: 700;
+  font-family: var(--font-retro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0;
+  border: 2px solid oklch(0.55 0.15 260 / 60%);
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: oklch(var(--b2, 0.2 0 0));
-  color: oklch(var(--bc, 0.9 0 0));
+  transition: all 0.1s steps(2);
+  background: oklch(0.15 0 0);
+  color: oklch(0.85 0 0);
+  text-shadow: 1px 1px 0 oklch(0 0 0 / 80%);
+  box-shadow: 3px 3px 0 oklch(0 0 0 / 60%);
 }
 
 button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px oklch(0 0 0 / 20%);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 oklch(0 0 0 / 60%), 0 0 8px oklch(0.55 0.15 260 / 40%);
+  border-color: oklch(0.65 0.18 260 / 80%);
+  background: oklch(0.2 0.02 260);
+}
+
+button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 oklch(0 0 0 / 60%);
 }
 
 button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 button.primary {
-  background: linear-gradient(135deg, oklch(var(--p, 0.6 0.2 260)), oklch(var(--s, 0.6 0.2 300)));
-  color: oklch(var(--pc, 0.95 0 0));
-  border: none;
-  box-shadow: 0 4px 15px oklch(var(--p, 0.6 0.2 260) / 30%);
+  background: oklch(0.45 0.18 260);
+  color: oklch(0.95 0 0);
+  border: 2px solid oklch(0.55 0.18 260 / 80%);
+  box-shadow: 3px 3px 0 oklch(0 0 0 / 60%), 0 0 8px oklch(0.45 0.18 260 / 30%);
+  text-shadow: 1px 1px 0 oklch(0 0 0 / 90%);
 }
 
 button.primary:hover {
-  box-shadow: 0 6px 20px oklch(var(--p, 0.6 0.2 260) / 40%);
+  background: oklch(0.55 0.2 260);
+  box-shadow: 4px 4px 0 oklch(0 0 0 / 60%), 0 0 12px oklch(0.55 0.2 260 / 40%);
+  border-color: oklch(0.65 0.2 260);
 }
 
 button.secondary {
-  background: oklch(var(--s, 0.6 0.2 300) / 15%);
-  border-color: oklch(var(--s, 0.6 0.2 300) / 50%);
-  color: oklch(var(--s, 0.6 0.2 300));
+  background: oklch(0.2 0.06 300 / 80%);
+  border-color: oklch(0.55 0.15 300 / 60%);
+  color: oklch(0.75 0.12 300);
 }
 
 button.ghost {
   background: transparent;
-  border-color: oklch(var(--bc, 0.9 0 0) / 20%);
-  color: oklch(var(--bc, 0.9 0 0) / 70%);
+  border-color: oklch(0.5 0 0 / 30%);
+  color: oklch(0.7 0 0 / 70%);
+  box-shadow: none;
 }
 
 button.ghost:hover {
-  background: oklch(var(--bc, 0.9 0 0) / 10%);
+  background: oklch(0.2 0 0 / 50%);
+  box-shadow: 2px 2px 0 oklch(0 0 0 / 40%);
 }
 
 button.danger {
-  border-color: oklch(var(--er, 0.6 0.2 25));
-  color: oklch(var(--er, 0.6 0.2 25));
+  border-color: oklch(0.55 0.2 25 / 70%);
+  color: oklch(0.65 0.2 25);
+  background: oklch(0.15 0.05 25);
 }
 
 button.small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.45rem;
 }
 
-/* ===== CARDS (Upgrades, Generators) ===== */
+/* ===== CARDS (Upgrades, Generators) - NES style ===== */
 .list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: 0.4rem;
+  padding: 0.5rem;
 }
 
 .card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(140deg, oklch(var(--b2, 0.18 0 0) / 65%), oklch(var(--b3, 0.15 0 0) / 55%));
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
-  border-radius: 0.75rem;
-  padding: 0.75rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 10px 25px oklch(0 0 0 / 12%);
+  background: oklch(0.14 0 0 / 95%);
+  border: 2px solid oklch(0.4 0.05 260 / 50%);
+  border-radius: 0;
+  padding: 0.6rem;
+  transition: all 0.1s steps(2);
+  box-shadow: 3px 3px 0 oklch(0 0 0 / 50%);
 }
 
 .card:hover {
-  background: linear-gradient(140deg, oklch(var(--b2, 0.18 0 0) / 78%), oklch(var(--b1, 0.2 0 0) / 65%));
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px oklch(0 0 0 / 18%);
+  background: oklch(0.18 0.02 260 / 95%);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 oklch(0 0 0 / 50%), 0 0 6px oklch(0.55 0.15 260 / 30%);
+  border-color: oklch(0.55 0.15 260 / 70%);
 }
 
 .card::after {
@@ -165,31 +187,36 @@ button.small {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(circle at 20% 20%, oklch(var(--p, 0.6 0.2 260) / 12%), transparent 35%),
-    radial-gradient(circle at 80% 20%, oklch(var(--s, 0.6 0.2 300) / 10%), transparent 35%);
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
+  background: none;
+  opacity: 0;
 }
 
 .card:hover::after {
-  opacity: 0.75;
+  opacity: 0;
 }
 
 .card h3 {
-  font-weight: 600;
-  font-size: 0.85rem;
-  margin: 0 0 0.25rem;
+  font-weight: 700;
+  font-size: 0.55rem;
+  margin: 0 0 0.2rem;
+  font-family: var(--font-retro);
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 0 oklch(0 0 0 / 80%);
 }
 
 .card p {
-  font-size: 0.75rem;
-  color: oklch(var(--bc, 0.9 0 0) / 60%);
+  font-size: 0.7rem;
+  font-family: var(--font-body);
+  color: oklch(0.7 0 0 / 70%);
   margin: 0;
 }
 
 .card .cost {
   color: oklch(var(--wa, 0.75 0.15 85));
   font-weight: 700;
+  font-family: var(--font-retro);
+  font-size: 0.7rem;
+  text-shadow: 0 0 8px oklch(var(--wa, 0.75 0.15 85) / 30%);
 }
 
 /* ===== WEAPONS GRID ===== */
@@ -202,16 +229,16 @@ button.small {
 
 .weapon-card {
   position: relative;
-  background: linear-gradient(160deg, oklch(var(--b2, 0.18 0 0) / 65%), oklch(var(--b3, 0.15 0 0) / 55%));
-  border: 1px solid oklch(var(--bc, 0.9 0 0) / 10%);
-  border-radius: 0.75rem;
+  background: linear-gradient(160deg, oklch(var(--b2, 0.18 0 0) / 75%), oklch(var(--b3, 0.15 0 0) / 65%));
+  border: var(--border-retro);
+  border-radius: 0.5rem;
   padding: 0.6rem;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
   overflow: hidden;
-  box-shadow: 0 10px 25px oklch(0 0 0 / 12%);
+  box-shadow: var(--shadow-retro);
 }
 
 .weapon-card:hover {

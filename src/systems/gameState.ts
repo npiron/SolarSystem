@@ -70,6 +70,7 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     dead: false,
     visualsLow: false,
     visualsParallax: true,
+    visualsDamageNumbers: true,
     audio: {
       enabled: false,
     },
@@ -86,7 +87,8 @@ export function createInitialState(canvasWidth: number, canvasHeight: number): G
     addons: {
       glow: false,
       bloom: false,
-      grain: false
+      grain: false,
+      crt: true
     },
     bossActive: false,
     currentBoss: null,

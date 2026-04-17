@@ -84,7 +84,7 @@ export function updateMissiles(state: GameState, dt: number): void {
                 enemy.hp -= missile.damage;
                 enemy.hitThisFrame = true;
                 missile.life = -1;
-                addFloatingText(state, "💥", enemy.x, enemy.y - 5, "#ff6600");
+                addFloatingText(state, `${Math.round(missile.damage)}`, enemy.x, enemy.y - 5, "#ff8c00", 1.4);
                 break;
             }
         }
@@ -97,7 +97,7 @@ export function updateMissiles(state: GameState, dt: number): void {
             if (dx * dx + dy * dy < (boss.radius + 6) ** 2) {
                 boss.hp -= missile.damage;
                 missile.life = -1;
-                addFloatingText(state, "💥", boss.x, boss.y - 5, "#ff6600");
+                addFloatingText(state, `${Math.round(missile.damage)}`, boss.x, boss.y - 5, "#ff8c00", 1.4);
             }
         }
     }

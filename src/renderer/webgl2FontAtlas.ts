@@ -30,7 +30,8 @@ type FontAtlasResult = {
  */
 export function generateFontAtlas(style: TextStyle, dpr: number): FontAtlasResult {
   const fontSize = Math.ceil(style.fontSize * dpr);
-  const padding = Math.ceil(style.strokeThickness * dpr) + 4;
+  // Extra padding for accent/diacritical marks (é, è, ê, à, etc.)
+  const padding = Math.ceil(style.strokeThickness * dpr) + 8;
   const shadowPadding = style.dropShadow ? Math.ceil(style.dropShadowBlur * dpr) : 0;
   const totalPadding = padding + shadowPadding;
 

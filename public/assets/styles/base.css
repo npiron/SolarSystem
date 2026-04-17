@@ -14,23 +14,34 @@ body {
   font-weight: var(--font-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* CRT-style subtle scanline overlay */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    oklch(0 0 0 / 3%) 2px,
+    oklch(0 0 0 / 3%) 4px
+  );
 }
 
-/* Typography Hierarchy */
+/* Typography Hierarchy - Balatro-inspired retro headings */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: var(--font-bold);
   line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
 }
 
 h1 {
   font-size: var(--text-2xl);
   font-weight: var(--font-extrabold);
+  text-shadow: 0 0 10px oklch(var(--p, 0.6 0.2 260) / 40%);
 }
 
 h2 {
   font-size: var(--text-xl);
+  text-shadow: 0 0 8px oklch(var(--p, 0.6 0.2 260) / 30%);
 }
 
 h3 {
